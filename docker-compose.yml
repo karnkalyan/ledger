@@ -9,7 +9,7 @@ services:
       - "${PORT:-3080}:${PORT:-3080}"
     environment:
       NODE_ENV: production
-      DATABASE_URL: ${DATABASE_URL:-mysql://root:quantumSql%40123@host.docker.internal:3306/dbname}
+      DATABASE_URL: ${DATABASE_URL:-mysql://root:quantumSql%40123@host.docker.internal:3306/ledger}
       AUTH_SECRET: ${AUTH_SECRET:-eFRIxdl2TCtTV0MJKnbaakG6Hhnav9tWadtiefwooXWqfwFVVHzuiRZggP4ZY7O4}
       CRON_SECRET: ${CRON_SECRET:-63EWQf3Ttdf-UW9OoID6fGHC2J4JZ32-lSkHqY-sA0QZvFtw_dYsJHybCgDMC2DL}
       SEED_ON_STARTUP: ${SEED_ON_STARTUP:-true}
