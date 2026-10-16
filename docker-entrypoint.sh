@@ -20,8 +20,8 @@ until npx prisma db push --skip-generate --accept-data-loss; do
 done
 echo "==> [Prisma] Database schema is up to date!"
 
-# Run master seed if enabled (default: true)
-if [ "${SEED_ON_STARTUP:-true}" = "true" ]; then
+# Run master seed if enabled (default: false to prevent background collision)
+if [ "${SEED_ON_STARTUP:-false}" = "true" ]; then
   echo "==> [Seed] Executing master seed script (prisma/seed.ts)..."
   npx tsx prisma/seed.ts || echo "==> [Notice] Seed script completed with warnings or was already initialized."
 else

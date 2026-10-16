@@ -975,21 +975,41 @@ async function main() {
         expenseId = exp.id;
       }
 
-      await prisma.bankTransaction.create({
-        data: {
-          organizationId: company.id,
-          bankAccountId: sBank.id,
-          transactionDate: txDate,
-          type: tx.type,
-          amount,
-          balance: tx.balance != null ? Number(tx.balance) : null,
-          description: tx.description,
-          reference: tx.reference,
-          category,
-          incomeId,
-          expenseId,
-        },
-      });
+      try {
+        await prisma.bankTransaction.create({
+          data: {
+            organizationId: company.id,
+            bankAccountId: sBank.id,
+            transactionDate: txDate,
+            type: tx.type,
+            amount,
+            balance: tx.balance != null ? Number(tx.balance) : null,
+            description: tx.description,
+            reference: tx.reference,
+            category,
+            incomeId: incomeId ?? undefined,
+            expenseId: expenseId ?? undefined,
+          },
+        });
+      } catch (err: any) {
+        if (err?.code === "P2003") {
+          await prisma.bankTransaction.create({
+            data: {
+              organizationId: company.id,
+              bankAccountId: sBank.id,
+              transactionDate: txDate,
+              type: tx.type,
+              amount,
+              balance: tx.balance != null ? Number(tx.balance) : null,
+              description: tx.description,
+              reference: tx.reference,
+              category,
+            },
+          });
+        } else {
+          throw err;
+        }
+      }
     }
 
     // Add verified transaction on 2026-10-15 (29 Ashwin 2083 BS)
@@ -1007,20 +1027,40 @@ async function main() {
       },
     });
 
-    await prisma.bankTransaction.create({
-      data: {
-        organizationId: company.id,
-        bankAccountId: sBank.id,
-        transactionDate: oct15Date,
-        type: "WITHDRAWAL",
-        amount: 15000,
-        balance: 12944.68,
-        description: oct15Desc,
-        reference: "MOB/SBLMOB01Kalyan Kumar Karn",
-        category: "Director Current Account (Drawings)",
-        expenseId: oct15Exp.id,
-      },
-    });
+    try {
+      await prisma.bankTransaction.create({
+        data: {
+          organizationId: company.id,
+          bankAccountId: sBank.id,
+          transactionDate: oct15Date,
+          type: "WITHDRAWAL",
+          amount: 15000,
+          balance: 12944.68,
+          description: oct15Desc,
+          reference: "MOB/SBLMOB01Kalyan Kumar Karn",
+          category: "Director Current Account (Drawings)",
+          expenseId: oct15Exp.id,
+        },
+      });
+    } catch (err: any) {
+      if (err?.code === "P2003") {
+        await prisma.bankTransaction.create({
+          data: {
+            organizationId: company.id,
+            bankAccountId: sBank.id,
+            transactionDate: oct15Date,
+            type: "WITHDRAWAL",
+            amount: 15000,
+            balance: 12944.68,
+            description: oct15Desc,
+            reference: "MOB/SBLMOB01Kalyan Kumar Karn",
+            category: "Director Current Account (Drawings)",
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     await prisma.bankAccount.update({
       where: { id: sBank.id },
