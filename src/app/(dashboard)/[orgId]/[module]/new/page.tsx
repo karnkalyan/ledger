@@ -34,13 +34,13 @@ const entries = [
 const officeOnly = new Set(["sales","purchase","stock","crm","leads","staff","payroll","leaves","invoices","quotes","licenses"]);
 export default async function NewEntryPage({params, searchParams}: {
  params: Promise<{orgId: string; module: string}>;
- searchParams: Promise<{type?: string}>;
+ searchParams: Promise<{type?: string; defaultType?: string}>;
 }) {
  const {orgId, module} = await params;
  if (["projects", "wallets", "worklogs"].includes(module)) {
    redirect(`/${orgId}/${module}`);
  }
- const {type} = await searchParams;
+ const {type, defaultType} = await searchParams;
  const entry = entries.find(e => e.module === module && (!type || e.type === type));
  if (!entry) notFound();
  const {organization, membership} = await requireOrganizationAccess(orgId);
@@ -169,10 +169,10 @@ export default async function NewEntryPage({params, searchParams}: {
               <div className="form-grid">
                 <label className="field">
                   Contact Type
-                  <select name="type">
-                    <option>CUSTOMER</option>
-                    <option>VENDOR</option>
-                    <option>BOTH</option>
+                  <select name="type" defaultValue={defaultType || "CUSTOMER"}>
+                    <option value="CUSTOMER">CUSTOMER (Client)</option>
+                    <option value="VENDOR">VENDOR (Supplier)</option>
+                    <option value="BOTH">BOTH (Dual Role)</option>
                   </select>
                 </label>
                 <label className="field">

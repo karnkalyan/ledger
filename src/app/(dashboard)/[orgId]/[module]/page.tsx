@@ -28,6 +28,8 @@ import {
   Trash2,
   UserCheck,
   Zap,
+  UsersRound,
+  UserRoundSearch,
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireOrganizationAccess } from "@/lib/session";
@@ -1665,7 +1667,8 @@ export default async function ModulePage({
   }
 
   if (module === "crm") {
-    const filterType = query.type ? String(query.type).toUpperCase() : null;
+    const rawType = query.type ? String(query.type).toUpperCase() : "CUSTOMER";
+    const filterType = rawType === "ALL" ? null : rawType === "VENDOR" ? "VENDOR" : "CUSTOMER";
     const allContacts = await db.contact.findMany({ where: { organizationId: orgId }, orderBy: { createdAt: "desc" } });
     const customerCount = allContacts.filter((c) => c.type === "CUSTOMER" || c.type === "BOTH").length;
     const vendorCount = allContacts.filter((c) => c.type === "VENDOR" || c.type === "BOTH").length;
@@ -1680,7 +1683,7 @@ export default async function ModulePage({
       ? "Vendor & Supplier Directory"
       : filterType === "CUSTOMER"
       ? "Customer & Client Directory"
-      : "CRM Directory";
+      : "All Contacts Directory (CRM)";
 
     const pageDescription = filterType === "VENDOR"
       ? "Manage suppliers, procurement contacts, VAT/PAN credentials, and payment terms."
@@ -1689,14 +1692,64 @@ export default async function ModulePage({
       : "Manage customers, vendors, and partners across quotes, invoices, sales, and purchases.";
 
     const addButtonLabel = filterType === "VENDOR" ? "Add Vendor" : filterType === "CUSTOMER" ? "Add Customer" : "Add Contact";
+    const addContactHref = filterType === "VENDOR"
+      ? `/${orgId}/crm/new?type=add-contact&defaultType=VENDOR`
+      : `/${orgId}/crm/new?type=add-contact&defaultType=CUSTOMER`;
 
     return (
       <main className="page-wrap">
         <Header title={pageTitle} description={pageDescription}>
-          <Link href={"/" + orgId + "/crm/new?type=add-contact"} className="primary-btn">
+          <Link href={addContactHref} className="primary-btn">
             <Plus size={14} /> {addButtonLabel}
           </Link>
         </Header>
+
+        {/* TABS: SEGREGATE VENDORS AND CUSTOMERS INTO DIFFERENT TABS */}
+        <div className="table-card no-print" style={{ padding: "12px 18px", marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              <Link
+                href={`/${orgId}/crm?type=CUSTOMER`}
+                className={`filter-tab ${filterType === "CUSTOMER" ? "active" : ""}`}
+                style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", fontSize: 12 }}
+              >
+                <UsersRound size={14} />
+                <span>Customers & Clients</span>
+                <span className="badge" style={{ padding: "2px 7px", fontSize: 10, background: filterType === "CUSTOMER" ? "rgba(255,255,255,0.25)" : "var(--soft)" }}>
+                  {customerCount}
+                </span>
+              </Link>
+              <Link
+                href={`/${orgId}/crm?type=VENDOR`}
+                className={`filter-tab ${filterType === "VENDOR" ? "active" : ""}`}
+                style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", fontSize: 12 }}
+              >
+                <Building2 size={14} />
+                <span>Vendors & Suppliers</span>
+                <span className="badge" style={{ padding: "2px 7px", fontSize: 10, background: filterType === "VENDOR" ? "rgba(255,255,255,0.25)" : "var(--soft)" }}>
+                  {vendorCount}
+                </span>
+              </Link>
+              <Link
+                href={`/${orgId}/crm?type=ALL`}
+                className={`filter-tab ${!filterType ? "active" : ""}`}
+                style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", fontSize: 12 }}
+              >
+                <UserRoundSearch size={14} />
+                <span>All Contacts</span>
+                <span className="badge" style={{ padding: "2px 7px", fontSize: 10, background: !filterType ? "rgba(255,255,255,0.25)" : "var(--soft)" }}>
+                  {allContacts.length}
+                </span>
+              </Link>
+            </div>
+
+            <div style={{ fontSize: 11.5, color: "var(--text-muted)" }}>
+              {filterType === "CUSTOMER" && "Tab: Customer records only"}
+              {filterType === "VENDOR" && "Tab: Vendor records only"}
+              {!filterType && "Tab: All combined contact records"}
+            </div>
+          </div>
+        </div>
         <Kpis
           items={
             filterType === "VENDOR"

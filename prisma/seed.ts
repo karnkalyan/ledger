@@ -41,6 +41,21 @@ function parseDate(dateStr: string | null | undefined): Date {
   return isNaN(d.getTime()) ? new Date() : d;
 }
 
+function toTitleCase(str?: string | null): string {
+  if (!str) return "";
+  return str
+    .trim()
+    .split(/\s+/)
+    .map((word) => {
+      if (!word) return "";
+      const lower = word.toLowerCase();
+      if (["pvt", "ltd"].includes(lower)) return lower === "pvt" ? "Pvt" : "Ltd";
+      if (["tv", "ku", "vat", "pan", "ips", "atm", "po", "so", "inv"].includes(lower)) return word.toUpperCase();
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(" ");
+}
+
 async function main() {
   console.log("=== KASHTRIX LEDGER & EXPENSE SUITE MASTER PRODUCTION SEED ===");
 
@@ -464,76 +479,35 @@ async function main() {
     },
   });
 
-  // Log linked expense so it shows in monthly reports
-  await prisma.expense.create({
-    data: {
+  // Log linked expense so it shows in monthly reports (idempotent check)
+  const existingOfficeSetupExp = await prisma.expense.findFirst({
+    where: {
       organizationId: company.id,
       title: `Payment for PO #${officePO.orderNumber} (${officeVendor.name})`,
-      vendor: officeVendor.name,
-      type: ExpenseType.ONE_TIME,
-      amount: 100000,
-      occurredAt: new Date("2026-09-15T14:30:00Z"),
-      notes: `Payment towards office setup purchase dues. Remaining order balance: NPR 200,000.`,
     },
   });
-  console.log(`Created Office Purchase Order PO-OFFICE-SETUP-300K: Total 300,000, Paid 100,000, Dues 200,000.`);
+  if (!existingOfficeSetupExp) {
+    await prisma.expense.create({
+      data: {
+        organizationId: company.id,
+        title: `Payment for PO #${officePO.orderNumber} (${officeVendor.name})`,
+        vendor: officeVendor.name,
+        type: ExpenseType.ONE_TIME,
+        amount: 100000,
+        occurredAt: new Date("2026-09-15T14:30:00Z"),
+        notes: `Payment towards office setup purchase dues. Remaining order balance: NPR 200,000.`,
+      },
+    });
+  }
+  console.log(`Created/Verified Office Purchase Order PO-OFFICE-SETUP-300K: Total 300,000, Paid 100,000, Dues 200,000.`);
 
-  // 7. LOAN MANAGEMENT SEED RECORDS (TAKEN & GIVEN WITH DAILY/MONTHLY/YEARLY INTEREST)
-  console.log("\n--- SEEDING LOAN MANAGEMENT DATA (OFFICE & HOUSEHOLD) ---");
+  // 7. LOAN CLEANUP (Office Loans Removed per user requirements)
+  console.log("\n--- CLEANING PREVIOUS DUMMY LOANS ---");
   await prisma.loanPayment.deleteMany({
     where: { loan: { organizationId: { in: [company.id, household.id] } } },
   });
   await prisma.loan.deleteMany({
     where: { organizationId: { in: [company.id, household.id] } },
-  });
-
-  // Office Loan 1: Loan Taken (Borrowing) with Monthly Interest
-  const officeLoanTaken = await prisma.loan.create({
-    data: {
-      organizationId: company.id,
-      type: LoanType.TAKEN,
-      partyName: "Suresh Sharma",
-      principalAmount: 200000,
-      startDate: new Date("2026-06-01T10:00:00Z"),
-      dueDate: new Date("2026-12-31T10:00:00Z"),
-      hasInterest: true,
-      interestRate: 1.2, // 1.2% per month
-      interestFrequency: InterestFrequency.MONTHLY,
-      totalPrincipalPaid: 50000,
-      totalInterestPaid: 4800,
-      status: LoanStatus.ACTIVE,
-      notes: "Short-term bridge finance for hardware import at 1.2% monthly interest.",
-      payments: {
-        create: [
-          {
-            principalAmount: 50000,
-            interestAmount: 4800,
-            totalAmount: 54800,
-            paymentDate: new Date("2026-08-01T12:00:00Z"),
-            notes: "First installment repayment (Principal 50k + Int 4.8k)",
-          },
-        ],
-      },
-    },
-  });
-
-  // Office Loan 2: Loan Given (Lending) with Yearly Interest
-  await prisma.loan.create({
-    data: {
-      organizationId: company.id,
-      type: LoanType.GIVEN,
-      partyName: "Tech Partner Solutions",
-      principalAmount: 150000,
-      startDate: new Date("2026-07-01T10:00:00Z"),
-      dueDate: new Date("2026-12-31T10:00:00Z"),
-      hasInterest: true,
-      interestRate: 10.0, // 10% per year
-      interestFrequency: InterestFrequency.YEARLY,
-      totalPrincipalPaid: 0,
-      totalInterestPaid: 0,
-      status: LoanStatus.ACTIVE,
-      notes: "Commercial bridge assistance to partner agency at 10% annual interest.",
-    },
   });
 
   // 7. HOUSEHOLD RENTAL RESIDENCE & TENANCY (USER SPECIFIED)
@@ -580,7 +554,20 @@ async function main() {
     console.log("\n--- IMPORTING LIVE COMPANY DATA FROM EXTRACTED JSON ---");
     const data = JSON.parse(fs.readFileSync(dataFilePath, "utf-8"));
 
-    // Clean prior contacts (except office interior setup vendor)
+    // Clean prior child records & contacts (except office interior setup) to maintain relational integrity
+    await prisma.bankTransaction.deleteMany({ where: { organizationId: company.id } });
+    await prisma.invoicePayment.deleteMany({ where: { invoice: { organizationId: company.id } } });
+    await prisma.invoiceItem.deleteMany({ where: { invoice: { organizationId: company.id } } });
+    await prisma.invoice.deleteMany({ where: { organizationId: company.id } });
+    await prisma.salesOrderItem.deleteMany({ where: { salesOrder: { organizationId: company.id } } });
+    await prisma.salesOrder.deleteMany({ where: { organizationId: company.id } });
+    await prisma.purchaseOrderItem.deleteMany({ where: { purchaseOrder: { organizationId: company.id, orderNumber: { not: "PO-OFFICE-SETUP-300K" } } } });
+    await prisma.purchaseOrder.deleteMany({ where: { organizationId: company.id, orderNumber: { not: "PO-OFFICE-SETUP-300K" } } });
+    await prisma.quoteItem.deleteMany({ where: { quote: { organizationId: company.id } } });
+    await prisma.quote.deleteMany({ where: { organizationId: company.id } });
+    await prisma.lead.deleteMany({ where: { organizationId: company.id } });
+    await prisma.stockMovement.deleteMany({ where: { organizationId: company.id } });
+    await prisma.product.deleteMany({ where: { organizationId: company.id } });
     await prisma.contact.deleteMany({
       where: {
         organizationId: company.id,
@@ -588,33 +575,56 @@ async function main() {
       },
     });
 
-    const CANONICAL_CONTACTS: Record<string, { companyName: string; name: string; taxNumber: string; address: string; phone: string; email: string }> = {
-      "av bionics": { companyName: "AV Bionics Pvt Ltd", name: "Anand Verma", taxNumber: "602381944", address: "Putalisadak, Kathmandu", phone: "+977-1-4245678", email: "info@avbionics.com.np" },
-      "balkumari electronics": { companyName: "Balkumari Electronics Pvt Ltd", name: "Bikash Shrestha", taxNumber: "601827364", address: "Balkumari, Lalitpur", phone: "+977-1-5548900", email: "sales@balkumarielectronics.np" },
-      "nav solutions": { companyName: "Nav Solutions Pvt Ltd", name: "Navin Adhikari", taxNumber: "603928172", address: "New Baneshwor, Kathmandu", phone: "+977-1-4782390", email: "support@navsolutions.com.np" },
-      "digital camera": { companyName: "Digital Camera & Broadcast Media Pvt Ltd", name: "Dinesh Manandhar", taxNumber: "302819283", address: "New Road, Kathmandu", phone: "+977-1-4228910", email: "orders@digitalcamera.np" },
-      "shasa enterprises": { companyName: "Shasa Enterprises Pvt Ltd", name: "Shashank Joshi", taxNumber: "604192837", address: "Tripureshwor, Kathmandu", phone: "+977-1-4261892", email: "shasa.enterprises@gmail.com" },
-      "spykar company": { companyName: "Spykar Company Pvt Ltd", name: "Sunil Karki", taxNumber: "605928374", address: "Kamaladi, Kathmandu", phone: "+977-1-4438290", email: "info@spykar.com.np" },
-      "nepal max tech": { companyName: "Nepal Max Tech Pvt Ltd", name: "Mukesh Yadav", taxNumber: "601293847", address: "Maitighar, Kathmandu", phone: "+977-1-4267123", email: "support@nepalmaxtech.np" },
-      "neoteric nepal": { companyName: "Neoteric Nepal Pvt Ltd", name: "Sanjay Golchha", taxNumber: "300182736", address: "Jawalakhel, Lalitpur", phone: "+977-1-5538901", email: "sales@neoteric.com.np" },
-      "smart enterprises": { companyName: "Smart Enterprises Pvt Ltd", name: "Suraj Pradhan", taxNumber: "602819283", address: "Teku, Kathmandu", phone: "+977-1-4219876", email: "smart.ent.np@gmail.com" },
-      "cloud tech": { companyName: "Cloud Tech Solutions Pvt Ltd", name: "Chandan Roy", taxNumber: "608192837", address: "Thapathali, Kathmandu", phone: "+977-1-4102938", email: "cloudtech@npmail.net" },
-      "lokesh agarwal": { companyName: "Lokesh Agarwal Trading", name: "Lokesh Agarwal", taxNumber: "302819284", address: "Indrachowk, Kathmandu", phone: "+977-9851029384", email: "lokesh.agarwal@outlook.com" },
-      "vianet": { companyName: "Vianet Communications Pvt Ltd", name: "Corporate Helpdesk", taxNumber: "301829384", address: "Jawalakhel, Lalitpur", phone: "+977-1-5970444", email: "corporate@vianet.com.np" },
-      "bagmati": { companyName: "Bagmati TV Network Pvt Ltd", name: "Bishal Thapa", taxNumber: "601928374", address: "Chabahil, Kathmandu", phone: "+977-1-4478900", email: "broadcast@bagmatitv.com" },
-      "dhulikhel": { companyName: "Dhulikhel Hospital - Kathmandu University Hospital", name: "Administration & IT Dept", taxNumber: "300182749", address: "Dhulikhel, Kavre", phone: "+977-11-490497", email: "it@dhulikhelhospital.org" },
-      "kathmandu university": { companyName: "Kathmandu University", name: "Procurement Directorate", taxNumber: "300182940", address: "Dhulikhel, Kavre", phone: "+977-11-415100", email: "procurement@ku.edu.np" },
-      "nepal news": { companyName: "Nepal News Bank Pvt Ltd", name: "Narayan Gautam", taxNumber: "604819283", address: "Anamnagar, Kathmandu", phone: "+977-1-4771234", email: "editor@nepalnews.com" },
-      "tv today": { companyName: "TV Today Network Pvt Ltd", name: "Janak Rijal", taxNumber: "602918273", address: "Tinkune, Kathmandu", phone: "+977-1-4111890", email: "accounts@tvtoday.com.np" },
-      "prime minister": { companyName: "Office of the Prime Minister and Council of Ministers", name: "IT & Media Cell", taxNumber: "300000001", address: "Singha Durbar, Kathmandu", phone: "+977-1-4211000", email: "info@opmcm.gov.np" },
-      "black swan": { companyName: "Black Swan Nepal Pvt Ltd", name: "Santosh Singh", taxNumber: "605192837", address: "Jhamsikhel, Lalitpur", phone: "+977-1-5529810", email: "santosh@blackswan.com.np" },
-      "7 star tv": { companyName: "7 Star TV Network Pvt Ltd", name: "Rajendra Shah", taxNumber: "603819284", address: "Pokhara / Kathmandu", phone: "+977-1-4412389", email: "broadcast@7startv.np" },
-      "dim movies": { companyName: "DIM Movies Production Pvt Ltd", name: "Deepak Shrestha", taxNumber: "604928172", address: "Gairidhara, Kathmandu", phone: "+977-1-4428190", email: "deepak@dimmovies.np" },
-      "fewa tv": { companyName: "Fewa Television Ltd", name: "Kishor Sharma", taxNumber: "601829304", address: "Pokhara, Gandaki", phone: "+977-61-524180", email: "fewatv@fewa.com.np" },
+    const CANONICAL_CONTACTS: Record<string, { companyName: string; name: string; taxNumber?: string; address?: string; phone?: string; email?: string; type?: ContactType }> = {
+      "simulcast": { companyName: "Simulcast Technologies Pvt Ltd", name: "Simulcast Technologies", taxNumber: "601928374", address: "Kathmandu, Nepal", phone: "+977-1-4412345", email: "accounts@simulcast.local", type: ContactType.BOTH },
+      "nav solutions": { companyName: "Nav Solutions Pvt Ltd", name: "Navin Adhikari", taxNumber: "603928172", address: "New Baneshwor, Kathmandu", phone: "+977-1-4782390", email: "support@navsolutions.com.np", type: ContactType.VENDOR },
+      "av bionics": { companyName: "AV Bionics Pvt Ltd", name: "Anand Verma", taxNumber: "602381944", address: "Putalisadak, Kathmandu", phone: "+977-1-4245678", email: "info@avbionics.com.np", type: ContactType.BOTH },
+      "kathmandu university": { companyName: "Kathmandu University", name: "Procurement Directorate", taxNumber: "300182940", address: "Dhulikhel, Kavre", phone: "+977-11-415100", email: "procurement@ku.edu.np", type: ContactType.CUSTOMER },
+      "dhulikhel": { companyName: "Dhulikhel Hospital - Kathmandu University Hospital", name: "Administration & IT Dept", taxNumber: "300182749", address: "Dhulikhel, Kavre", phone: "+977-11-490497", email: "it@dhulikhelhospital.org", type: ContactType.CUSTOMER },
+      "prime minister": { companyName: "Office of the Prime Minister and Council of Ministers", name: "IT & Media Cell", taxNumber: "300000001", address: "Singha Durbar, Kathmandu", phone: "+977-1-4211000", email: "info@opmcm.gov.np", type: ContactType.CUSTOMER },
+      "nepal max tech": { companyName: "Nepal Max Tech Pvt Ltd", name: "Mukesh Yadav", taxNumber: "601293847", address: "Maitighar, Kathmandu", phone: "+977-1-4267123", email: "support@nepalmaxtech.np", type: ContactType.VENDOR },
+      "balkumari electronics": { companyName: "Balkumari Electronics Pvt Ltd", name: "Bikash Shrestha", taxNumber: "601827364", address: "Balkumari, Lalitpur", phone: "+977-1-5548900", email: "sales@balkumarielectronics.np", type: ContactType.VENDOR },
+      "digital camera": { companyName: "Digital Camera & Broadcast Media Pvt Ltd", name: "Dinesh Manandhar", taxNumber: "302819283", address: "New Road, Kathmandu", phone: "+977-1-4228910", email: "orders@digitalcamera.np", type: ContactType.VENDOR },
+      "shasa enterprises": { companyName: "Shasa Enterprises Pvt Ltd", name: "Shashank Joshi", taxNumber: "604192837", address: "Tripureshwor, Kathmandu", phone: "+977-1-4261892", email: "shasa.enterprises@gmail.com", type: ContactType.VENDOR },
+      "spykar company": { companyName: "Spykar Company Pvt Ltd", name: "Sunil Karki", taxNumber: "605928374", address: "Kamaladi, Kathmandu", phone: "+977-1-4438290", email: "info@spykar.com.np", type: ContactType.VENDOR },
+      "neoteric nepal": { companyName: "Neoteric Nepal Pvt Ltd", name: "Sanjay Golchha", taxNumber: "300182736", address: "Jawalakhel, Lalitpur", phone: "+977-1-5538901", email: "sales@neoteric.com.np", type: ContactType.VENDOR },
+      "smart enterprises": { companyName: "Smart Enterprises Pvt Ltd", name: "Suraj Pradhan", taxNumber: "602819283", address: "Teku, Kathmandu", phone: "+977-1-4219876", email: "smart.ent.np@gmail.com", type: ContactType.VENDOR },
+      "cloud tech": { companyName: "Cloud Tech Solutions Pvt Ltd", name: "Chandan Roy", taxNumber: "608192837", address: "Thapathali, Kathmandu", phone: "+977-1-4102938", email: "cloudtech@npmail.net", type: ContactType.VENDOR },
+      "lokesh agarwal": { companyName: "Lokesh Agarwal Trading", name: "Lokesh Agarwal", taxNumber: "302819284", address: "Indrachowk, Kathmandu", phone: "+977-9851029384", email: "lokesh.agarwal@outlook.com", type: ContactType.VENDOR },
+      "vianet": { companyName: "Vianet Communications Pvt Ltd", name: "Corporate Helpdesk", taxNumber: "301829384", address: "Jawalakhel, Lalitpur", phone: "+977-1-5970444", email: "corporate@vianet.com.np", type: ContactType.VENDOR },
+      "commercial tech": { companyName: "Commercial Tech & Office Interiors Pvt Ltd", name: "Kiran Basnet", taxNumber: "602381944", address: "Putalisadak, Kathmandu", phone: "+977-1-4268900", email: "sales@officeinteriors.np", type: ContactType.VENDOR },
+      "riddhi siddhi": { companyName: "Riddhi Siddhi Multipurpose Pvt Ltd", name: "Riddhi Siddhi Multipurpose", taxNumber: "603819201", address: "Kathmandu, Nepal", type: ContactType.CUSTOMER },
+      "aashi traders": { companyName: "Aashi Traders Pvt Ltd", name: "Aashi Traders", taxNumber: "604819280", address: "Kathmandu, Nepal", type: ContactType.CUSTOMER },
+      "sujay": { companyName: "Sujay Enterprises", name: "Sujay", address: "Kathmandu, Nepal", type: ContactType.CUSTOMER },
+      "illya": { companyName: "Illya Electronics", name: "Illya", address: "Kathmandu, Nepal", type: ContactType.VENDOR },
+      "quick": { companyName: "Quick Logistics", name: "Quick", address: "Kathmandu, Nepal", type: ContactType.VENDOR },
+      "air": { companyName: "Air Logistics", name: "Air", address: "Kathmandu, Nepal", type: ContactType.VENDOR },
+      "bagmati": { companyName: "Bagmati TV Network Pvt Ltd", name: "Bishal Thapa", taxNumber: "601928374", address: "Chabahil, Kathmandu", phone: "+977-1-4478900", email: "broadcast@bagmatitv.com", type: ContactType.CUSTOMER },
+      "nepal news": { companyName: "Nepal News Bank Pvt Ltd", name: "Narayan Gautam", taxNumber: "604819283", address: "Anamnagar, Kathmandu", phone: "+977-1-4771234", email: "editor@nepalnews.com", type: ContactType.CUSTOMER },
+      "tv today": { companyName: "TV Today Network Pvt Ltd", name: "Janak Rijal", taxNumber: "602918273", address: "Tinkune, Kathmandu", phone: "+977-1-4111890", email: "accounts@tvtoday.com.np", type: ContactType.CUSTOMER },
+      "black swan": { companyName: "Black Swan Nepal Pvt Ltd", name: "Santosh Singh", taxNumber: "605192837", address: "Jhamsikhel, Lalitpur", phone: "+977-1-5529810", email: "santosh@blackswan.com.np", type: ContactType.CUSTOMER },
+      "7 star tv": { companyName: "7 Star TV Network Pvt Ltd", name: "Rajendra Shah", taxNumber: "603819284", address: "Pokhara / Kathmandu", phone: "+977-1-4412389", email: "broadcast@7startv.np", type: ContactType.CUSTOMER },
+      "dim movies": { companyName: "DIM Movies Production Pvt Ltd", name: "Deepak Shrestha", taxNumber: "604928172", address: "Gairidhara, Kathmandu", phone: "+977-1-4428190", email: "deepak@dimmovies.np", type: ContactType.CUSTOMER },
+      "fewa tv": { companyName: "Fewa Television Ltd", name: "Kishor Sharma", taxNumber: "601829304", address: "Pokhara, Gandaki", phone: "+977-61-524180", email: "fewatv@fewa.com.np", type: ContactType.CUSTOMER },
     };
 
     function matchCanonicalKey(rawName: string): string | null {
-      const lower = rawName.toLowerCase();
+      const lower = rawName.toLowerCase().trim();
+      if (lower === "simul" || lower === "simulcast" || lower.includes("simulcast")) return "simulcast";
+      if (lower === "nav" || lower === "navsolutions" || lower.includes("nav solutions")) return "nav solutions";
+      if (lower === "av" || lower === "avbionics" || lower.includes("av bionics")) return "av bionics";
+      if (lower === "ku" || lower.includes("kayhmandu") || lower.includes("kathmandu university")) return "kathmandu university";
+      if (lower.includes("dhulukhel") || lower.includes("dhulikhel")) return "dhulikhel";
+      if (lower.includes("primeminister") || lower.includes("prime minister")) return "prime minister";
+      if (lower === "max" || lower.includes("max tech")) return "nepal max tech";
+      if (lower.includes("comp.pvt") || lower.includes("comp pvt") || lower.includes("commercial tech") || lower.includes("office interiors")) return "commercial tech";
+      if (lower.includes("riddhi siddhi")) return "riddhi siddhi";
+      if (lower.includes("aashi")) return "aashi traders";
+      if (lower.includes("sujay")) return "sujay";
+      if (lower.includes("illya")) return "illya";
+      if (lower.includes("quick")) return "quick";
+      if (lower.includes("air")) return "air";
+
       for (const k of Object.keys(CANONICAL_CONTACTS)) {
         if (lower.includes(k)) return k;
       }
@@ -629,7 +639,7 @@ async function main() {
       const raw = clientName.trim();
       const canonKey = matchCanonicalKey(raw);
       const meta = canonKey ? CANONICAL_CONTACTS[canonKey] : null;
-      const compName = meta ? meta.companyName : raw;
+      const compName = meta ? meta.companyName : toTitleCase(raw);
       const key = (canonKey || raw).toLowerCase();
 
       if (contactMap.has(key)) continue;
@@ -637,7 +647,7 @@ async function main() {
       const c = await prisma.contact.create({
         data: {
           organizationId: company.id,
-          type: ContactType.CUSTOMER,
+          type: meta?.type || ContactType.CUSTOMER,
           name: meta ? meta.name : compName,
           companyName: compName,
           taxNumber: meta?.taxNumber || null,
@@ -658,7 +668,7 @@ async function main() {
       const raw = vendorName.trim();
       const canonKey = matchCanonicalKey(raw);
       const meta = canonKey ? CANONICAL_CONTACTS[canonKey] : null;
-      const compName = meta ? meta.companyName : raw;
+      const compName = meta ? meta.companyName : toTitleCase(raw);
       const key = (canonKey || raw).toLowerCase();
 
       const existingId = contactMap.get(key) || (meta ? contactMap.get(meta.companyName.toLowerCase()) : undefined);
@@ -675,7 +685,7 @@ async function main() {
         const c = await prisma.contact.create({
           data: {
             organizationId: company.id,
-            type: ContactType.VENDOR,
+            type: meta?.type || ContactType.VENDOR,
             name: meta ? meta.name : compName,
             companyName: compName,
             taxNumber: meta?.taxNumber || null,
@@ -690,18 +700,6 @@ async function main() {
         if (meta) contactMap.set(meta.companyName.toLowerCase(), c.id);
       }
     }
-
-    // Clean prior historical import to ensure repeatable idempotent seed
-    await prisma.bankTransaction.deleteMany({ where: { organizationId: company.id } });
-    await prisma.invoicePayment.deleteMany({ where: { invoice: { organizationId: company.id } } });
-    await prisma.invoiceItem.deleteMany({ where: { invoice: { organizationId: company.id } } });
-    await prisma.invoice.deleteMany({ where: { organizationId: company.id } });
-    await prisma.salesOrderItem.deleteMany({ where: { salesOrder: { organizationId: company.id } } });
-    await prisma.salesOrder.deleteMany({ where: { organizationId: company.id } });
-    await prisma.purchaseOrderItem.deleteMany({ where: { purchaseOrder: { organizationId: company.id, orderNumber: { not: "PO-OFFICE-SETUP-300K" } } } });
-    await prisma.purchaseOrder.deleteMany({ where: { organizationId: company.id, orderNumber: { not: "PO-OFFICE-SETUP-300K" } } });
-    await prisma.stockMovement.deleteMany({ where: { organizationId: company.id } });
-    await prisma.product.deleteMany({ where: { organizationId: company.id } });
 
     // Products & Stock
     const productMap = new Map<string, string>();
@@ -859,6 +857,35 @@ async function main() {
       },
     });
 
+    // Idempotent cleanup: remove prior bank transactions and linked bank-incomes/expenses
+    const oldBankTxs = await prisma.bankTransaction.findMany({
+      where: { organizationId: company.id },
+      select: { incomeId: true, expenseId: true },
+    });
+    const oldIncIds = oldBankTxs.map((t) => t.incomeId).filter((id): id is string => Boolean(id));
+    const oldExpIds = oldBankTxs.map((t) => t.expenseId).filter((id): id is string => Boolean(id));
+
+    await prisma.bankTransaction.deleteMany({ where: { organizationId: company.id } });
+    if (oldIncIds.length > 0) {
+      await prisma.income.deleteMany({ where: { id: { in: oldIncIds } } });
+    }
+    if (oldExpIds.length > 0) {
+      await prisma.expense.deleteMany({ where: { id: { in: oldExpIds } } });
+    }
+    // Safety cleanup: ensure no orphaned Siddhartha bank inflows or outflows exist
+    await prisma.income.deleteMany({
+      where: {
+        organizationId: company.id,
+        source: "Siddhartha Bank Ltd (02017249683)",
+      },
+    });
+    await prisma.expense.deleteMany({
+      where: {
+        organizationId: company.id,
+        vendor: { in: ["Siddhartha Bank Outlay", "Director Current Account (Kalyan Kumar Karn)"] },
+      },
+    });
+
     // Seed Siddhartha Bank Transactions
     for (const tx of sBankData.transactions) {
       const txDate = new Date(`${tx.date}T12:00:00Z`);
@@ -926,33 +953,48 @@ async function main() {
         },
       });
     }
-    console.log(`Imported ${sBankData.transactions.length} Siddhartha Bank transactions. Balance set to NPR 27,944.68.`);
+
+    // Add verified transaction on 2026-10-15 (29 Ashwin 2083 BS)
+    const oct15Date = new Date("2026-10-15T12:00:00Z");
+    const oct15Desc = "Fund Trf to KALYAN KUMAR KARN-Kalyan Kumar Kar FUN MOB/SBLMOB01Kalyan Kumar Karn";
+    const oct15Exp = await prisma.expense.create({
+      data: {
+        organizationId: company.id,
+        title: oct15Desc,
+        vendor: "Director Current Account (Kalyan Kumar Karn)",
+        type: ExpenseType.ONE_TIME,
+        amount: 15000,
+        occurredAt: oct15Date,
+        notes: "Bank ref: MOB/SBLMOB01Kalyan Kumar Karn | Category: Director Current Account (Drawings)",
+      },
+    });
+
+    await prisma.bankTransaction.create({
+      data: {
+        organizationId: company.id,
+        bankAccountId: sBank.id,
+        transactionDate: oct15Date,
+        type: "WITHDRAWAL",
+        amount: 15000,
+        balance: 12944.68,
+        description: oct15Desc,
+        reference: "MOB/SBLMOB01Kalyan Kumar Karn",
+        category: "Director Current Account (Drawings)",
+        expenseId: oct15Exp.id,
+      },
+    });
+
+    await prisma.bankAccount.update({
+      where: { id: sBank.id },
+      data: { currentBalance: 12944.68 },
+    });
+
+    console.log(`Imported Siddhartha Bank transactions. Verified closing balance set to NPR 12,944.68.`);
   }
 
-  // 9. Staff & Licenses
-  const employee = await prisma.employee.upsert({
-    where: { organizationId_employeeCode: { organizationId: company.id, employeeCode: "EMP-001" } },
-    update: {},
-    create: {
-      organizationId: company.id,
-      employeeCode: "EMP-001",
-      name: "Aarav Shrestha",
-      email: "aarav@simulcast.local",
-      designation: "Broadcast Systems Engineer",
-      department: "Engineering",
-      basicSalary: 85000,
-    },
-  });
-
-  await prisma.task.create({
-    data: {
-      organizationId: company.id,
-      title: "Prepare client broadcast deployment checklist",
-      priority: TaskPriority.HIGH,
-      employeeId: employee.id,
-      dueAt: new Date(Date.now() + 2 * 86400000),
-    },
-  });
+  // 9. Staff Clean Directory (No dummy employees seeded per request)
+  await prisma.task.deleteMany({ where: { organizationId: company.id, employee: { employeeCode: "EMP-001" } } });
+  await prisma.employee.deleteMany({ where: { organizationId: company.id, employeeCode: "EMP-001" } });
 
   await prisma.licenseRecord.deleteMany({ where: { organizationId: company.id } });
   await prisma.licenseRecord.create({

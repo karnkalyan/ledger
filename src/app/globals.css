@@ -134,8 +134,8 @@ a:active,
 a:focus {
   text-decoration: none !important;
 }
-a:not(.primary-btn):not(.success-btn):not(.warning-btn):not(.danger-btn):not(.secondary-btn):not(.ghost-btn),
-a:visited:not(.primary-btn):not(.success-btn):not(.warning-btn):not(.danger-btn):not(.secondary-btn):not(.ghost-btn) {
+a:not(.primary-btn):not(.success-btn):not(.warning-btn):not(.danger-btn):not(.secondary-btn):not(.ghost-btn):not(.filter-tab):not(.filter-preset-chip):not(.active),
+a:visited:not(.primary-btn):not(.success-btn):not(.warning-btn):not(.danger-btn):not(.secondary-btn):not(.ghost-btn):not(.filter-tab):not(.filter-preset-chip):not(.active) {
   color: inherit;
   text-decoration: none !important;
 }
@@ -1896,10 +1896,17 @@ textarea { resize: vertical; }
   font-weight: 600;
   color: var(--text-secondary);
 }
-.filter-tab.active {
-  background: var(--brand);
-  color: #ffffff;
-  border-color: var(--brand-hover);
+.filter-tab.active,
+a.filter-tab.active,
+button.filter-tab.active {
+  background: var(--brand) !important;
+  color: #ffffff !important;
+  border-color: var(--brand-hover) !important;
+}
+.filter-tab.active *,
+a.filter-tab.active *,
+button.filter-tab.active * {
+  color: #ffffff !important;
 }
 .row-pending-highlight {
   background: var(--warning-soft) !important;
@@ -2839,10 +2846,17 @@ mark.highlight-match {
   color: var(--brand);
   background: var(--soft);
 }
-.filter-preset-chip.active {
-  background: var(--brand);
+.filter-preset-chip.active,
+a.filter-preset-chip.active,
+button.filter-preset-chip.active {
+  background: var(--brand) !important;
   color: #ffffff !important;
-  border-color: var(--brand);
+  border-color: var(--brand) !important;
+}
+.filter-preset-chip.active *,
+a.filter-preset-chip.active *,
+button.filter-preset-chip.active * {
+  color: #ffffff !important;
 }
 
 .active-filter-pill {

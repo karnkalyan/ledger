@@ -108,10 +108,27 @@ export async function createIncomeAction(formData: FormData) {
   refresh(orgId,"income");
 }
 
+function toTitleCase(str?: string | null): string {
+  if (!str) return "";
+  return str
+    .trim()
+    .split(/\s+/)
+    .map((word) => {
+      if (!word) return "";
+      const lower = word.toLowerCase();
+      if (["pvt", "ltd"].includes(lower)) return lower === "pvt" ? "Pvt" : "Ltd";
+      if (["tv", "ku", "vat", "pan", "ips", "atm", "po", "so", "inv"].includes(lower)) return word.toUpperCase();
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(" ");
+}
+
 export async function createContactAction(formData: FormData) {
   const orgId = s(formData,"orgId"); const { organization } = await orgAccess(orgId); if (organization.kind !== WorkspaceKind.COMPANY) return;
   if (!s(formData,"name")) return;
-  await db.contact.create({ data: { organizationId: orgId, type: (s(formData,"type") || "CUSTOMER") as never, name: s(formData,"name"), companyName: s(formData,"companyName") || null, email: s(formData,"email") || null, phone: s(formData,"phone") || null, address: s(formData,"address") || null, taxNumber: s(formData,"taxNumber") || null, notes: s(formData,"notes") || null } });
+  const name = toTitleCase(s(formData, "name"));
+  const companyName = s(formData, "companyName") ? toTitleCase(s(formData, "companyName")) : null;
+  await db.contact.create({ data: { organizationId: orgId, type: (s(formData,"type") || "CUSTOMER") as never, name, companyName, email: s(formData,"email") || null, phone: s(formData,"phone") || null, address: s(formData,"address") || null, taxNumber: s(formData,"taxNumber") || null, notes: s(formData,"notes") || null } });
   refresh(orgId,"crm");
 }
 
