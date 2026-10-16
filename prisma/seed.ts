@@ -63,6 +63,44 @@ async function main() {
     await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 0;");
   } catch {}
 
+  console.log("\n--- PURGING ALL EXISTING DATABASE DATA (FRESH CLEAN PURGE) ---");
+  await prisma.bankTransaction.deleteMany();
+  await prisma.income.deleteMany();
+  await prisma.expense.deleteMany();
+  await prisma.recurringExpense.deleteMany();
+  await prisma.purchasePayment.deleteMany();
+  await prisma.purchaseOrderItem.deleteMany();
+  await prisma.purchaseOrder.deleteMany();
+  await prisma.invoicePayment.deleteMany();
+  await prisma.invoiceItem.deleteMany();
+  await prisma.invoice.deleteMany();
+  await prisma.salesOrderItem.deleteMany();
+  await prisma.salesOrder.deleteMany();
+  await prisma.quoteItem.deleteMany();
+  await prisma.quote.deleteMany();
+  await prisma.stockMovement.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.lead.deleteMany();
+  await prisma.contact.deleteMany();
+  await prisma.loanPayment.deleteMany();
+  await prisma.loan.deleteMany();
+  await prisma.rentalHouse.deleteMany();
+  await prisma.milkMonthlyLog.deleteMany();
+  await prisma.projectMember.deleteMany();
+  await prisma.workLog.deleteMany();
+  await prisma.walletTransaction.deleteMany();
+  await prisma.projectWallet.deleteMany();
+  await prisma.project.deleteMany();
+  await prisma.task.deleteMany();
+  await prisma.payroll.deleteMany();
+  await prisma.leaveRequest.deleteMany();
+  await prisma.employee.deleteMany();
+  await prisma.licenseRecord.deleteMany();
+  await prisma.reminder.deleteMany();
+  await prisma.bankAccount.deleteMany();
+  await prisma.expenseCategory.deleteMany();
+  console.log("Database purged cleanly. Proceeding with fresh seed.");
+
   const passwordHash = await bcrypt.hash("Admin@123", 12);
   const vendorPasswordHash = await bcrypt.hash("Vendor@123", 12);
 
@@ -901,45 +939,26 @@ async function main() {
       },
     });
 
-    // Idempotent cleanup: remove prior bank transactions and linked bank-incomes/expenses
-    const oldBankTxs = await prisma.bankTransaction.findMany({
-      where: { organizationId: company.id },
-      select: { incomeId: true, expenseId: true },
-    });
-    const oldIncIds = oldBankTxs.map((t) => t.incomeId).filter((id): id is string => Boolean(id));
-    const oldExpIds = oldBankTxs.map((t) => t.expenseId).filter((id): id is string => Boolean(id));
-
-    await prisma.bankTransaction.deleteMany({ where: { organizationId: company.id } });
-    if (oldIncIds.length > 0) {
-      await prisma.income.deleteMany({ where: { id: { in: oldIncIds } } });
-    }
-    if (oldExpIds.length > 0) {
-      await prisma.expense.deleteMany({ where: { id: { in: oldExpIds } } });
-    }
-    // Safety cleanup: ensure no orphaned Siddhartha bank inflows or outflows exist
-    await prisma.income.deleteMany({
-      where: {
-        organizationId: company.id,
-        source: "Siddhartha Bank Ltd (02017249683)",
-      },
-    });
-    await prisma.expense.deleteMany({
-      where: {
-        organizationId: company.id,
-        vendor: { in: ["Siddhartha Bank Outlay", "Director Current Account (Kalyan Kumar Karn)"] },
-      },
-    });
-
-    // Seed Siddhartha Bank Transactions
+    // Seed Siddhartha Bank Transactions (Guaranteed 0 duplicates)
+    const seenTxKeys = new Set<string>();
     for (const tx of sBankData.transactions) {
-      const txDate = new Date(`${tx.date}T12:00:00Z`);
-      const amount = Number(tx.amount);
-      const descLower = (tx.description || "").toLowerCase();
+      const descClean = (tx.description || "").trim();
+      const descLower = descClean.toLowerCase();
 
       if (descLower.includes("kashvi")) {
         // Exclude Kashvi Karn personal transactions from company ledger
         continue;
       }
+
+      const txDate = new Date(`${tx.date}T12:00:00Z`);
+      const amount = Number(tx.amount);
+      const txKey = `${tx.date}_${amount}_${descLower}_${tx.type}`;
+
+      if (seenTxKeys.has(txKey)) {
+        continue;
+      }
+      seenTxKeys.add(txKey);
+
       let category = "General Bank Transaction";
       if (descLower.includes("charge") || descLower.includes("fee") || descLower.includes("wtax") || descLower.includes("sms")) {
         category = "Bank Service Charges & Tax";
@@ -1018,38 +1037,27 @@ async function main() {
       }
     }
 
-    // Add verified transaction on 2026-10-15 (29 Ashwin 2083 BS)
+    // Add verified transaction on 2026-10-15 (29 Ashwin 2083 BS) - Deduplicated
     const oct15Date = new Date("2026-10-15T12:00:00Z");
     const oct15Desc = "Fund Trf to KALYAN KUMAR KARN-Kalyan Kumar Kar FUN MOB/SBLMOB01Kalyan Kumar Karn";
-    const oct15Exp = await prisma.expense.create({
-      data: {
-        organizationId: company.id,
-        title: oct15Desc,
-        vendor: "Director Current Account (Kalyan Kumar Karn)",
-        type: ExpenseType.ONE_TIME,
-        amount: 15000,
-        occurredAt: oct15Date,
-        notes: "Bank ref: MOB/SBLMOB01Kalyan Kumar Karn | Category: Director Current Account (Drawings)",
-      },
-    });
+    const oct15Key = `2026-10-15_15000_${oct15Desc.toLowerCase().trim()}_WITHDRAWAL`;
 
-    try {
-      await prisma.bankTransaction.create({
+    if (!seenTxKeys.has(oct15Key)) {
+      seenTxKeys.add(oct15Key);
+
+      const oct15Exp = await prisma.expense.create({
         data: {
           organizationId: company.id,
-          bankAccountId: sBank.id,
-          transactionDate: oct15Date,
-          type: "WITHDRAWAL",
+          title: oct15Desc,
+          vendor: "Director Current Account (Kalyan Kumar Karn)",
+          type: ExpenseType.ONE_TIME,
           amount: 15000,
-          balance: 12944.68,
-          description: oct15Desc,
-          reference: "MOB/SBLMOB01Kalyan Kumar Karn",
-          category: "Director Current Account (Drawings)",
-          expenseId: oct15Exp.id,
+          occurredAt: oct15Date,
+          notes: "Bank ref: MOB/SBLMOB01Kalyan Kumar Karn | Category: Director Current Account (Drawings)",
         },
       });
-    } catch (err: any) {
-      if (err?.code === "P2003") {
+
+      try {
         await prisma.bankTransaction.create({
           data: {
             organizationId: company.id,
@@ -1061,10 +1069,27 @@ async function main() {
             description: oct15Desc,
             reference: "MOB/SBLMOB01Kalyan Kumar Karn",
             category: "Director Current Account (Drawings)",
+            expenseId: oct15Exp.id,
           },
         });
-      } else {
-        throw err;
+      } catch (err: any) {
+        if (err?.code === "P2003") {
+          await prisma.bankTransaction.create({
+            data: {
+              organizationId: company.id,
+              bankAccountId: sBank.id,
+              transactionDate: oct15Date,
+              type: "WITHDRAWAL",
+              amount: 15000,
+              balance: 12944.68,
+              description: oct15Desc,
+              reference: "MOB/SBLMOB01Kalyan Kumar Karn",
+              category: "Director Current Account (Drawings)",
+            },
+          });
+        } else {
+          throw err;
+        }
       }
     }
 
