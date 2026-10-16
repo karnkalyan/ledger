@@ -76,7 +76,7 @@ The container automatically:
 - Connects to your host's MySQL at `host.docker.internal:3306`
 - Synchronizes database tables with `prisma db push`
 - Runs the master seed (`prisma/seed.ts`) to populate company, contacts, and historical ledger records
-- Launches the Next.js app on port `3000`
+- Launches the Next.js app on port `3080`
 
 ### Demo login
 
