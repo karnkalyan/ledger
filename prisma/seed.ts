@@ -77,7 +77,7 @@ async function main() {
       vendorCategory: "IT & Software",
       address: "Kathmandu, Nepal",
       email: "accounts@simulcast.local",
-      logoUrl: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230284c7'/><path d='M25 50 L45 25 L55 25 L35 50 L55 75 L45 75 Z M45 50 L65 25 L75 25 L55 50 L75 75 L65 75 Z' fill='%23ffffff'/></svg>",
+      logoUrl: "/logo-mark.png",
       defaultTaxPercent: 13.00,
     },
     create: {
@@ -92,7 +92,7 @@ async function main() {
       panVatNumber: "601928374",
       taxNumber: "601928374",
       vendorCategory: "IT & Software",
-      logoUrl: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230284c7'/><path d='M25 50 L45 25 L55 25 L35 50 L55 75 L45 75 Z M45 50 L65 25 L75 25 L55 50 L75 75 L65 75 Z' fill='%23ffffff'/></svg>",
+      logoUrl: "/logo-mark.png",
       defaultTaxPercent: 13.00,
     },
   });

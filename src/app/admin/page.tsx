@@ -96,11 +96,15 @@ export default async function AdminVendorsPage({
     <div className="admin-page-shell">
       <header className="admin-topbar">
         <div className="admin-brand">
-          <div className="brand-mark">
-            <span className="brand-symbol">K</span>
+          <div className="brand-mark" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <img 
+              src="/logo-mark.png" 
+              alt="Simulcast Logo" 
+              style={{ width: 30, height: 30, objectFit: "contain" }} 
+            />
             <div>
-              <span>KASHTRIX</span>
-              <div className="brand-sub">SUPER ADMIN</div>
+              <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: "0.04em" }}>SIMULCAST</span>
+              <div className="brand-sub" style={{ color: "var(--brand-pink)", fontWeight: 700 }}>SUPER ADMIN</div>
             </div>
           </div>
           <span className="badge purple" style={{ marginLeft: 12 }}>

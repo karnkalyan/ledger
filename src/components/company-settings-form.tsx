@@ -31,8 +31,16 @@ interface OrganizationData {
 
 const PRESET_LOGOS = [
   {
-    name: "Simulcast Cyan Wave",
-    url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230284c7'/><path d='M25 50 L45 25 L55 25 L35 50 L55 75 L45 75 Z M45 50 L65 25 L75 25 L55 50 L75 75 L65 75 Z' fill='%23ffffff'/></svg>",
+    name: "Simulcast Official Monogram",
+    url: "/logo-mark.png",
+  },
+  {
+    name: "Simulcast Master Logo",
+    url: "/logo-master.png",
+  },
+  {
+    name: "Simulcast Wordmark",
+    url: "/logo-wordmark.png",
   },
   {
     name: "Kashtrix Deep Indigo",

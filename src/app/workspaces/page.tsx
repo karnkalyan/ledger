@@ -19,11 +19,15 @@ export default async function WorkspacesPage() {
       <div className="workspace-shell">
         <div className="workspace-header">
           <div>
-            <div className="brand-mark">
-              <span className="brand-symbol">K</span>
+            <div className="brand-mark" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <img 
+                src="/logo-mark.png" 
+                alt="Simulcast Logo" 
+                style={{ width: 32, height: 32, objectFit: "contain" }} 
+              />
               <div>
-                <span>KASHTRIX</span>
-                <div className="brand-sub">LEDGER</div>
+                <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "0.04em" }}>SIMULCAST</span>
+                <div className="brand-sub" style={{ color: "var(--brand-pink)", fontWeight: 700 }}>LEDGER</div>
               </div>
             </div>
             <h1>Choose your workspace</h1>

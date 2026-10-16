@@ -22,44 +22,54 @@ export default async function LoginPage({
       </div>
 
       <section className="login-brand-panel">
-        <div className="brand-mark">
-          <span className="brand-symbol">K</span>
+        <div className="brand-mark" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <img 
+            src="/logo-mark.png" 
+            alt="Simulcast Technologies Logo" 
+            style={{ width: 42, height: 42, objectFit: "contain", filter: "drop-shadow(0 4px 10px rgba(239, 8, 111, 0.45))" }} 
+          />
           <div>
-            <span>KASHTRIX</span>
-            <div className="brand-sub">LEDGER</div>
+            <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "0.06em", color: "#ffffff", lineHeight: 1.1 }}>SIMULCAST</div>
+            <div className="brand-sub" style={{ color: "#f472b6", fontWeight: 700, letterSpacing: "0.14em", marginTop: 2 }}>TECHNOLOGIES · LEDGER</div>
           </div>
         </div>
         <div className="login-copy">
-          <span className="eyebrow">Enterprise Finance & Multi-Vendor ERP</span>
-          <h1>Precision ledger for office, vendor business & home.</h1>
+          <span className="eyebrow">Enterprise Finance & Commercial Operations Suite</span>
+          <h1>Precision financial ledger & ERP management.</h1>
           <p>
-            Streamline commercial invoicing, team payroll, customer CRM, and personal household expenses in one unified system with complete Nepali Bikram Sambat date support.
+            Streamline commercial invoicing, vendor orders, team payroll, customer CRM, and real-time bank reconciliation in one unified system with complete Nepali Bikram Sambat date support.
           </p>
           <div className="feature-stack">
             <div>
-              <CheckCircle2 /> Multi-vendor tenant isolation with dedicated admin approval
+              <CheckCircle2 /> Commercial tenant management with dedicated workspace isolation
             </div>
             <div>
-              <BarChart3 /> Bikram Sambat (BS) & AD calendar financial reports & formulas
+              <BarChart3 /> Real-time Siddhartha Bank statement matching & Bikram Sambat (BS) ledgers
             </div>
             <div>
-              <LockKeyhole /> Role-based security, dark/light theme & printable ledger reports
+              <LockKeyhole /> Role-based access, automated recurring expenses & printable reports
             </div>
           </div>
         </div>
         <div className="login-brand-footer">
-          <span>KASHTRIX LEDGER · COMMERCIAL MULTI-VENDOR ERP</span>
+          <span>SIMULCAST TECHNOLOGIES PVT. LTD.</span>
           <ArrowUpRight size={18} />
         </div>
       </section>
 
       <section className="login-form-panel">
         <form action={loginAction} className="auth-card">
-          <div className="auth-icon">
-            <LockKeyhole />
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 6 }}>
+            <img 
+              src="/logo-mark.png" 
+              alt="Simulcast Logo" 
+              style={{ width: 46, height: 46, objectFit: "contain", flexShrink: 0 }} 
+            />
+            <div>
+              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "var(--text)" }}>Welcome back</h2>
+              <p style={{ margin: "2px 0 0 0", fontSize: 12, color: "var(--text-muted)" }}>Sign in to your Simulcast Enterprise account</p>
+            </div>
           </div>
-          <h2>Welcome back</h2>
-          <p>Sign in with your vendor enterprise, personal workspace, or admin account.</p>
 
           {error && <div className="alert error">{errorMessages[error] || "Authentication failed."}</div>}
 

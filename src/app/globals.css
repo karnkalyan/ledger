@@ -11,11 +11,15 @@
   --text-muted: #64748b;
   --text-dim: #94a3b8;
   
-  /* Brand Colors */
-  --brand: #2563eb;
-  --brand-hover: #1d4ed8;
-  --brand-soft: #eff6ff;
-  --brand-border: #bfdbfe;
+  /* Brand Colors (Simulcast Technologies: Deep Imperial Violet & Vivid Pink) */
+  --brand: #4a086b;
+  --brand-hover: #340651;
+  --brand-active: #ef086f;
+  --brand-soft: rgba(74, 8, 107, 0.08);
+  --brand-border: #e9d5ff;
+  --brand-pink: #ef086f;
+  --brand-pink-hover: #d60460;
+  --brand-pink-soft: rgba(239, 8, 111, 0.12);
   
   /* Multi-color Action Palette */
   --success: #059669;
@@ -71,10 +75,14 @@
   --text-muted: #94a3b8;
   --text-dim: #64748b;
 
-  --brand: #3b82f6;
-  --brand-hover: #60a5fa;
-  --brand-soft: rgba(59, 130, 246, 0.15);
-  --brand-border: #1d4ed8;
+  --brand: #c026d3;
+  --brand-hover: #e879f9;
+  --brand-active: #ef086f;
+  --brand-soft: rgba(192, 38, 211, 0.18);
+  --brand-border: rgba(192, 38, 211, 0.4);
+  --brand-pink: #ef086f;
+  --brand-pink-hover: #fb7185;
+  --brand-pink-soft: rgba(239, 8, 111, 0.2);
 
   --success: #10b981;
   --success-hover: #34d399;
@@ -153,11 +161,11 @@ button { cursor: pointer; border: 0; background: none; }
   width: 28px;
   height: 28px;
   border-radius: 7px;
-  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  background: linear-gradient(135deg, #340651, #ef086f);
   color: #ffffff;
   font-size: 15px;
   font-weight: 700;
-  box-shadow: 0 2px 5px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 2px 7px rgba(239, 8, 111, 0.35);
   flex-shrink: 0;
 }
 .brand-sub {
@@ -1921,17 +1929,40 @@ textarea { resize: vertical; }
   flex-direction: column;
   justify-content: space-between;
   padding: 48px;
-  background: linear-gradient(135deg, #1e3a8a, #0f172a);
+  background: linear-gradient(135deg, #180227 0%, #340651 55%, #590850 100%);
   color: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+.login-brand-panel::before {
+  content: "";
+  position: absolute;
+  top: -90px;
+  right: -90px;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(239, 8, 111, 0.35) 0%, transparent 70%);
+  pointer-events: none;
+}
+.login-brand-panel::after {
+  content: "";
+  position: absolute;
+  bottom: -70px;
+  left: -70px;
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle, rgba(52, 6, 81, 0.7) 0%, transparent 70%);
+  pointer-events: none;
 }
 .login-brand-panel .brand-mark { color: #ffffff; }
-.login-brand-panel .brand-sub { color: #93c5fd; }
-.login-brand-panel .eyebrow { color: #60a5fa; }
+.login-brand-panel .brand-sub { color: #f472b6; }
+.login-brand-panel .eyebrow { color: #f472b6; font-weight: 700; letter-spacing: 0.1em; }
 .login-copy h1 { font-size: 28px; line-height: 1.25; margin: 12px 0; color: #ffffff; }
-.login-copy p { color: #bfdbfe; font-size: 13.5px; line-height: 1.6; max-width: 480px; }
+.login-copy p { color: #fce7f3; font-size: 13.5px; line-height: 1.6; max-width: 480px; }
 .feature-stack { display: grid; gap: 12px; margin-top: 24px; }
-.feature-stack div { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #e0f2fe; }
-.login-brand-footer { display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 650; letter-spacing: 0.05em; color: #93c5fd; }
+.feature-stack div { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #fdf2f8; }
+.feature-stack div svg { color: #ef086f; flex-shrink: 0; }
+.login-brand-footer { display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 650; letter-spacing: 0.05em; color: #f472b6; }
 
 .login-form-panel {
   display: flex;
@@ -1957,11 +1988,12 @@ textarea { resize: vertical; }
 .auth-icon {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-sm);
-  background: var(--brand-soft);
-  color: var(--brand);
+  background: rgba(239, 8, 111, 0.1);
+  color: #ef086f;
+  border: 1px solid rgba(239, 8, 111, 0.25);
 }
 .auth-card h2 { margin: 0; font-size: 19px; color: var(--text); }
 .auth-card p { margin: 0; font-size: 12px; color: var(--text-muted); }
