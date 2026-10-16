@@ -1,0 +1,125 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowLeftRight, LogOut, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Sidebar } from "@/components/sidebar";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { logoutAction } from "@/app/login/actions";
+import { FiscalYearSelector } from "@/components/fiscal-year-selector";
+import { FiscalYearInfo } from "@/lib/fiscal-year";
+import { TodayTasksNav, PendingItem } from "@/components/today-tasks-nav";
+import { NepaliCalendarNav } from "@/components/nepali-calendar-nav";
+
+export function AppShell({
+  children,
+  org,
+  user,
+  fiscalInfo,
+  pendingTasks = [],
+  pendingReminders = [],
+}: {
+  children: React.ReactNode;
+  org: { id: string; name: string; kind: string; logoUrl?: string | null; taxNumber?: string | null };
+  user: { name: string; email: string };
+  fiscalInfo?: {
+    availableYears: FiscalYearInfo[];
+    currentFiscalYear: FiscalYearInfo;
+    activeCode: string | null;
+  };
+  pendingTasks?: PendingItem[];
+  pendingReminders?: PendingItem[];
+}) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("sidebar_collapsed");
+    if (saved === "true") {
+      setSidebarCollapsed(true);
+    }
+  }, []);
+
+  const toggleSidebarCollapsed = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("sidebar_collapsed", String(next));
+      return next;
+    });
+  };
+
+  return (
+    <div className={`app-shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
+      <Sidebar
+        orgId={org.id}
+        orgName={org.name}
+        kind={org.kind}
+        logoUrl={org.logoUrl}
+        taxNumber={org.taxNumber}
+        isOpen={sidebarOpen}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={toggleSidebarCollapsed}
+        onClose={() => setSidebarOpen(false)}
+      />
+      <div className="main-column">
+        <header className="topbar">
+          <div className="topbar-left">
+            <button
+              type="button"
+              className="mobile-menu-btn"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open menu"
+            >
+              <Menu size={18} />
+            </button>
+            <button
+              type="button"
+              className="ghost-btn icon-btn desktop-only"
+              onClick={toggleSidebarCollapsed}
+              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              style={{ width: 28, height: 28, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+            >
+              {sidebarCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
+            </button>
+            <div>
+              <div className="topbar-kicker">
+                {org.kind === "COMPANY" ? "Kashtrix Office ERP" : "Kashtrix Personal Ledger"}
+              </div>
+              <h2 className="topbar-title">{org.name}</h2>
+            </div>
+          </div>
+          <div className="topbar-actions">
+            <NepaliCalendarNav />
+            {fiscalInfo && (
+              <FiscalYearSelector
+                availableYears={fiscalInfo.availableYears}
+                currentFiscalYear={fiscalInfo.currentFiscalYear}
+                activeCode={fiscalInfo.activeCode}
+              />
+            )}
+            <TodayTasksNav orgId={org.id} tasks={pendingTasks} reminders={pendingReminders} />
+            <ThemeToggle />
+            <Link href="/workspaces" className="ghost-btn" title="Switch workspace">
+              <ArrowLeftRight size={13} style={{ verticalAlign: "middle", marginRight: 4 }} />
+              <span className="hide-mobile">Switch</span>
+            </Link>
+            <div className="user-pill">
+              <div className="avatar">{user.name.slice(0, 1).toUpperCase()}</div>
+              <div>
+                <strong>{user.name}</strong>
+                <small className="hide-mobile">{user.email}</small>
+              </div>
+            </div>
+            <form action={logoutAction}>
+              <button className="ghost-btn icon-btn" title="Sign out" aria-label="Sign out">
+                <LogOut size={14} />
+              </button>
+            </form>
+          </div>
+        </header>
+        {children}
+      </div>
+    </div>
+  );
+}

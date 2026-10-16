@@ -1,0 +1,5029 @@
+{
+  "siddharthaBank": {
+    "bankName": "Siddhartha Bank Ltd",
+    "accountName": "Simulcast Technologies Pvt Ltd",
+    "accountNumber": "02017249683",
+    "accountType": "CANR (Current Account)",
+    "currency": "NPR",
+    "openingBalance": 5795.0,
+    "transactions": [
+      {
+        "date": "2023-02-22",
+        "type": "WITHDRAWAL",
+        "amount": 300.0,
+        "balance": 5495.0,
+        "description": "Fund Trf to BANKSMART ANNUAL FEE- chg:1929148,Rene FUN",
+        "reference": "SN-1",
+        "source_pdf": "statement-2023-01-01-to-2023-02-28.pdf"
+      },
+      {
+        "date": "2023-03-04",
+        "type": "DEPOSIT",
+        "amount": 200000.0,
+        "balance": 205495.0,
+        "description": "Fund Trf frm KALYAN KUMAR KA- Director Payment FUN",
+        "reference": "SN-1",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-05",
+        "type": "DEPOSIT",
+        "amount": 10000.0,
+        "balance": 215495.0,
+        "description": "Fund Trf frm KALYAN KUMAR KA- DIRECTOR PAYMENT FUN",
+        "reference": "SN-2",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-05",
+        "type": "WITHDRAWAL",
+        "amount": 208000.0,
+        "balance": 7495.0,
+        "description": "284643251701 SHASA ENTERPRISES The zone serial is [    80].",
+        "reference": "SN-3",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-05",
+        "type": "DEPOSIT",
+        "amount": 70000.0,
+        "balance": 77495.0,
+        "description": "Fund Trf frm IBFT PAYABLE (I- EVBLNPKAXP-12560 FUN",
+        "reference": "SN-4",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-05",
+        "type": "DEPOSIT",
+        "amount": 125000.0,
+        "balance": 202495.0,
+        "description": "Fund Trf frm KALYAN KUMAR KA- DIRECTOR PAYMENT FUN",
+        "reference": "SN-5",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-05",
+        "type": "WITHDRAWAL",
+        "amount": 197010.0,
+        "balance": 5485.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER -TT FOR FEELWORLD FUN",
+        "reference": "SN-6",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-05",
+        "type": "DEPOSIT",
+        "amount": 197000.0,
+        "balance": 202485.0,
+        "description": "BY INST 41963646 : OW_EXPRESS_2ND_NPR  /",
+        "reference": "SN-7",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-05",
+        "type": "WITHDRAWAL",
+        "amount": 100.0,
+        "balance": 202385.0,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:41963646/NABIL BANK LI 41963646",
+        "reference": "SN-8",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-05",
+        "type": "WITHDRAWAL",
+        "amount": 197000.0,
+        "balance": 5385.0,
+        "description": "284643261701 shasa enterprises The zone serial is [    51].",
+        "reference": "SN-9",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-07",
+        "type": "DEPOSIT",
+        "amount": 197000.0,
+        "balance": 202385.0,
+        "description": "BY INST 64317873 : OW_REGULAR_NPR  / LAXMI_SHASA",
+        "reference": "SN-10",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-07",
+        "type": "DEPOSIT",
+        "amount": 8000.0,
+        "balance": 210385.0,
+        "description": "Fund Trf frm KALYAN KUMAR KA- DIRECTOR PAYMENT FUN",
+        "reference": "SN-11",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-07",
+        "type": "WITHDRAWAL",
+        "amount": 10010.0,
+        "balance": 200375.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER -TT AMOUNT,LXBLNP FUN",
+        "reference": "SN-12",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-09",
+        "type": "WITHDRAWAL",
+        "amount": 127000.0,
+        "balance": 73375.0,
+        "description": "Fund Trf to KALYAN KUMAR KARN-PAID FOR GOODS FUN",
+        "reference": "SN-13",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-09",
+        "type": "WITHDRAWAL",
+        "amount": 70010.0,
+        "balance": 3365.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - LOAN REFUND,EVBL FUN",
+        "reference": "SN-14",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-10",
+        "type": "DEPOSIT",
+        "amount": 54240.0,
+        "balance": 57605.0,
+        "description": "BY INST 44315483 : OW_REGULAR_NPR  / NABIL_NEPAL",
+        "reference": "SN-15",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-10",
+        "type": "WITHDRAWAL",
+        "amount": 34000.0,
+        "balance": 23605.0,
+        "description": "Fund Trf to LOKESH AGRAWAL-Ceiling Light Hi FUN",
+        "reference": "SN-16",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-12",
+        "type": "WITHDRAWAL",
+        "amount": 18996.0,
+        "balance": 4609.0,
+        "description": "Fund Trf to KALYAN KUMAR KARN-OLD PAYMENT FUN",
+        "reference": "SN-17",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-15",
+        "type": "DEPOSIT",
+        "amount": 150000.0,
+        "balance": 154609.0,
+        "description": "Fund Trf frm KALYAN KUMAR KA- DIRECTOR PAYMENT FUN",
+        "reference": "SN-18",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-15",
+        "type": "WITHDRAWAL",
+        "amount": 28510.0,
+        "balance": 126099.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - Custom Clearance FUN",
+        "reference": "SN-19",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-15",
+        "type": "WITHDRAWAL",
+        "amount": 27610.0,
+        "balance": 98489.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - FEELWORLD Custom FUN",
+        "reference": "SN-20",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-17",
+        "type": "DEPOSIT",
+        "amount": 295000.0,
+        "balance": 393489.0,
+        "description": "BY INST 40093569 : OW_EXPRESS_2ND_NPR  /",
+        "reference": "SN-21",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-17",
+        "type": "WITHDRAWAL",
+        "amount": 100.0,
+        "balance": 393389.0,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:40093569/NABIL BANK LI 40093569",
+        "reference": "SN-22",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-17",
+        "type": "WITHDRAWAL",
+        "amount": 200000.0,
+        "balance": 193389.0,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Local Purchase E FUN",
+        "reference": "SN-23",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-18",
+        "type": "WITHDRAWAL",
+        "amount": 380.0,
+        "balance": 193009.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - ,94701902,222212 FUN",
+        "reference": "SN-24",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-19",
+        "type": "WITHDRAWAL",
+        "amount": 42272.0,
+        "balance": 150737.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER -SDI TO HDMI AND FUN",
+        "reference": "SN-25",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-19",
+        "type": "WITHDRAWAL",
+        "amount": 29000.0,
+        "balance": 121737.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - N/A,94898005,222 FUN",
+        "reference": "SN-26",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-19",
+        "type": "WITHDRAWAL",
+        "amount": 520.0,
+        "balance": 121217.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - N/A,94923386,222 FUN",
+        "reference": "SN-27",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-19",
+        "type": "WITHDRAWAL",
+        "amount": 2000.0,
+        "balance": 119217.0,
+        "description": "Fund Trf to NABIL BANK LTD (ESEW- 9841890763,11859 FUN",
+        "reference": "SN-28",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-19",
+        "type": "DEPOSIT",
+        "amount": 200000.0,
+        "balance": 319217.0,
+        "description": "Fund Trf frm KALYAN KUMAR KA- DIRECTOR PAYMENT FUN",
+        "reference": "SN-29",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-20",
+        "type": "WITHDRAWAL",
+        "amount": 150000.0,
+        "balance": 169217.0,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-30",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-21",
+        "type": "WITHDRAWAL",
+        "amount": 6010.0,
+        "balance": 163207.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - HDMI CABLE FIBER FUN",
+        "reference": "SN-31",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-21",
+        "type": "WITHDRAWAL",
+        "amount": 1062.0,
+        "balance": 162145.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - N/A,95403100,222 FUN",
+        "reference": "SN-32",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-22",
+        "type": "DEPOSIT",
+        "amount": 295500.0,
+        "balance": 457645.0,
+        "description": "BY INST 13699051 : OW_EXPRESS_3RD_NPR  /",
+        "reference": "SN-33",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-22",
+        "type": "WITHDRAWAL",
+        "amount": 100.0,
+        "balance": 457545.0,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:13699051/NEPAL CREDIT 13699051",
+        "reference": "SN-34",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-22",
+        "type": "WITHDRAWAL",
+        "amount": 200000.0,
+        "balance": 257545.0,
+        "description": "Fund Trf to KALYAN KUMAR KARN-Bipin Sir Return FUN",
+        "reference": "SN-35",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-24",
+        "type": "WITHDRAWAL",
+        "amount": 15010.0,
+        "balance": 242535.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - Nepalkhabar,NMBB FUN",
+        "reference": "SN-36",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-03-27",
+        "type": "WITHDRAWAL",
+        "amount": 47510.0,
+        "balance": 195025.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - custom Clearance FUN",
+        "reference": "SN-37",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-04-03",
+        "type": "WITHDRAWAL",
+        "amount": 20000.0,
+        "balance": 175025.0,
+        "description": "284643272001 UTTAM NEPAL The zone serial is [   888].",
+        "reference": "SN-38",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-04-04",
+        "type": "WITHDRAWAL",
+        "amount": 39250.0,
+        "balance": 135775.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - Sales return cei FUN",
+        "reference": "SN-39",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-04-06",
+        "type": "WITHDRAWAL",
+        "amount": 45010.0,
+        "balance": 90765.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - House Rent,EVBLN FUN",
+        "reference": "SN-40",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-04-09",
+        "type": "WITHDRAWAL",
+        "amount": 2010.0,
+        "balance": 88755.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - VISITING CARD PR FUN",
+        "reference": "SN-41",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-04-09",
+        "type": "WITHDRAWAL",
+        "amount": 1200.0,
+        "balance": 87555.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - N/A,100754967,22 FUN",
+        "reference": "SN-42",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-04-14",
+        "type": "WITHDRAWAL",
+        "amount": 1810.0,
+        "balance": 85745.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - cable visiting c FUN",
+        "reference": "SN-43",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-04-18",
+        "type": "DEPOSIT",
+        "amount": 60000.0,
+        "balance": 145745.0,
+        "description": "BY INST 57464184 : OW_REGULAR_NPR  /",
+        "reference": "SN-44",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-04-18",
+        "type": "WITHDRAWAL",
+        "amount": 60000.0,
+        "balance": 85745.0,
+        "description": "REJECT:57464184:INSUFFICIENT FUND GLOBAL_RIDDHI SIDDHI",
+        "reference": "SN-45",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-04-21",
+        "type": "WITHDRAWAL",
+        "amount": 25000.0,
+        "balance": 60745.0,
+        "description": "Fund Trf to NABIL BANK LTD (ESEW- 9814823222,14299 FUN",
+        "reference": "SN-46",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-04-21",
+        "type": "WITHDRAWAL",
+        "amount": 25000.0,
+        "balance": 35745.0,
+        "description": "Fund Trf to NABIL BANK LTD (ESEW- 9814823222,14299 FUN",
+        "reference": "SN-47",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-04-21",
+        "type": "WITHDRAWAL",
+        "amount": 25000.0,
+        "balance": 10745.0,
+        "description": "Fund Trf to NABIL BANK LTD (ESEW- 9814823222,14299 FUN",
+        "reference": "SN-48",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-04-21",
+        "type": "WITHDRAWAL",
+        "amount": 5000.0,
+        "balance": 5745.0,
+        "description": "Fund Trf to NABIL BANK LTD (ESEW- 9814823222,14300 FUN",
+        "reference": "SN-49",
+        "source_pdf": "statement-2023-03-01-to-2023-04-30.pdf"
+      },
+      {
+        "date": "2023-05-07",
+        "type": "DEPOSIT",
+        "amount": 60000.0,
+        "balance": 65745.0,
+        "description": "BY INST 57464184 : OW_REGULAR_NPR  /",
+        "reference": "SN-1",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-05-09",
+        "type": "WITHDRAWAL",
+        "amount": 1640.0,
+        "balance": 64105.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - N/A,109857831,22 FUN",
+        "reference": "SN-2",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-05-10",
+        "type": "DEPOSIT",
+        "amount": 432925.0,
+        "balance": 497030.0,
+        "description": "BY INST 41963671 : OW_REGULAR_NPR  /",
+        "reference": "SN-3",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-05-10",
+        "type": "WITHDRAWAL",
+        "amount": 432925.0,
+        "balance": 64105.0,
+        "description": "REJECT:41963671:INSUFFICIENT FUND NABIL_DHULIKHEL HOSPITAL",
+        "reference": "SN-4",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-05-10",
+        "type": "WITHDRAWAL",
+        "amount": 15.0,
+        "balance": 64090.0,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:41963671/NABIL BANK LI 41963671",
+        "reference": "SN-5",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-05-12",
+        "type": "DEPOSIT",
+        "amount": 432925.0,
+        "balance": 497015.0,
+        "description": "BY INST 41963671 : OW_REGULAR_NPR  /",
+        "reference": "SN-6",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-05-12",
+        "type": "WITHDRAWAL",
+        "amount": 432925.0,
+        "balance": 64090.0,
+        "description": "REJECT:41963671:INSUFFICIENT FUND NABIL_DHULIKHEL HOSPITAL",
+        "reference": "SN-7",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-05-12",
+        "type": "WITHDRAWAL",
+        "amount": 15.0,
+        "balance": 64075.0,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:41963671/NABIL BANK LI 41963671",
+        "reference": "SN-8",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-05-14",
+        "type": "WITHDRAWAL",
+        "amount": 16510.0,
+        "balance": 47565.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER -Loan Refund,NARB FUN",
+        "reference": "SN-9",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-05-15",
+        "type": "DEPOSIT",
+        "amount": 432925.0,
+        "balance": 480490.0,
+        "description": "BY INST 41963671 : OW_REGULAR_NPR  /",
+        "reference": "SN-10",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-05-15",
+        "type": "WITHDRAWAL",
+        "amount": 15.0,
+        "balance": 480475.0,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:41963671/NABIL BANK LI 41963671",
+        "reference": "SN-11",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-05-17",
+        "type": "DEPOSIT",
+        "amount": 500000.0,
+        "balance": 980475.0,
+        "description": "BY INST 41116636 : OW_REGULAR_NPR  / EBL_BIPIN",
+        "reference": "SN-12",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-05-17",
+        "type": "WITHDRAWAL",
+        "amount": 15.0,
+        "balance": 980460.0,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:41116636/EVEREST BANK",
+        "reference": "SN-13",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-05-18",
+        "type": "WITHDRAWAL",
+        "amount": 950000.0,
+        "balance": 30460.0,
+        "description": "28464328CHQ 28464328 TRF FRM 02017249683 TO 01615383041",
+        "reference": "SN-14",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-05-30",
+        "type": "WITHDRAWAL",
+        "amount": 4000.0,
+        "balance": 26460.0,
+        "description": "Fund Trf to NABIL BANK LTD (ESEW- 9814823222,17232 FUN",
+        "reference": "SN-15",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-05-30",
+        "type": "WITHDRAWAL",
+        "amount": 4000.0,
+        "balance": 22460.0,
+        "description": "Fund Trf to NABIL BANK LTD (ESEW- 9814823222,17246 FUN",
+        "reference": "SN-16",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-05-31",
+        "type": "WITHDRAWAL",
+        "amount": 5000.0,
+        "balance": 17460.0,
+        "description": "Fund Trf to KALYAN KUMAR KARN-loan from compan FUN",
+        "reference": "SN-17",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-02",
+        "type": "WITHDRAWAL",
+        "amount": 475.0,
+        "balance": 16985.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - 117383253,Mobile FUN",
+        "reference": "SN-18",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-04",
+        "type": "WITHDRAWAL",
+        "amount": 500.0,
+        "balance": 16485.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - 117965343,Mobile FUN",
+        "reference": "SN-19",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-05",
+        "type": "WITHDRAWAL",
+        "amount": 820.0,
+        "balance": 15665.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - 118318799,Mobile FUN",
+        "reference": "SN-20",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-07",
+        "type": "WITHDRAWAL",
+        "amount": 3000.0,
+        "balance": 12665.0,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Director Loan FUN",
+        "reference": "SN-21",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-07",
+        "type": "DEPOSIT",
+        "amount": 24976.0,
+        "balance": 37641.0,
+        "description": "BY INST 32658743 : OW_REGULAR_NPR  / HBL_STAR",
+        "reference": "SN-22",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-08",
+        "type": "WITHDRAWAL",
+        "amount": 2780.0,
+        "balance": 34861.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - 119296253,Mobile FUN",
+        "reference": "SN-23",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-11",
+        "type": "WITHDRAWAL",
+        "amount": 20000.0,
+        "balance": 14861.0,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Director Loan FUN",
+        "reference": "SN-24",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-12",
+        "type": "WITHDRAWAL",
+        "amount": 5000.0,
+        "balance": 9861.0,
+        "description": "Fund Trf to KALYAN KUMAR KARN-Loan director FUN",
+        "reference": "SN-25",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-13",
+        "type": "DEPOSIT",
+        "amount": 200000.0,
+        "balance": 209861.0,
+        "description": "BY INST 53454581 : OW_EXPRESS_1ST_NPR  / EBL_A V",
+        "reference": "SN-26",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-13",
+        "type": "WITHDRAWAL",
+        "amount": 100.0,
+        "balance": 209761.0,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:53454581/EVEREST BANK",
+        "reference": "SN-27",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-17",
+        "type": "WITHDRAWAL",
+        "amount": 56340.0,
+        "balance": 153421.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - House Rent Kalya FUN",
+        "reference": "SN-28",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-19",
+        "type": "DEPOSIT",
+        "amount": 150000.0,
+        "balance": 303421.0,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/A.V. BIONICS",
+        "reference": "SN-29",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-19",
+        "type": "WITHDRAWAL",
+        "amount": 150010.0,
+        "balance": 153411.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER -Bipin Sir,EVBLNP FUN",
+        "reference": "SN-30",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-19",
+        "type": "WITHDRAWAL",
+        "amount": 5000.0,
+        "balance": 148411.0,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan personal FUN",
+        "reference": "SN-31",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-20",
+        "type": "WITHDRAWAL",
+        "amount": 865.0,
+        "balance": 147546.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - 123576149,Mobile FUN",
+        "reference": "SN-32",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-21",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 197546.0,
+        "description": "BY INST 38387140 : OW_REGULAR_NPR  / PBL_NEPAL",
+        "reference": "SN-33",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-21",
+        "type": "WITHDRAWAL",
+        "amount": 50000.0,
+        "balance": 147546.0,
+        "description": "REJECT:38387140:INSUFFICIENT FUND PBL_NEPAL NEWS BANK PVT",
+        "reference": "SN-34",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-22",
+        "type": "DEPOSIT",
+        "amount": 100000.0,
+        "balance": 247546.0,
+        "description": "Fund Trf frm IBFT PAYABLE (I- PRVUNPKA-1158005 FUN",
+        "reference": "SN-35",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-23",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 297546.0,
+        "description": "BY INST 38387140 : OW_REGULAR_NPR  / PBL_NEPAL",
+        "reference": "SN-36",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-23",
+        "type": "WITHDRAWAL",
+        "amount": 50000.0,
+        "balance": 247546.0,
+        "description": "REJECT:38387140:INSUFFICIENT FUND PBL_NEPAL NEWS BANK PVT",
+        "reference": "SN-37",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-23",
+        "type": "WITHDRAWAL",
+        "amount": 100010.0,
+        "balance": 147536.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - House rent and l FUN",
+        "reference": "SN-38",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-23",
+        "type": "WITHDRAWAL",
+        "amount": 50010.0,
+        "balance": 97526.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER -Loan Refund - Ka FUN",
+        "reference": "SN-39",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-06-28",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 147526.0,
+        "description": "BY INST 38387140 : OW_REGULAR_NPR  / PBL_NEPAL",
+        "reference": "SN-40",
+        "source_pdf": "statement-2023-05-01-to-2023-06-30.pdf"
+      },
+      {
+        "date": "2023-07-01",
+        "type": "WITHDRAWAL",
+        "amount": 5000.0,
+        "balance": 142526.0,
+        "description": "Fund Trf to KALYAN KUMAR KARN- director loan FUN",
+        "reference": "SN-1",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-03",
+        "type": "WITHDRAWAL",
+        "amount": 5800.0,
+        "balance": 136726.0,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - 127964998,Mobile FUN",
+        "reference": "SN-2",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-06",
+        "type": "WITHDRAWAL",
+        "amount": 8311.49,
+        "balance": 128414.51,
+        "description": "Fund Trf to CREDIT CARD PMT-BANK- 4438320000231668 FUN",
+        "reference": "SN-3",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-06",
+        "type": "WITHDRAWAL",
+        "amount": 10700.0,
+        "balance": 117714.51,
+        "description": "Fund Trf to NABIL BANK LTD (ESEW- 9814823222,20220 FUN",
+        "reference": "SN-4",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-06",
+        "type": "WITHDRAWAL",
+        "amount": 5000.0,
+        "balance": 112714.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- director loan FUN",
+        "reference": "SN-5",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-07",
+        "type": "WITHDRAWAL",
+        "amount": 10010.0,
+        "balance": 102704.51,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - Guriya,NARBNPKA; FUN",
+        "reference": "SN-6",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-07",
+        "type": "DEPOSIT",
+        "amount": 100000.0,
+        "balance": 202704.51,
+        "description": "BY INST 34110004 : OW_EXPRESS_1ST_NPR  / HBL_TV",
+        "reference": "SN-7",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-07",
+        "type": "WITHDRAWAL",
+        "amount": 100.0,
+        "balance": 202604.51,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:34110004/HIMALAYAN BAN",
+        "reference": "SN-8",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-09",
+        "type": "WITHDRAWAL",
+        "amount": 190010.0,
+        "balance": 12594.51,
+        "description": "Fund Trf to IBFT PAYABLE (INTER -Vat amount,BOALN FUN",
+        "reference": "SN-9",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-10",
+        "type": "DEPOSIT",
+        "amount": 1500000.0,
+        "balance": 1512594.51,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/A.V. BIONICS",
+        "reference": "SN-10",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-10",
+        "type": "WITHDRAWAL",
+        "amount": 100010.0,
+        "balance": 1412584.51,
+        "description": "Fund Trf to IBFT PAYABLE (INTER -bipin sir pramod FUN",
+        "reference": "SN-11",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-13",
+        "type": "DEPOSIT",
+        "amount": 190657.0,
+        "balance": 1603241.51,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/KATHMANDU",
+        "reference": "SN-12",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-16",
+        "type": "WITHDRAWAL",
+        "amount": 30000.0,
+        "balance": 1573241.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Sushil Payment D FUN",
+        "reference": "SN-13",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-16",
+        "type": "WITHDRAWAL",
+        "amount": 50010.0,
+        "balance": 1523231.51,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - Toran Ji Advance FUN",
+        "reference": "SN-14",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-18",
+        "type": "DEPOSIT",
+        "amount": 152550.0,
+        "balance": 1675781.51,
+        "description": "BY INST 63872598 : OW_REGULAR_NPR  / GLOBAL_riddhi",
+        "reference": "SN-15",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-18",
+        "type": "WITHDRAWAL",
+        "amount": 152550.0,
+        "balance": 1523231.51,
+        "description": "REJECT:63872598:INSUFFICIENT FUND GLOBAL_riddhi siddhi",
+        "reference": "SN-16",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-23",
+        "type": "WITHDRAWAL",
+        "amount": 1500000.0,
+        "balance": 23231.51,
+        "description": "284643291001 A V BIONICS PVT LTD The zone serial is [  1228].",
+        "reference": "SN-17",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-23",
+        "type": "WITHDRAWAL",
+        "amount": 1335.0,
+        "balance": 21896.51,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - 135326723,Mobile FUN",
+        "reference": "SN-18",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-24",
+        "type": "WITHDRAWAL",
+        "amount": 3500.0,
+        "balance": 18396.51,
+        "description": "Fund Trf to NABIL BANK LTD (ESEW- 9814823222,21897 FUN",
+        "reference": "SN-19",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-24",
+        "type": "WITHDRAWAL",
+        "amount": 5000.0,
+        "balance": 13396.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Director loan FUN",
+        "reference": "SN-20",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-26",
+        "type": "DEPOSIT",
+        "amount": 150000.0,
+        "balance": 163396.51,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/A.V. BIONICS",
+        "reference": "SN-21",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-26",
+        "type": "WITHDRAWAL",
+        "amount": 121510.0,
+        "balance": 41886.51,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - 43INCH TV AND WA FUN",
+        "reference": "SN-22",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-29",
+        "type": "WITHDRAWAL",
+        "amount": 5000.0,
+        "balance": 36886.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Director loan FUN",
+        "reference": "SN-23",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-07-30",
+        "type": "WITHDRAWAL",
+        "amount": 16010.0,
+        "balance": 20876.51,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - House rent tax c FUN",
+        "reference": "SN-24",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-08-03",
+        "type": "DEPOSIT",
+        "amount": 152550.0,
+        "balance": 173426.51,
+        "description": "BY INST 63872598 : OW_REGULAR_NPR  /",
+        "reference": "SN-25",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-08-03",
+        "type": "WITHDRAWAL",
+        "amount": 152550.0,
+        "balance": 20876.51,
+        "description": "REJECT:63872598:INSUFFICIENT FUND GLOBAL_RIDDHI SIDDHI",
+        "reference": "SN-26",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-08-06",
+        "type": "DEPOSIT",
+        "amount": 3390.0,
+        "balance": 24266.51,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/Aashi",
+        "reference": "SN-27",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-08-10",
+        "type": "WITHDRAWAL",
+        "amount": 20000.0,
+        "balance": 4266.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Karn FUN",
+        "reference": "SN-28",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-08-11",
+        "type": "WITHDRAWAL",
+        "amount": 1510.0,
+        "balance": 2756.51,
+        "description": "Fund Trf to IBFT PAYABLE (INTER - 142255907,Mobile FUN",
+        "reference": "SN-29",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-08-16",
+        "type": "WITHDRAWAL",
+        "amount": 200.0,
+        "balance": 2556.51,
+        "description": "CHARGE TAKEN FOR DOUBLE STATEMENT 0201724968",
+        "reference": "SN-30",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-08-31",
+        "type": "DEPOSIT",
+        "amount": 10000.0,
+        "balance": 12556.51,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/A.V BIONICS",
+        "reference": "SN-31",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-08-31",
+        "type": "WITHDRAWAL",
+        "amount": 4510.0,
+        "balance": 8046.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-SDI TO HDMI CONV FUN",
+        "reference": "SN-32",
+        "source_pdf": "statement-2023-07-01-to-2023-08-31.pdf"
+      },
+      {
+        "date": "2023-09-10",
+        "type": "WITHDRAWAL",
+        "amount": 5500.0,
+        "balance": 2546.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Loan FUN",
+        "reference": "SN-1",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-09-13",
+        "type": "DEPOSIT",
+        "amount": 200000.0,
+        "balance": 202546.51,
+        "description": "KALYAN KUMAR KARN AC 01615383041",
+        "reference": "SN-2",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-09-13",
+        "type": "WITHDRAWAL",
+        "amount": 780.0,
+        "balance": 201766.51,
+        "description": "Fund Trf to ORAK FOODS-launch at nada FUN MOB/SBLMOB01launch at",
+        "reference": "SN-3",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-09-14",
+        "type": "DEPOSIT",
+        "amount": 3700.0,
+        "balance": 205466.51,
+        "description": "Fund Trf frm KALYAN KUMAR KA-cable mic FUN MOB/SBLMOB01cable",
+        "reference": "SN-4",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-09-14",
+        "type": "WITHDRAWAL",
+        "amount": 10000.0,
+        "balance": 195466.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Karn FUN",
+        "reference": "SN-5",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-09-14",
+        "type": "WITHDRAWAL",
+        "amount": 140010.0,
+        "balance": 55456.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-AV BIONICS,EVBLN FUN",
+        "reference": "SN-6",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-09-15",
+        "type": "DEPOSIT",
+        "amount": 10000.0,
+        "balance": 65456.51,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/RIDDHI",
+        "reference": "SN-7",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-09-15",
+        "type": "DEPOSIT",
+        "amount": 10000.0,
+        "balance": 75456.51,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/RIDDHI",
+        "reference": "SN-8",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-09-15",
+        "type": "DEPOSIT",
+        "amount": 7000.0,
+        "balance": 82456.51,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/RIDDHI",
+        "reference": "SN-9",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-09-19",
+        "type": "WITHDRAWAL",
+        "amount": 5000.0,
+        "balance": 77456.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- KALYAN KUMAR KAR FUN",
+        "reference": "SN-10",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-09-19",
+        "type": "WITHDRAWAL",
+        "amount": 15500.0,
+        "balance": 61956.51,
+        "description": "Fund Trf to SUSHMA NEPAL-SL60 Light FUN MOB/SBLMOB01SL60 Light",
+        "reference": "SN-11",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-09-19",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 111956.51,
+        "description": "BY INST 44758344 : OW_REGULAR_NPR  / EBL_TORAN",
+        "reference": "SN-12",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-09-20",
+        "type": "WITHDRAWAL",
+        "amount": 50010.0,
+        "balance": 61946.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- TOREN JI LOAN RE FUN",
+        "reference": "SN-13",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-09-25",
+        "type": "DEPOSIT",
+        "amount": 100000.0,
+        "balance": 161946.51,
+        "description": "Fund Trf frm A/C PAYABLE IBF- FON:IBFT:2468302 FUN",
+        "reference": "SN-14",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-09-25",
+        "type": "WITHDRAWAL",
+        "amount": 100010.0,
+        "balance": 61936.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- PAYMENT OF YOLO FUN",
+        "reference": "SN-15",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-09-26",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 111936.51,
+        "description": "RIDDHI SIDDHI BY TORAN BAHADUR RANA",
+        "reference": "SN-16",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-09-26",
+        "type": "WITHDRAWAL",
+        "amount": 50010.0,
+        "balance": 61926.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- PAYMENT OF RIDDH FUN",
+        "reference": "SN-17",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-09-30",
+        "type": "WITHDRAWAL",
+        "amount": 370.0,
+        "balance": 61556.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- 162472162,Mobile FUN",
+        "reference": "SN-18",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-01",
+        "type": "WITHDRAWAL",
+        "amount": 250.0,
+        "balance": 61306.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- Coffee with eart FUN",
+        "reference": "SN-19",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-04",
+        "type": "WITHDRAWAL",
+        "amount": 10000.0,
+        "balance": 51306.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Karn FUN",
+        "reference": "SN-20",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-08",
+        "type": "WITHDRAWAL",
+        "amount": 480.0,
+        "balance": 50826.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- 165812791,Mobile FUN",
+        "reference": "SN-21",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-09",
+        "type": "WITHDRAWAL",
+        "amount": 5010.0,
+        "balance": 45816.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-N CONNECTORS FOR FUN",
+        "reference": "SN-22",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-09",
+        "type": "WITHDRAWAL",
+        "amount": 260.0,
+        "balance": 45556.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- 166419811,Mobile FUN",
+        "reference": "SN-23",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-10",
+        "type": "WITHDRAWAL",
+        "amount": 8000.0,
+        "balance": 37556.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- KALYAN KARN CRED FUN",
+        "reference": "SN-24",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-13",
+        "type": "DEPOSIT",
+        "amount": 200000.0,
+        "balance": 237556.51,
+        "description": "BY INST 3025997942 : OW_EXPRESS_2ND_NPR  /",
+        "reference": "SN-25",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-13",
+        "type": "WITHDRAWAL",
+        "amount": 200000.0,
+        "balance": 37556.51,
+        "description": "REJECT:3025997942:INSUFFICIENT FUND NIBL_BAGMATI TELEVISION",
+        "reference": "SN-26",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-13",
+        "type": "WITHDRAWAL",
+        "amount": 100.0,
+        "balance": 37456.51,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:3025997942/NEPAL INVES",
+        "reference": "SN-27",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-14",
+        "type": "WITHDRAWAL",
+        "amount": 798.0,
+        "balance": 36658.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- 168459511,Mobile FUN",
+        "reference": "SN-28",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-15",
+        "type": "WITHDRAWAL",
+        "amount": 30000.0,
+        "balance": 6658.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- KALYAN KARN FUN",
+        "reference": "SN-29",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-16",
+        "type": "DEPOSIT",
+        "amount": 40000.0,
+        "balance": 46658.51,
+        "description": "Fund Trf frm KALYAN KUMAR KA- RAMAN KARN FUN",
+        "reference": "SN-30",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-16",
+        "type": "WITHDRAWAL",
+        "amount": 40000.0,
+        "balance": 6658.51,
+        "description": "Fund Trf to DIWAKAR KARN-Salary FUN MOB/SBLMOB01Salary",
+        "reference": "SN-31",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-18",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 56658.51,
+        "description": "BAGMATI TELEVISION NETWORK PVT LTD",
+        "reference": "SN-32",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-19",
+        "type": "DEPOSIT",
+        "amount": 353447.0,
+        "balance": 410105.51,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/KATHMANDU",
+        "reference": "SN-33",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-20",
+        "type": "WITHDRAWAL",
+        "amount": 25010.0,
+        "balance": 385095.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- Salary,EVBLNPKA; FUN",
+        "reference": "SN-34",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-20",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 435095.51,
+        "description": "NEPAL NEWS BANK",
+        "reference": "SN-35",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-21",
+        "type": "WITHDRAWAL",
+        "amount": 10010.0,
+        "balance": 425085.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- Salary Bonus,EVB FUN",
+        "reference": "SN-36",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-21",
+        "type": "WITHDRAWAL",
+        "amount": 190010.0,
+        "balance": 235075.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- ADVANCE DEPOSIT, FUN",
+        "reference": "SN-37",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-23",
+        "type": "WITHDRAWAL",
+        "amount": 130010.0,
+        "balance": 105065.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- advance deposit, FUN",
+        "reference": "SN-38",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-10-30",
+        "type": "WITHDRAWAL",
+        "amount": 6510.0,
+        "balance": 98555.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- Electricity Bill FUN",
+        "reference": "SN-39",
+        "source_pdf": "statement-2023-09-01-to-2023-10-31.pdf"
+      },
+      {
+        "date": "2023-11-02",
+        "type": "WITHDRAWAL",
+        "amount": 2565.0,
+        "balance": 95990.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- 175208831,Mobile FUN",
+        "reference": "SN-1",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-05",
+        "type": "WITHDRAWAL",
+        "amount": 798.0,
+        "balance": 95192.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- 176304431,Mobile FUN",
+        "reference": "SN-2",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-05",
+        "type": "DEPOSIT",
+        "amount": 196500.0,
+        "balance": 291692.51,
+        "description": "BY INST 33893750 : OW_REGULAR_NPR  / PBL_BLACK",
+        "reference": "SN-3",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-05",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 341692.51,
+        "description": "BY INST 3025997952 : OW_REGULAR_NPR  / NIBL_BAGMATI",
+        "reference": "SN-4",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-05",
+        "type": "WITHDRAWAL",
+        "amount": 196500.0,
+        "balance": 145192.51,
+        "description": "REJECT:33893750:INSUFFICIENT FUND PBL_BLACK SWAN NEPAL PVT",
+        "reference": "SN-5",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-05",
+        "type": "WITHDRAWAL",
+        "amount": 50000.0,
+        "balance": 95192.51,
+        "description": "REJECT:3025997952:INSUFFICIENT FUND NIBL_BAGMATI TELEVISION",
+        "reference": "SN-6",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-06",
+        "type": "WITHDRAWAL",
+        "amount": 800.0,
+        "balance": 94392.51,
+        "description": "Fund Trf to NABIL BANK LTD (ESEW- 9823417797,31515 FUN",
+        "reference": "SN-7",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-06",
+        "type": "WITHDRAWAL",
+        "amount": 8010.0,
+        "balance": 86382.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-KU Cable Gyan da FUN",
+        "reference": "SN-8",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-07",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 136382.51,
+        "description": "BY INST 3025997952 : OW_REGULAR_NPR  / NIBL_BAGMATI",
+        "reference": "SN-9",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-07",
+        "type": "WITHDRAWAL",
+        "amount": 50000.0,
+        "balance": 86382.51,
+        "description": "REJECT:3025997952:REFER TO DRAWER NIBL_BAGMATI TELEVISION",
+        "reference": "SN-10",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-08",
+        "type": "WITHDRAWAL",
+        "amount": 500.0,
+        "balance": 85882.51,
+        "description": "Fund Trf to NABIL BANK LTD (ESEW- 9823417797,31700 FUN",
+        "reference": "SN-11",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-09",
+        "type": "WITHDRAWAL",
+        "amount": 80000.0,
+        "balance": 5882.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- KALYAN KUMAR KAR FUN",
+        "reference": "SN-12",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-10",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 55882.51,
+        "description": "TARAN BAHADUR RANA",
+        "reference": "SN-13",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-19",
+        "type": "WITHDRAWAL",
+        "amount": 50010.0,
+        "balance": 5872.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- Advance to Bipin FUN",
+        "reference": "SN-14",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-20",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 55872.51,
+        "description": "Fund Trf frm A/C PAYABLE IBF- FON:IBFT:2822567 FUN",
+        "reference": "SN-15",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-21",
+        "type": "WITHDRAWAL",
+        "amount": 710.0,
+        "balance": 55162.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- 181976242,Mobile FUN",
+        "reference": "SN-16",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-22",
+        "type": "WITHDRAWAL",
+        "amount": 730.0,
+        "balance": 54432.51,
+        "description": "Fund Trf to NABIL BANK LTD (ESEW- 9849382314,32888 FUN",
+        "reference": "SN-17",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-28",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 104432.51,
+        "description": "BAGMATI TELEVISION NETWORK PVT LTD BY TORAN BAHADU  / R RANA",
+        "reference": "SN-18",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-28",
+        "type": "WITHDRAWAL",
+        "amount": 5010.0,
+        "balance": 99422.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- Bagmati TV,EVBLN FUN",
+        "reference": "SN-19",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-28",
+        "type": "WITHDRAWAL",
+        "amount": 45010.0,
+        "balance": 54412.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- Bagmati TV Bondi FUN",
+        "reference": "SN-20",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-11-29",
+        "type": "WITHDRAWAL",
+        "amount": 20000.0,
+        "balance": 34412.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- KALYAN KARN FUN",
+        "reference": "SN-21",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-12-01",
+        "type": "WITHDRAWAL",
+        "amount": 3500.0,
+        "balance": 30912.51,
+        "description": "Fund Trf to NABIL BANK LTD (ESEW- 9814823222,33671 FUN",
+        "reference": "SN-22",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-12-05",
+        "type": "WITHDRAWAL",
+        "amount": 10000.0,
+        "balance": 20912.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-23",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-12-06",
+        "type": "WITHDRAWAL",
+        "amount": 570.0,
+        "balance": 20342.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- electricity bill FUN",
+        "reference": "SN-24",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-12-08",
+        "type": "WITHDRAWAL",
+        "amount": 5000.0,
+        "balance": 15342.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-25",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-12-18",
+        "type": "DEPOSIT",
+        "amount": 16000.0,
+        "balance": 31342.51,
+        "description": "Fund Trf frm A/C PAYABLE IBF- FON:IBFT:3005742 FUN",
+        "reference": "SN-26",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-12-18",
+        "type": "WITHDRAWAL",
+        "amount": 8010.0,
+        "balance": 23332.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-Bipin sir,EVBLNP FUN",
+        "reference": "SN-27",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-12-26",
+        "type": "WITHDRAWAL",
+        "amount": 20000.0,
+        "balance": 3332.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- KALYAN KUMAR KAR FUN",
+        "reference": "SN-28",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-12-28",
+        "type": "DEPOSIT",
+        "amount": 175000.0,
+        "balance": 178332.51,
+        "description": "Fund Trf frm KALYAN KUMAR KA- KALYAN  YOLOBOX FUN",
+        "reference": "SN-29",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2023-12-28",
+        "type": "WITHDRAWAL",
+        "amount": 100010.0,
+        "balance": 78322.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- YoloBox Liv,EVBL FUN",
+        "reference": "SN-30",
+        "source_pdf": "statement-2023-11-01-to-2023-12-30.pdf"
+      },
+      {
+        "date": "2024-01-02",
+        "type": "DEPOSIT",
+        "amount": 47945.0,
+        "balance": 121267.51,
+        "description": "BY INST 24031676 : OW_REGULAR_NPR  /",
+        "reference": "SN-1",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-01-04",
+        "type": "DEPOSIT",
+        "amount": 100000.0,
+        "balance": 221267.51,
+        "description": "BLACK SWON PVT LTD BY TORAN BAHADUR RANA",
+        "reference": "SN-2",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-01-04",
+        "type": "WITHDRAWAL",
+        "amount": 8000.0,
+        "balance": 213267.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Toran Ji advance FUN",
+        "reference": "SN-3",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-01-07",
+        "type": "WITHDRAWAL",
+        "amount": 140010.0,
+        "balance": 73257.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- payment of black FUN",
+        "reference": "SN-4",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-01-08",
+        "type": "WITHDRAWAL",
+        "amount": 20000.0,
+        "balance": 53257.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- KALYAN KUMAR KAR FUN",
+        "reference": "SN-5",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-01-10",
+        "type": "WITHDRAWAL",
+        "amount": 50000.0,
+        "balance": 3257.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-6",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-01-10",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 53257.51,
+        "description": "BY INST 42240707 : OW_REGULAR_NPR  / PBL_NEPAL",
+        "reference": "SN-7",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-01-10",
+        "type": "WITHDRAWAL",
+        "amount": 6510.0,
+        "balance": 46747.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-IRD PAYMENT,LXBL FUN",
+        "reference": "SN-8",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-01-11",
+        "type": "DEPOSIT",
+        "amount": 312192.0,
+        "balance": 358939.51,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/KATHMANDU",
+        "reference": "SN-9",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-01-14",
+        "type": "DEPOSIT",
+        "amount": 100000.0,
+        "balance": 458939.51,
+        "description": "Fund Trf frm A/C PAYABLE IBF- FON:IBFT:3200293 FUN",
+        "reference": "SN-10",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-01-14",
+        "type": "WITHDRAWAL",
+        "amount": 100010.0,
+        "balance": 358929.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- Seven Star,EVBLN FUN",
+        "reference": "SN-11",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-01-15",
+        "type": "WITHDRAWAL",
+        "amount": 110000.0,
+        "balance": 248929.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- KALYAN KUMAR KAR FUN",
+        "reference": "SN-12",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-01-18",
+        "type": "WITHDRAWAL",
+        "amount": 10010.0,
+        "balance": 238919.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-KU Installation, FUN MOB/SBLMOB01KU",
+        "reference": "SN-13",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-01-18",
+        "type": "WITHDRAWAL",
+        "amount": 4010.0,
+        "balance": 234909.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- Apache Bike,EVBL FUN",
+        "reference": "SN-14",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-01-19",
+        "type": "WITHDRAWAL",
+        "amount": 150010.0,
+        "balance": 84899.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-KU INSTALLATION, FUN",
+        "reference": "SN-15",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-01-21",
+        "type": "WITHDRAWAL",
+        "amount": 50010.0,
+        "balance": 34889.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- NEWS BANK NEPAL, FUN",
+        "reference": "SN-16",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-01-31",
+        "type": "WITHDRAWAL",
+        "amount": 30000.0,
+        "balance": 4889.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- KALYAN KUMAR KAR FUN",
+        "reference": "SN-17",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-02-01",
+        "type": "DEPOSIT",
+        "amount": 6000.0,
+        "balance": 10889.51,
+        "description": "Fund Trf frm KALYAN KUMAR KA-Kalyan Kumar Kar FUN",
+        "reference": "SN-18",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-02-01",
+        "type": "WITHDRAWAL",
+        "amount": 6710.0,
+        "balance": 4179.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- Electricity Bill FUN",
+        "reference": "SN-19",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-02-01",
+        "type": "DEPOSIT",
+        "amount": 401400.0,
+        "balance": 405579.51,
+        "description": "BY INST 3027981402 : OW_REGULAR_NPR  / NIBL_KU",
+        "reference": "SN-20",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-02-01",
+        "type": "DEPOSIT",
+        "amount": 55750.0,
+        "balance": 461329.51,
+        "description": "BY INST 3024765180 : OW_REGULAR_NPR  / NIBL_KU",
+        "reference": "SN-21",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-02-01",
+        "type": "WITHDRAWAL",
+        "amount": 15.0,
+        "balance": 461314.51,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:3027981402/NEPAL INVES",
+        "reference": "SN-22",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-02-01",
+        "type": "WITHDRAWAL",
+        "amount": 190010.0,
+        "balance": 271304.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-KU UNIVERSITY,EV FUN",
+        "reference": "SN-23",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-02-02",
+        "type": "WITHDRAWAL",
+        "amount": 200010.0,
+        "balance": 71294.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-KU UNIVERSITY,EV FUN",
+        "reference": "SN-24",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-02-04",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 121294.51,
+        "description": "BY INST 42240710 : OW_EXPRESS_3RD_NPR  /",
+        "reference": "SN-25",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-02-04",
+        "type": "WITHDRAWAL",
+        "amount": 100.0,
+        "balance": 121194.51,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:42240710/PRABHU BANK L",
+        "reference": "SN-26",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-02-11",
+        "type": "WITHDRAWAL",
+        "amount": 6610.0,
+        "balance": 114584.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- House rent,LXBLN FUN",
+        "reference": "SN-27",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-02-17",
+        "type": "WITHDRAWAL",
+        "amount": 1599.0,
+        "balance": 112985.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- 220836435,Mobile FUN",
+        "reference": "SN-28",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-02-21",
+        "type": "WITHDRAWAL",
+        "amount": 300.0,
+        "balance": 112685.51,
+        "description": "Fund Trf to ANNUAL FEE-BANKSMART- chg:3486200,Rene FUN",
+        "reference": "SN-29",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-02-21",
+        "type": "WITHDRAWAL",
+        "amount": 110000.0,
+        "balance": 2685.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- KALYAN KARN FUN",
+        "reference": "SN-30",
+        "source_pdf": "statement-2024-01-01-to-2024-02-29.pdf"
+      },
+      {
+        "date": "2024-03-03",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 52685.51,
+        "description": "Fund Trf frm A/C PAYABLE IBF- FON:IBFT:3575412 FUN",
+        "reference": "SN-1",
+        "source_pdf": "statement-2024-03-01-to-2024-04-30.pdf"
+      },
+      {
+        "date": "2024-03-04",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 102685.51,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/A.V. BIONICS",
+        "reference": "SN-2",
+        "source_pdf": "statement-2024-03-01-to-2024-04-30.pdf"
+      },
+      {
+        "date": "2024-03-04",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 152685.51,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/A.V. BIONICS",
+        "reference": "SN-3",
+        "source_pdf": "statement-2024-03-01-to-2024-04-30.pdf"
+      },
+      {
+        "date": "2024-03-04",
+        "type": "WITHDRAWAL",
+        "amount": 50010.0,
+        "balance": 102675.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-AV BIONIC EXTRA FUN",
+        "reference": "SN-4",
+        "source_pdf": "statement-2024-03-01-to-2024-04-30.pdf"
+      },
+      {
+        "date": "2024-03-18",
+        "type": "WITHDRAWAL",
+        "amount": 100000.0,
+        "balance": 2675.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- KALYAN KUMAR KAR FUN",
+        "reference": "SN-5",
+        "source_pdf": "statement-2024-03-01-to-2024-04-30.pdf"
+      },
+      {
+        "date": "2024-04-08",
+        "type": "DEPOSIT",
+        "amount": 30000.0,
+        "balance": 32675.51,
+        "description": "Fund Trf frm A/C PAYABLE IBF- FON:IBFT:3876830 FUN",
+        "reference": "SN-6",
+        "source_pdf": "statement-2024-03-01-to-2024-04-30.pdf"
+      },
+      {
+        "date": "2024-04-16",
+        "type": "WITHDRAWAL",
+        "amount": 30000.0,
+        "balance": 2675.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-7",
+        "source_pdf": "statement-2024-03-01-to-2024-04-30.pdf"
+      },
+      {
+        "date": "2024-04-24",
+        "type": "DEPOSIT",
+        "amount": 20000.0,
+        "balance": 22675.51,
+        "description": "CASH DEPOSIT BY BAGMATI TELEVISION  / TORAN  BAHADUR",
+        "reference": "SN-8",
+        "source_pdf": "statement-2024-03-01-to-2024-04-30.pdf"
+      },
+      {
+        "date": "2024-04-25",
+        "type": "WITHDRAWAL",
+        "amount": 5510.0,
+        "balance": 17165.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- Ayush Design,NMB FUN",
+        "reference": "SN-9",
+        "source_pdf": "statement-2024-03-01-to-2024-04-30.pdf"
+      },
+      {
+        "date": "2024-05-03",
+        "type": "WITHDRAWAL",
+        "amount": 500.0,
+        "balance": 16665.51,
+        "description": "Fund Trf to NABIL BANK LTD (ESEW- 9847481256,50262 FUN",
+        "reference": "SN-1",
+        "source_pdf": "statement-2024-05-01-to-2024-06-30.pdf"
+      },
+      {
+        "date": "2024-05-03",
+        "type": "DEPOSIT",
+        "amount": 47000.0,
+        "balance": 63665.51,
+        "description": "CASH DEPOSIT BY BLACK SWAN NEPAL PVT LTD  / TARAN BAHADUR",
+        "reference": "SN-2",
+        "source_pdf": "statement-2024-05-01-to-2024-06-30.pdf"
+      },
+      {
+        "date": "2024-05-08",
+        "type": "WITHDRAWAL",
+        "amount": 330.0,
+        "balance": 63335.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- 265535058,Mobile FUN",
+        "reference": "SN-3",
+        "source_pdf": "statement-2024-05-01-to-2024-06-30.pdf"
+      },
+      {
+        "date": "2024-05-08",
+        "type": "WITHDRAWAL",
+        "amount": 1045.0,
+        "balance": 62290.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- 265624033,Mobile FUN",
+        "reference": "SN-4",
+        "source_pdf": "statement-2024-05-01-to-2024-06-30.pdf"
+      },
+      {
+        "date": "2024-05-10",
+        "type": "WITHDRAWAL",
+        "amount": 40000.0,
+        "balance": 22290.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-5",
+        "source_pdf": "statement-2024-05-01-to-2024-06-30.pdf"
+      },
+      {
+        "date": "2024-05-16",
+        "type": "WITHDRAWAL",
+        "amount": 5000.0,
+        "balance": 17290.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-6",
+        "source_pdf": "statement-2024-05-01-to-2024-06-30.pdf"
+      },
+      {
+        "date": "2024-05-19",
+        "type": "WITHDRAWAL",
+        "amount": 14500.0,
+        "balance": 2790.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-7",
+        "source_pdf": "statement-2024-05-01-to-2024-06-30.pdf"
+      },
+      {
+        "date": "2024-05-29",
+        "type": "DEPOSIT",
+        "amount": 14000.0,
+        "balance": 16790.51,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/A.V BIONICS",
+        "reference": "SN-8",
+        "source_pdf": "statement-2024-05-01-to-2024-06-30.pdf"
+      },
+      {
+        "date": "2024-06-01",
+        "type": "WITHDRAWAL",
+        "amount": 4000.0,
+        "balance": 12790.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-9",
+        "source_pdf": "statement-2024-05-01-to-2024-06-30.pdf"
+      },
+      {
+        "date": "2024-06-06",
+        "type": "WITHDRAWAL",
+        "amount": 5000.0,
+        "balance": 7790.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-10",
+        "source_pdf": "statement-2024-05-01-to-2024-06-30.pdf"
+      },
+      {
+        "date": "2024-06-12",
+        "type": "WITHDRAWAL",
+        "amount": 5000.0,
+        "balance": 2790.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-11",
+        "source_pdf": "statement-2024-05-01-to-2024-06-30.pdf"
+      },
+      {
+        "date": "2024-07-23",
+        "type": "DEPOSIT",
+        "amount": 250000.0,
+        "balance": 252790.51,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/Star Media",
+        "reference": "SN-1",
+        "source_pdf": "statement-2024-07-01-to-2024-08-31.pdf"
+      },
+      {
+        "date": "2024-07-23",
+        "type": "WITHDRAWAL",
+        "amount": 110000.0,
+        "balance": 142790.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan bipin 55k FUN",
+        "reference": "SN-2",
+        "source_pdf": "statement-2024-07-01-to-2024-08-31.pdf"
+      },
+      {
+        "date": "2024-07-23",
+        "type": "WITHDRAWAL",
+        "amount": 140010.0,
+        "balance": 2780.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-TV TODAY PAYMENT FUN",
+        "reference": "SN-3",
+        "source_pdf": "statement-2024-07-01-to-2024-08-31.pdf"
+      },
+      {
+        "date": "2024-07-26",
+        "type": "DEPOSIT",
+        "amount": 100000.0,
+        "balance": 102780.51,
+        "description": "BY INST 3030324383 : OW_EXPRESS_4TH_NPR  /",
+        "reference": "SN-4",
+        "source_pdf": "statement-2024-07-01-to-2024-08-31.pdf"
+      },
+      {
+        "date": "2024-07-26",
+        "type": "WITHDRAWAL",
+        "amount": 113.0,
+        "balance": 102667.51,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:3030324383/NEPAL INVES",
+        "reference": "SN-5",
+        "source_pdf": "statement-2024-07-01-to-2024-08-31.pdf"
+      },
+      {
+        "date": "2024-07-26",
+        "type": "WITHDRAWAL",
+        "amount": 100010.0,
+        "balance": 2657.51,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-Prime TV p2,EVBL FUN",
+        "reference": "SN-6",
+        "source_pdf": "statement-2024-07-01-to-2024-08-31.pdf"
+      },
+      {
+        "date": "2024-08-28",
+        "type": "DEPOSIT",
+        "amount": 20000.0,
+        "balance": 22657.51,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/A.V. BIONICS",
+        "reference": "SN-7",
+        "source_pdf": "statement-2024-07-01-to-2024-08-31.pdf"
+      },
+      {
+        "date": "2024-08-29",
+        "type": "WITHDRAWAL",
+        "amount": 15000.0,
+        "balance": 7657.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-8",
+        "source_pdf": "statement-2024-07-01-to-2024-08-31.pdf"
+      },
+      {
+        "date": "2024-09-03",
+        "type": "WITHDRAWAL",
+        "amount": 5000.0,
+        "balance": 2657.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-1",
+        "source_pdf": "statement-2024-09-01-to-2024-10-31.pdf"
+      },
+      {
+        "date": "2024-09-09",
+        "type": "DEPOSIT",
+        "amount": 20000.0,
+        "balance": 22657.51,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/A.V. BIONICS",
+        "reference": "SN-2",
+        "source_pdf": "statement-2024-09-01-to-2024-10-31.pdf"
+      },
+      {
+        "date": "2024-09-10",
+        "type": "WITHDRAWAL",
+        "amount": 10000.0,
+        "balance": 12657.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-3",
+        "source_pdf": "statement-2024-09-01-to-2024-10-31.pdf"
+      },
+      {
+        "date": "2024-09-18",
+        "type": "WITHDRAWAL",
+        "amount": 10000.0,
+        "balance": 2657.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-4",
+        "source_pdf": "statement-2024-09-01-to-2024-10-31.pdf"
+      },
+      {
+        "date": "2024-09-26",
+        "type": "DEPOSIT",
+        "amount": 100000.0,
+        "balance": 102657.51,
+        "description": "BY INST 3030324421 : OW_REGULAR_NPR  / NIBL_TIMES",
+        "reference": "SN-5",
+        "source_pdf": "statement-2024-09-01-to-2024-10-31.pdf"
+      },
+      {
+        "date": "2024-09-26",
+        "type": "WITHDRAWAL",
+        "amount": 100000.0,
+        "balance": 2657.51,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan and Bipin FUN",
+        "reference": "SN-6",
+        "source_pdf": "statement-2024-09-01-to-2024-10-31.pdf"
+      },
+      {
+        "date": "2024-10-24",
+        "type": "DEPOSIT",
+        "amount": 20000.0,
+        "balance": 22657.51,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/A.V. BIONICS",
+        "reference": "SN-7",
+        "source_pdf": "statement-2024-09-01-to-2024-10-31.pdf"
+      },
+      {
+        "date": "2024-10-24",
+        "type": "WITHDRAWAL",
+        "amount": 8811.3,
+        "balance": 13846.21,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- Electricity and FUN",
+        "reference": "SN-8",
+        "source_pdf": "statement-2024-09-01-to-2024-10-31.pdf"
+      },
+      {
+        "date": "2024-10-24",
+        "type": "WITHDRAWAL",
+        "amount": 11000.0,
+        "balance": 2846.21,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-9",
+        "source_pdf": "statement-2024-09-01-to-2024-10-31.pdf"
+      },
+      {
+        "date": "2024-11-14",
+        "type": "DEPOSIT",
+        "amount": 100000.0,
+        "balance": 102846.21,
+        "description": "BY INST 34110026 : OW_REGULAR_NPR  / HBL_TV TODAY",
+        "reference": "SN-1",
+        "source_pdf": "statement-2024-11-01-to-2024-12-31.pdf"
+      },
+      {
+        "date": "2024-11-14",
+        "type": "WITHDRAWAL",
+        "amount": 100000.0,
+        "balance": 2846.21,
+        "description": "REJECT:34110026:INSUFFICIENT FUND HBL_TV TODAY NETWORK PVT",
+        "reference": "SN-2",
+        "source_pdf": "statement-2024-11-01-to-2024-12-31.pdf"
+      },
+      {
+        "date": "2024-11-14",
+        "type": "DEPOSIT",
+        "amount": 100000.0,
+        "balance": 102846.21,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/Star Media",
+        "reference": "SN-3",
+        "source_pdf": "statement-2024-11-01-to-2024-12-31.pdf"
+      },
+      {
+        "date": "2024-11-15",
+        "type": "WITHDRAWAL",
+        "amount": 5750.0,
+        "balance": 97096.21,
+        "description": "Fund Trf to NABIL BANK LTD (ESEW- 9862742564,77094 FUN",
+        "reference": "SN-4",
+        "source_pdf": "statement-2024-11-01-to-2024-12-31.pdf"
+      },
+      {
+        "date": "2024-11-15",
+        "type": "WITHDRAWAL",
+        "amount": 500.0,
+        "balance": 96596.21,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- 390432773,Mobile FUN",
+        "reference": "SN-5",
+        "source_pdf": "statement-2024-11-01-to-2024-12-31.pdf"
+      },
+      {
+        "date": "2024-11-18",
+        "type": "WITHDRAWAL",
+        "amount": 10000.0,
+        "balance": 86596.21,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-6",
+        "source_pdf": "statement-2024-11-01-to-2024-12-31.pdf"
+      },
+      {
+        "date": "2024-11-18",
+        "type": "WITHDRAWAL",
+        "amount": 25000.0,
+        "balance": 61596.21,
+        "description": "Fund Trf to KALYAN KUMAR KARN-Bipin Sir FUN MOB/SBLMOB01Bipin",
+        "reference": "SN-7",
+        "source_pdf": "statement-2024-11-01-to-2024-12-31.pdf"
+      },
+      {
+        "date": "2024-11-18",
+        "type": "WITHDRAWAL",
+        "amount": 210.0,
+        "balance": 61386.21,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- 392528288,Mobile FUN",
+        "reference": "SN-8",
+        "source_pdf": "statement-2024-11-01-to-2024-12-31.pdf"
+      },
+      {
+        "date": "2024-11-18",
+        "type": "WITHDRAWAL",
+        "amount": 43000.0,
+        "balance": 18386.21,
+        "description": "Fund Trf to A/C PAYABLE NPS (NEP- AVMATRIXCARD FUN",
+        "reference": "SN-9",
+        "source_pdf": "statement-2024-11-01-to-2024-12-31.pdf"
+      },
+      {
+        "date": "2024-11-18",
+        "type": "WITHDRAWAL",
+        "amount": 5.65,
+        "balance": 18380.56,
+        "description": "Fund Transfer @ FUN API/SBLNPS01AVMATRIXCARD",
+        "reference": "SN-10",
+        "source_pdf": "statement-2024-11-01-to-2024-12-31.pdf"
+      },
+      {
+        "date": "2024-11-21",
+        "type": "WITHDRAWAL",
+        "amount": 15000.0,
+        "balance": 3380.56,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-11",
+        "source_pdf": "statement-2024-11-01-to-2024-12-31.pdf"
+      },
+      {
+        "date": "2025-01-13",
+        "type": "DEPOSIT",
+        "amount": 25000.0,
+        "balance": 28380.56,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/A.V BIONICS",
+        "reference": "SN-1",
+        "source_pdf": "statement-2025-01-01-to-2025-02-28.pdf"
+      },
+      {
+        "date": "2025-01-16",
+        "type": "WITHDRAWAL",
+        "amount": 25000.0,
+        "balance": 3380.56,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-2",
+        "source_pdf": "statement-2025-01-01-to-2025-02-28.pdf"
+      },
+      {
+        "date": "2025-01-24",
+        "type": "DEPOSIT",
+        "amount": 15000.0,
+        "balance": 18380.56,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/A.V BIONICS",
+        "reference": "SN-3",
+        "source_pdf": "statement-2025-01-01-to-2025-02-28.pdf"
+      },
+      {
+        "date": "2025-01-31",
+        "type": "WITHDRAWAL",
+        "amount": 15000.0,
+        "balance": 3380.56,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-4",
+        "source_pdf": "statement-2025-01-01-to-2025-02-28.pdf"
+      },
+      {
+        "date": "2025-02-18",
+        "type": "DEPOSIT",
+        "amount": 20000.0,
+        "balance": 23380.56,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/A.V. BIONICS",
+        "reference": "SN-5",
+        "source_pdf": "statement-2025-01-01-to-2025-02-28.pdf"
+      },
+      {
+        "date": "2025-02-19",
+        "type": "WITHDRAWAL",
+        "amount": 20500.0,
+        "balance": 2880.56,
+        "description": "Fund Trf to KALYAN KUMAR KARN- KALYAN KUMAR KAR FUN",
+        "reference": "SN-6",
+        "source_pdf": "statement-2025-01-01-to-2025-02-28.pdf"
+      },
+      {
+        "date": "2025-03-06",
+        "type": "DEPOSIT",
+        "amount": 25000.0,
+        "balance": 27880.56,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/Dristi",
+        "reference": "SN-1",
+        "source_pdf": "statement-2025-03-01-to-2025-04-30.pdf"
+      },
+      {
+        "date": "2025-03-07",
+        "type": "DEPOSIT",
+        "amount": 12480.0,
+        "balance": 40360.56,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/A.V BIONICS",
+        "reference": "SN-2",
+        "source_pdf": "statement-2025-03-01-to-2025-04-30.pdf"
+      },
+      {
+        "date": "2025-03-08",
+        "type": "WITHDRAWAL",
+        "amount": 37500.0,
+        "balance": 2860.56,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-3",
+        "source_pdf": "statement-2025-03-01-to-2025-04-30.pdf"
+      },
+      {
+        "date": "2025-04-17",
+        "type": "DEPOSIT",
+        "amount": 25000.0,
+        "balance": 27860.56,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/Dristi",
+        "reference": "SN-4",
+        "source_pdf": "statement-2025-03-01-to-2025-04-30.pdf"
+      },
+      {
+        "date": "2025-04-18",
+        "type": "WITHDRAWAL",
+        "amount": 25000.0,
+        "balance": 2860.56,
+        "description": "Fund Trf to KALYAN KUMAR KARN- 12500 transfer t FUN",
+        "reference": "SN-5",
+        "source_pdf": "statement-2025-03-01-to-2025-04-30.pdf"
+      },
+      {
+        "date": "2025-05-23",
+        "type": "DEPOSIT",
+        "amount": 500000.0,
+        "balance": 502860.56,
+        "description": "BY INST 3034598267 : OW_REGULAR_NPR  / NIBL_KISAN",
+        "reference": "SN-1",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-05-23",
+        "type": "WITHDRAWAL",
+        "amount": 16.95,
+        "balance": 502843.61,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:3034598267/NEPAL INVES",
+        "reference": "SN-2",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-05-25",
+        "type": "WITHDRAWAL",
+        "amount": 500000.0,
+        "balance": 2843.61,
+        "description": "380478531001 av bionics pvt ltd The zone serial is [   656].",
+        "reference": "SN-3",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-03",
+        "type": "DEPOSIT",
+        "amount": 25000.0,
+        "balance": 27843.61,
+        "description": "CHQ AMT TRF FRM GEN NEXT IT AND INTERIORS PVTLTD SIMULCAST",
+        "reference": "SN-4",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-05",
+        "type": "WITHDRAWAL",
+        "amount": 25000.0,
+        "balance": 2843.61,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-5",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-06",
+        "type": "DEPOSIT",
+        "amount": 300000.0,
+        "balance": 302843.61,
+        "description": "BY INST 3036046439 : OW_REGULAR_NPR  / NIBL_KISAN",
+        "reference": "SN-6",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-06",
+        "type": "WITHDRAWAL",
+        "amount": 15.0,
+        "balance": 302828.61,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:3036046439/NEPAL INVES",
+        "reference": "SN-7",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-07",
+        "type": "WITHDRAWAL",
+        "amount": 100000.0,
+        "balance": 202828.61,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-8",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-08",
+        "type": "WITHDRAWAL",
+        "amount": 200010.0,
+        "balance": 2818.61,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- ADVANCE,EVBLNPKA FUN",
+        "reference": "SN-9",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-15",
+        "type": "DEPOSIT",
+        "amount": 454939.73,
+        "balance": 457758.34,
+        "description": "BY INST 33251976 : OW_REGULAR_NPR  /",
+        "reference": "SN-10",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-15",
+        "type": "WITHDRAWAL",
+        "amount": 15.0,
+        "balance": 457743.34,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:33251976/KUMARI BANK L",
+        "reference": "SN-11",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-15",
+        "type": "WITHDRAWAL",
+        "amount": 200010.0,
+        "balance": 257733.34,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- ADVANCE AV,EVBLN FUN",
+        "reference": "SN-12",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-16",
+        "type": "WITHDRAWAL",
+        "amount": 200010.0,
+        "balance": 57723.34,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-AV ADVANCE,EVBLN FUN",
+        "reference": "SN-13",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-17",
+        "type": "WITHDRAWAL",
+        "amount": 54949.0,
+        "balance": 2774.34,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-AV BIONICS,EVBLN FUN",
+        "reference": "SN-14",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-22",
+        "type": "DEPOSIT",
+        "amount": 200000.0,
+        "balance": 202774.34,
+        "description": "BY INST 3036046444 : OW_REGULAR_NPR  / NIBL_KISAN",
+        "reference": "SN-15",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-22",
+        "type": "WITHDRAWAL",
+        "amount": 10.0,
+        "balance": 202764.34,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:3036046444/NEPAL INVES",
+        "reference": "SN-16",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-22",
+        "type": "WITHDRAWAL",
+        "amount": 200000.0,
+        "balance": 2764.34,
+        "description": "EBL /A.V. BIONICS/MOB_SIDBL_XP- 1644543/SIDBL_MOB_X FUN",
+        "reference": "SN-17",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-22",
+        "type": "WITHDRAWAL",
+        "amount": 8.0,
+        "balance": 2756.34,
+        "description": "cIPS Fund Trf Charge FEE of FT/SBLIPS02cIPS/KALYAN KUMAR",
+        "reference": "SN-18",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-22",
+        "type": "DEPOSIT",
+        "amount": 90000.0,
+        "balance": 92756.34,
+        "description": "Fund Trf frm KALYAN KUMAR KA-Kalyan Kumar Kar FUN",
+        "reference": "SN-19",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-23",
+        "type": "DEPOSIT",
+        "amount": 110000.0,
+        "balance": 202756.34,
+        "description": "Fund Trf frm KALYAN KUMAR KA-Kalyan Kumar Kar FUN",
+        "reference": "SN-20",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-23",
+        "type": "WITHDRAWAL",
+        "amount": 180010.0,
+        "balance": 22746.34,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-AV BIONICS,EVBLN FUN",
+        "reference": "SN-21",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-24",
+        "type": "WITHDRAWAL",
+        "amount": 20010.0,
+        "balance": 2736.34,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-AV BIONICS ADVAN FUN",
+        "reference": "SN-22",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-29",
+        "type": "DEPOSIT",
+        "amount": 600000.0,
+        "balance": 602736.34,
+        "description": "CHQ AMT TRF FRMKALYAN KUMAR KARN SIMULCAST TECHNOLOGIES",
+        "reference": "SN-23",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-06-29",
+        "type": "WITHDRAWAL",
+        "amount": 600000.0,
+        "balance": 2736.34,
+        "description": "380478541001 AV BIOnICS PVT LTD The zone serial is [   973].",
+        "reference": "SN-24",
+        "source_pdf": "statement-2025-05-01-to-2025-06-30.pdf"
+      },
+      {
+        "date": "2025-07-04",
+        "type": "DEPOSIT",
+        "amount": 500000.0,
+        "balance": 502736.34,
+        "description": "CHQ AMT TRF FRM KALYAN KUMAR KARN SIMULCAST TECHNOLOGIES",
+        "reference": "SN-1",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-07-04",
+        "type": "WITHDRAWAL",
+        "amount": 500000.0,
+        "balance": 2736.34,
+        "description": "380478551001 AV BIONICS PVT LTD The zone serial is [   256].",
+        "reference": "SN-2",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-07-04",
+        "type": "DEPOSIT",
+        "amount": 25000.0,
+        "balance": 27736.34,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/Janak Raj",
+        "reference": "SN-3",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-07-04",
+        "type": "DEPOSIT",
+        "amount": 100000.0,
+        "balance": 127736.34,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/Janak Raj",
+        "reference": "SN-4",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-07-04",
+        "type": "WITHDRAWAL",
+        "amount": 100010.0,
+        "balance": 27726.34,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-AV ADVANCE TV TO FUN",
+        "reference": "SN-5",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-07-04",
+        "type": "WITHDRAWAL",
+        "amount": 25000.0,
+        "balance": 2726.34,
+        "description": "Fund Trf to KALYAN KUMAR KARN-12.5 k Bipin & K FUN",
+        "reference": "SN-6",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-07-14",
+        "type": "DEPOSIT",
+        "amount": 653927.77,
+        "balance": 656654.11,
+        "description": "BY INST 34671201 : OW_REGULAR_NPR  /",
+        "reference": "SN-7",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-07-14",
+        "type": "WITHDRAWAL",
+        "amount": 15.0,
+        "balance": 656639.11,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:34671201/KUMARI BANK L",
+        "reference": "SN-8",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-07-16",
+        "type": "WITHDRAWAL",
+        "amount": 650000.0,
+        "balance": 6639.11,
+        "description": "380478571001 av bionics pvt ltd The zone serial is [   265].",
+        "reference": "SN-9",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-07-16",
+        "type": "WITHDRAWAL",
+        "amount": 3928.0,
+        "balance": 2711.11,
+        "description": "Fund Trf to KALYAN KUMAR KARN-AV BIONICS FROM FUN",
+        "reference": "SN-10",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-07-21",
+        "type": "DEPOSIT",
+        "amount": 140000.0,
+        "balance": 142711.11,
+        "description": "BY INST 43578117 : OW_REGULAR_NPR  /",
+        "reference": "SN-11",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-07-21",
+        "type": "WITHDRAWAL",
+        "amount": 140000.0,
+        "balance": 2711.11,
+        "description": "REJECT:43578117:INVALID/WRONG ACCOUNT NUMBER GLOBAL_JANUKA",
+        "reference": "SN-12",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-07-22",
+        "type": "DEPOSIT",
+        "amount": 140000.0,
+        "balance": 142711.11,
+        "description": "BY INST 43578117 : OW_REGULAR_NPR  /",
+        "reference": "SN-13",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-07-22",
+        "type": "WITHDRAWAL",
+        "amount": 140000.0,
+        "balance": 2711.11,
+        "description": "REJECT:43578117:REFER TO DRAWER GLOBAL_JANUKA BARAL",
+        "reference": "SN-14",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-08-03",
+        "type": "DEPOSIT",
+        "amount": 140000.0,
+        "balance": 142711.11,
+        "description": "BY INST 43578117 : OW_REGULAR_NPR  /",
+        "reference": "SN-15",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-08-03",
+        "type": "WITHDRAWAL",
+        "amount": 140000.0,
+        "balance": 2711.11,
+        "description": "REJECT:43578117:REFER TO DRAWER GLOBAL_JANUKA BARAL",
+        "reference": "SN-16",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-08-12",
+        "type": "DEPOSIT",
+        "amount": 25000.0,
+        "balance": 27711.11,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/TV Today",
+        "reference": "SN-17",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-08-12",
+        "type": "WITHDRAWAL",
+        "amount": 25000.0,
+        "balance": 2711.11,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-18",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-08-18",
+        "type": "DEPOSIT",
+        "amount": 140000.0,
+        "balance": 142711.11,
+        "description": "BY INST 43578117 : OW_REGULAR_NPR  /",
+        "reference": "SN-19",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-08-18",
+        "type": "WITHDRAWAL",
+        "amount": 140000.0,
+        "balance": 2711.11,
+        "description": "REJECT:43578117:REFER TO DRAWER GLOBAL_JANUKA BARAL",
+        "reference": "SN-20",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-08-27",
+        "type": "DEPOSIT",
+        "amount": 15000.0,
+        "balance": 17711.11,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/Star Media",
+        "reference": "SN-21",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-08-30",
+        "type": "WITHDRAWAL",
+        "amount": 15000.0,
+        "balance": 2711.11,
+        "description": "Fund Trf to KALYAN KUMAR KARN-7500 Bipin and K FUN",
+        "reference": "SN-22",
+        "source_pdf": "statement-2025-07-01-to-2025-08-31.pdf"
+      },
+      {
+        "date": "2025-09-23",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 52711.11,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/TV Today",
+        "reference": "SN-1",
+        "source_pdf": "statement-2025-09-01-to-2025-10-31 (1).pdf"
+      },
+      {
+        "date": "2025-09-23",
+        "type": "WITHDRAWAL",
+        "amount": 50000.0,
+        "balance": 2711.11,
+        "description": "Fund Trf to KALYAN KUMAR KARN-20K bipin and Ka FUN",
+        "reference": "SN-2",
+        "source_pdf": "statement-2025-09-01-to-2025-10-31 (1).pdf"
+      },
+      {
+        "date": "2025-09-28",
+        "type": "DEPOSIT",
+        "amount": 98672.57,
+        "balance": 101383.68,
+        "description": "BY INST 56808812 : OW_EXPRESS_2ND_NPR  /",
+        "reference": "SN-3",
+        "source_pdf": "statement-2025-09-01-to-2025-10-31 (1).pdf"
+      },
+      {
+        "date": "2025-09-28",
+        "type": "WITHDRAWAL",
+        "amount": 100.0,
+        "balance": 101283.68,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:56808812/PRABHU BANK L",
+        "reference": "SN-4",
+        "source_pdf": "statement-2025-09-01-to-2025-10-31 (1).pdf"
+      },
+      {
+        "date": "2025-09-28",
+        "type": "WITHDRAWAL",
+        "amount": 98500.0,
+        "balance": 2783.68,
+        "description": "Fund Trf to KALYAN KUMAR KARN- 49250 to bipin a FUN",
+        "reference": "SN-5",
+        "source_pdf": "statement-2025-09-01-to-2025-10-31 (1).pdf"
+      },
+      {
+        "date": "2025-11-27",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 52783.68,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/A.V. BIONICS",
+        "reference": "SN-1",
+        "source_pdf": "statement-2025-11-01-to-2025-12-31.pdf"
+      },
+      {
+        "date": "2025-11-29",
+        "type": "WITHDRAWAL",
+        "amount": 50000.0,
+        "balance": 2783.68,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan FUN MOB/SBLMOB01Kalyan",
+        "reference": "SN-2",
+        "source_pdf": "statement-2025-11-01-to-2025-12-31.pdf"
+      },
+      {
+        "date": "2025-12-05",
+        "type": "DEPOSIT",
+        "amount": 400000.0,
+        "balance": 402783.68,
+        "description": "BY INST 3038592844 : OW_EXPRESS_2ND_NPR  /",
+        "reference": "SN-3",
+        "source_pdf": "statement-2025-11-01-to-2025-12-31.pdf"
+      },
+      {
+        "date": "2025-12-05",
+        "type": "WITHDRAWAL",
+        "amount": 100.0,
+        "balance": 402683.68,
+        "description": "PRESENTMENT CHRG FOR CHQ NO:3038592844/NEPAL INVES",
+        "reference": "SN-4",
+        "source_pdf": "statement-2025-11-01-to-2025-12-31.pdf"
+      },
+      {
+        "date": "2025-12-08",
+        "type": "WITHDRAWAL",
+        "amount": 200010.0,
+        "balance": 202673.68,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- Director Loan,EV FUN",
+        "reference": "SN-5",
+        "source_pdf": "statement-2025-11-01-to-2025-12-31.pdf"
+      },
+      {
+        "date": "2025-12-09",
+        "type": "WITHDRAWAL",
+        "amount": 200000.0,
+        "balance": 2673.68,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan FUN MOB/SBLMOB01Kalyan",
+        "reference": "SN-6",
+        "source_pdf": "statement-2025-11-01-to-2025-12-31.pdf"
+      },
+      {
+        "date": "2025-12-10",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 52673.68,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/Star Media",
+        "reference": "SN-7",
+        "source_pdf": "statement-2025-11-01-to-2025-12-31.pdf"
+      },
+      {
+        "date": "2025-12-23",
+        "type": "DEPOSIT",
+        "amount": 450000.0,
+        "balance": 502673.68,
+        "description": "CASH DEPOSITED BY KISAN NET PVT LTD  / KISAN NET PVT LTD",
+        "reference": "SN-8",
+        "source_pdf": "statement-2025-11-01-to-2025-12-31.pdf"
+      },
+      {
+        "date": "2025-12-23",
+        "type": "WITHDRAWAL",
+        "amount": 66444.0,
+        "balance": 436229.68,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- 16524337mg5U,Mob FUN",
+        "reference": "SN-9",
+        "source_pdf": "statement-2025-11-01-to-2025-12-31.pdf"
+      },
+      {
+        "date": "2025-12-23",
+        "type": "WITHDRAWAL",
+        "amount": 88800.0,
+        "balance": 347429.68,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- 165295306d9b,Mob FUN",
+        "reference": "SN-10",
+        "source_pdf": "statement-2025-11-01-to-2025-12-31.pdf"
+      },
+      {
+        "date": "2025-12-23",
+        "type": "WITHDRAWAL",
+        "amount": 61200.0,
+        "balance": 286229.68,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- 16531448riRF,Mob FUN",
+        "reference": "SN-11",
+        "source_pdf": "statement-2025-11-01-to-2025-12-31.pdf"
+      },
+      {
+        "date": "2025-12-23",
+        "type": "WITHDRAWAL",
+        "amount": 18300.0,
+        "balance": 267929.68,
+        "description": "SANIMA /NQR PAYABLE/GALAXY ELECTRONICS C/SIDDNPKA- FUN",
+        "reference": "SN-12",
+        "source_pdf": "statement-2025-11-01-to-2025-12-31.pdf"
+      },
+      {
+        "date": "2025-12-24",
+        "type": "WITHDRAWAL",
+        "amount": 50000.0,
+        "balance": 217929.68,
+        "description": "Fund Trf to KALYAN KUMAR KARN-Bipin Kalyan 25k FUN",
+        "reference": "SN-13",
+        "source_pdf": "statement-2025-11-01-to-2025-12-31.pdf"
+      },
+      {
+        "date": "2026-01-01",
+        "type": "DEPOSIT",
+        "amount": 40000.0,
+        "balance": 257929.68,
+        "description": "BY INST 59580477 : OW_REGULAR_NPR  /",
+        "reference": "SN-1",
+        "source_pdf": "statement-2026-01-01-to-2026-02-28 (1).pdf"
+      },
+      {
+        "date": "2026-01-02",
+        "type": "WITHDRAWAL",
+        "amount": 8850.0,
+        "balance": 249079.68,
+        "description": "Fund Trf to NABIL BANK LTD (ESEW- 9803209461,15637 FUN",
+        "reference": "SN-2",
+        "source_pdf": "statement-2026-01-01-to-2026-02-28 (1).pdf"
+      },
+      {
+        "date": "2026-01-02",
+        "type": "WITHDRAWAL",
+        "amount": 14310.0,
+        "balance": 234769.68,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-Vat bill print FUN MOB/SBLMOB01Vat bill",
+        "reference": "SN-3",
+        "source_pdf": "statement-2026-01-01-to-2026-02-28 (1).pdf"
+      },
+      {
+        "date": "2026-01-02",
+        "type": "WITHDRAWAL",
+        "amount": 16010.0,
+        "balance": 218759.68,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- Tripod Payment,E FUN",
+        "reference": "SN-4",
+        "source_pdf": "statement-2026-01-01-to-2026-02-28 (1).pdf"
+      },
+      {
+        "date": "2026-01-08",
+        "type": "WITHDRAWAL",
+        "amount": 50000.0,
+        "balance": 168759.68,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Karn Dire FUN",
+        "reference": "SN-5",
+        "source_pdf": "statement-2026-01-01-to-2026-02-28 (1).pdf"
+      },
+      {
+        "date": "2026-01-13",
+        "type": "WITHDRAWAL",
+        "amount": 28860.0,
+        "balance": 139899.68,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- tax,LXBLNPKA;022 FUN",
+        "reference": "SN-6",
+        "source_pdf": "statement-2026-01-01-to-2026-02-28 (1).pdf"
+      },
+      {
+        "date": "2026-01-14",
+        "type": "WITHDRAWAL",
+        "amount": 100010.0,
+        "balance": 39889.68,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- Director Advance FUN",
+        "reference": "SN-7",
+        "source_pdf": "statement-2026-01-01-to-2026-02-28 (1).pdf"
+      },
+      {
+        "date": "2026-01-20",
+        "type": "WITHDRAWAL",
+        "amount": 1797.0,
+        "balance": 38092.68,
+        "description": "Fund Trf to NABIL BANK LTD (ESEW- 9803209461,16075 FUN",
+        "reference": "SN-8",
+        "source_pdf": "statement-2026-01-01-to-2026-02-28 (1).pdf"
+      },
+      {
+        "date": "2026-01-20",
+        "type": "WITHDRAWAL",
+        "amount": 10010.0,
+        "balance": 28082.68,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN-OLT DEVICE,LXBLN FUN",
+        "reference": "SN-9",
+        "source_pdf": "statement-2026-01-01-to-2026-02-28 (1).pdf"
+      },
+      {
+        "date": "2026-01-20",
+        "type": "WITHDRAWAL",
+        "amount": 2425.0,
+        "balance": 25657.68,
+        "description": "Fund Trf to NABIL BANK LTD (ESEW- 9844386872,16085 FUN",
+        "reference": "SN-10",
+        "source_pdf": "statement-2026-01-01-to-2026-02-28 (1).pdf"
+      },
+      {
+        "date": "2026-02-06",
+        "type": "WITHDRAWAL",
+        "amount": 10000.0,
+        "balance": 15657.68,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Karn FUN",
+        "reference": "SN-11",
+        "source_pdf": "statement-2026-01-01-to-2026-02-28 (1).pdf"
+      },
+      {
+        "date": "2026-02-10",
+        "type": "WITHDRAWAL",
+        "amount": 10000.0,
+        "balance": 5657.68,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Karn Dire FUN",
+        "reference": "SN-12",
+        "source_pdf": "statement-2026-01-01-to-2026-02-28 (1).pdf"
+      },
+      {
+        "date": "2026-02-15",
+        "type": "DEPOSIT",
+        "amount": 95000.0,
+        "balance": 100657.68,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/Janak Raj",
+        "reference": "SN-13",
+        "source_pdf": "statement-2026-01-01-to-2026-02-28 (1).pdf"
+      },
+      {
+        "date": "2026-03-02",
+        "type": "WITHDRAWAL",
+        "amount": 10000.0,
+        "balance": 90657.68,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-1",
+        "source_pdf": "statement-2026-03-01-to-2026-04-30 (1).pdf"
+      },
+      {
+        "date": "2026-03-25",
+        "type": "WITHDRAWAL",
+        "amount": 6685.0,
+        "balance": 83972.68,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- house rent,LXBLN FUN",
+        "reference": "SN-2",
+        "source_pdf": "statement-2026-03-01-to-2026-04-30 (1).pdf"
+      },
+      {
+        "date": "2026-04-12",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 133972.68,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/ARROWNET",
+        "reference": "SN-3",
+        "source_pdf": "statement-2026-03-01-to-2026-04-30 (1).pdf"
+      },
+      {
+        "date": "2026-04-22",
+        "type": "WITHDRAWAL",
+        "amount": 200000.0,
+        "balance": 13972.68,
+        "description": "38047858KALYAN KUMAR KARN",
+        "reference": "SN-5",
+        "source_pdf": "statement-2026-03-01-to-2026-04-30 (1).pdf"
+      },
+      {
+        "date": "2026-05-07",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 63972.68,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/ARROWNET",
+        "reference": "SN-1",
+        "source_pdf": "statement-2026-05-01-to-2026-06-30 (1).pdf"
+      },
+      {
+        "date": "2026-05-11",
+        "type": "WITHDRAWAL",
+        "amount": 25000.0,
+        "balance": 38972.68,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-2",
+        "source_pdf": "statement-2026-05-01-to-2026-06-30 (1).pdf"
+      },
+      {
+        "date": "2026-05-14",
+        "type": "WITHDRAWAL",
+        "amount": 25010.0,
+        "balance": 13962.68,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- Arrownet website FUN",
+        "reference": "SN-3",
+        "source_pdf": "statement-2026-05-01-to-2026-06-30 (1).pdf"
+      },
+      {
+        "date": "2026-05-28",
+        "type": "WITHDRAWAL",
+        "amount": 5000.0,
+        "balance": 8962.68,
+        "description": "Fund Trf to KALYAN KUMAR KARN- kalyan FUN MOB/SBLMOB01kalyan",
+        "reference": "SN-4",
+        "source_pdf": "statement-2026-05-01-to-2026-06-30 (1).pdf"
+      },
+      {
+        "date": "2026-06-08",
+        "type": "WITHDRAWAL",
+        "amount": 6000.0,
+        "balance": 2962.68,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN",
+        "reference": "SN-5",
+        "source_pdf": "statement-2026-05-01-to-2026-06-30 (1).pdf"
+      },
+      {
+        "date": "2026-06-17",
+        "type": "DEPOSIT",
+        "amount": 350000.0,
+        "balance": 352962.68,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/A.V. BIONICS",
+        "reference": "SN-6",
+        "source_pdf": "statement-2026-05-01-to-2026-06-30 (1).pdf"
+      },
+      {
+        "date": "2026-06-21",
+        "type": "WITHDRAWAL",
+        "amount": 100000.0,
+        "balance": 252962.68,
+        "description": "NIBL /kalyan Kumar/MOB_SIDBL_XP- 3217290/SIDBL_MOB_ FUN",
+        "reference": "SN-7",
+        "source_pdf": "statement-2026-05-01-to-2026-06-30 (1).pdf"
+      },
+      {
+        "date": "2026-06-21",
+        "type": "WITHDRAWAL",
+        "amount": 8.0,
+        "balance": 252954.68,
+        "description": "cIPS Fund Trf Charge FEE of FT/SBLIPS02cIPS/KALYAN KUMAR",
+        "reference": "SN-8",
+        "source_pdf": "statement-2026-05-01-to-2026-06-30 (1).pdf"
+      },
+      {
+        "date": "2026-06-22",
+        "type": "WITHDRAWAL",
+        "amount": 250000.0,
+        "balance": 2954.68,
+        "description": "38047859CASH WITHDRAWAL BY CASH WITHDRAWAL BY  / KALYAN",
+        "reference": "SN-9",
+        "source_pdf": "statement-2026-05-01-to-2026-06-30 (1).pdf"
+      },
+      {
+        "date": "2026-07-18",
+        "type": "DEPOSIT",
+        "amount": 50000.0,
+        "balance": 52954.68,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I- FUN IPS/SBLIPS02cIPS/Medi Consult",
+        "reference": "SN-1",
+        "source_pdf": "statement-2026-07-01-to-2026-08-31 (1).pdf"
+      },
+      {
+        "date": "2026-08-20",
+        "type": "WITHDRAWAL",
+        "amount": 25000.0,
+        "balance": 27954.68,
+        "description": "Fund Trf to KALYAN KUMAR KARN- KALYAN Kumar Kar FUN",
+        "reference": "SN-2",
+        "source_pdf": "statement-2026-07-01-to-2026-08-31 (1).pdf"
+      },
+      {
+        "date": "2026-09-03",
+        "type": "WITHDRAWAL",
+        "amount": 5000.0,
+        "balance": 22954.68,
+        "description": "Fund Trf to KALYAN KUMAR KARN- kalyan FUN MOB/SBLMOB01kalyan",
+        "reference": "SN-1",
+        "source_pdf": "statement-2026-09-01-to-2026-10-07 (1).pdf"
+      },
+      {
+        "date": "2026-09-10",
+        "type": "WITHDRAWAL",
+        "amount": 10000.0,
+        "balance": 12954.68,
+        "description": "Fund Trf to KALYAN KUMAR KARN- kalyan Kumar Kar FUN",
+        "reference": "SN-2",
+        "source_pdf": "statement-2026-09-01-to-2026-10-07 (1).pdf"
+      },
+      {
+        "date": "2026-09-13",
+        "type": "WITHDRAWAL",
+        "amount": 10000.0,
+        "balance": 2954.68,
+        "description": "Fund Trf to KALYAN KUMAR KARN- kalyan Kumar Kar FUN",
+        "reference": "SN-3",
+        "source_pdf": "statement-2026-09-01-to-2026-10-07 (1).pdf"
+      },
+      {
+        "date": "2026-09-18",
+        "type": "DEPOSIT",
+        "amount": 10000.0,
+        "balance": 12954.68,
+        "description": "Fund Trf frm NABIL BANK LTD - WD:1789703799058 FUN",
+        "reference": "SN-4",
+        "source_pdf": "statement-2026-09-01-to-2026-10-07 (1).pdf"
+      },
+      {
+        "date": "2026-09-18",
+        "type": "WITHDRAWAL",
+        "amount": 5010.0,
+        "balance": 7944.68,
+        "description": "Fund Trf to A/C PAYABLE IBFT (IN- Domain Purchase, FUN",
+        "reference": "SN-5",
+        "source_pdf": "statement-2026-09-01-to-2026-10-07 (1).pdf"
+      },
+      {
+        "date": "2026-09-22",
+        "type": "DEPOSIT",
+        "amount": 20000.0,
+        "balance": 27944.68,
+        "description": "Fund Trf frm NABIL BANK LTD - WD:1790090175061 FUN",
+        "reference": "SN-6",
+        "source_pdf": "statement-2026-09-01-to-2026-10-07 (1).pdf"
+      }
+    ]
+  },
+  "products": [
+    {
+      "sku": "SIM-PRD-002",
+      "name": "CONTROLLER KT-KD50X",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 2.0,
+      "purchasePrice": 165660.0,
+      "salePrice": 224634.96,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-003",
+      "name": "HDMI BONDING VIDEO CONVERTER",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 2.0,
+      "purchasePrice": 268800.0,
+      "salePrice": 364492.8,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-004",
+      "name": "Dell 35 11 13 4/1tb",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 10.0,
+      "purchasePrice": 640221.1,
+      "salePrice": 868139.8115999998,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-005",
+      "name": "Monitor 18.5\"",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 10.0,
+      "purchasePrice": 90772.5,
+      "salePrice": 123087.50999999998,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-006",
+      "name": "Monitor19\"",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 50.0,
+      "purchasePrice": 283237.5,
+      "salePrice": 384070.04999999993,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-007",
+      "name": "router BL Wush LB-link",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 20.0,
+      "purchasePrice": 27300.0,
+      "salePrice": 37018.799999999996,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-008",
+      "name": "SSD 128",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 20.0,
+      "purchasePrice": 40950.0,
+      "salePrice": 55528.19999999999,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-009",
+      "name": "SSD256",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 20.0,
+      "purchasePrice": 80535.0,
+      "salePrice": 109205.45999999998,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-010",
+      "name": "3 HP victus 16i5/8/512/1650",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 10.0,
+      "purchasePrice": 1727544.0,
+      "salePrice": 2342549.6639999994,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-011",
+      "name": "Prizma induction desktop",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 20.0,
+      "purchasePrice": 79170.0,
+      "salePrice": 107354.51999999999,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-012",
+      "name": "4 Nitro 5 i5/16/512/3060",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 5.0,
+      "purchasePrice": 712699.1000000001,
+      "salePrice": 966419.9796,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-013",
+      "name": "HP victus 16 i7/16/512/3060",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 5.0,
+      "purchasePrice": 1295658.0,
+      "salePrice": 1756912.2479999997,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-014",
+      "name": "BMD Micro SDI to HDMI converter",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 3.0,
+      "purchasePrice": 28500.0,
+      "salePrice": 38645.99999999999,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-015",
+      "name": "BMD HDMI TO SDI MICRO CONVERTER",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 1.0,
+      "purchasePrice": 8900.0,
+      "salePrice": 12068.399999999998,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-016",
+      "name": "UGREEN HDMI FEMALE TO FEMALE",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 2.0,
+      "purchasePrice": 460.18,
+      "salePrice": 624.0040799999999,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-017",
+      "name": "XVIVE U4 IN EAR MONITER WIRELESS SYSTEM",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 1.0,
+      "purchasePrice": 25663.72,
+      "salePrice": 34800.00432,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-018",
+      "name": "SHE 7000/98 (IN-EAR HEADPHONE)",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 1.0,
+      "purchasePrice": 1044.0,
+      "salePrice": 1415.6639999999998,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-019",
+      "name": "Boya-WMC",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 1.0,
+      "purchasePrice": 22000.0,
+      "salePrice": 29831.999999999993,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-020",
+      "name": "PTZ Camera (POE20X)",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 1.0,
+      "purchasePrice": 85523.0,
+      "salePrice": 115969.18799999998,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-021",
+      "name": "PTZ Controller(KBC10)",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 1.0,
+      "purchasePrice": 74518.5,
+      "salePrice": 101047.086,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-022",
+      "name": "VIDEO Switcher(L2Plus)",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 1.0,
+      "purchasePrice": 64648.5,
+      "salePrice": 87663.366,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-023",
+      "name": "video fiber converter(8channel)",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 2.0,
+      "purchasePrice": 187612.25,
+      "salePrice": 254402.21099999995,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-024",
+      "name": "audio fiber converter(XLR 4 Channel 2in 2 out)",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 2.0,
+      "purchasePrice": 46635.75,
+      "salePrice": 63238.07699999999,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-025",
+      "name": "BY-M8C",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 4.0,
+      "purchasePrice": 20400.0,
+      "salePrice": 27662.399999999994,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-026",
+      "name": "SC-542N4 HDMI input card",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 1.0,
+      "purchasePrice": 53097.35,
+      "salePrice": 72000.0066,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-027",
+      "name": "ATCOM A20W IP PHONE",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 1.0,
+      "purchasePrice": 6200.0,
+      "salePrice": 8407.199999999999,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-028",
+      "name": "43\" LED TV",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 3.0,
+      "purchasePrice": 133185.84,
+      "salePrice": 180599.99904,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-029",
+      "name": "WALL MOUNT",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 3.0,
+      "purchasePrice": 5700.0,
+      "salePrice": 7729.199999999999,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-030",
+      "name": "SDI TO HDMI CONVERTER",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 1.0,
+      "purchasePrice": 6017.7,
+      "salePrice": 8160.001199999999,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-031",
+      "name": "4K*2K HDMI SPLITTER",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 4.0,
+      "purchasePrice": 14159.28,
+      "salePrice": 19199.983679999998,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-032",
+      "name": "YPLO LIV BOX PRO EM",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 1.0,
+      "purchasePrice": 130000.0,
+      "salePrice": 176280.0,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-033",
+      "name": "HDMI 4K 50M",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 1.0,
+      "purchasePrice": 18000.0,
+      "salePrice": 24407.999999999996,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-034",
+      "name": "HDMI 4K 30M",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 1.0,
+      "purchasePrice": 9000.0,
+      "salePrice": 12203.999999999998,
+      "reorderLevel": 2
+    },
+    {
+      "sku": "SIM-PRD-035",
+      "name": "server Dell T40",
+      "unit": "pcs",
+      "category": "Broadcasting Hardware",
+      "stockQty": 1.0,
+      "purchasePrice": 92500.0,
+      "salePrice": 125429.99999999997,
+      "reorderLevel": 2
+    }
+  ],
+  "purchases": [
+    {
+      "fiscalYear": "79-80",
+      "vendor": "LOKESH AGARWAL",
+      "invoiceNumber": "NO",
+      "date": "2023-03-10",
+      "productName": "CEILING LIGHT",
+      "quantity": 1.0,
+      "unitPrice": 0.0,
+      "total": 0.0,
+      "vat": 0.0
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "smart enterprisespvt ltd",
+      "invoiceNumber": "211",
+      "date": "2023-03-19",
+      "productName": "BMD Micro SDI to HDMI converter",
+      "quantity": 3.0,
+      "unitPrice": 9500.0,
+      "total": 28500.0,
+      "vat": 3705.0
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "smart enterprisespvt ltd",
+      "invoiceNumber": "211",
+      "date": "2023-03-19",
+      "productName": "BMD HDMI TO SDI MICRO CONVERTER",
+      "quantity": 1.0,
+      "unitPrice": 8900.0,
+      "total": 8900.0,
+      "vat": 1157.0
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "NEOTERIC NEPAL P. LTD",
+      "invoiceNumber": "SI-JWK/02308",
+      "date": "2023-03-19",
+      "productName": "UGREEN HDMI FEMALE TO FEMALE",
+      "quantity": 2.0,
+      "unitPrice": 230.09,
+      "total": 460.18,
+      "vat": 59.8234
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "NEPAL MAX TECH. PVT LTD",
+      "invoiceNumber": "185",
+      "date": "2023-03-19",
+      "productName": "XVIVE U4 IN EAR MONITER WIRELESS SYSTEM",
+      "quantity": 1.0,
+      "unitPrice": 25663.72,
+      "total": 25663.72,
+      "vat": 3336.2836
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "SPYKAR COMPANY PVT LTD",
+      "invoiceNumber": "SB-7102/80/0569",
+      "date": "2023-03-21",
+      "productName": "SHE 7000/98 (IN-EAR HEADPHONE)",
+      "quantity": 1.0,
+      "unitPrice": 1044.0,
+      "total": 1044.0,
+      "vat": 135.72
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "nav solutions pvt ltd",
+      "invoiceNumber": "11",
+      "date": "2023-03-31",
+      "productName": "Boya-WMC",
+      "quantity": 1.0,
+      "unitPrice": 22000.0,
+      "total": 22000.0,
+      "vat": 2860.0
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "SHASA ENTERPRISES",
+      "invoiceNumber": "1",
+      "date": "2023-03-31",
+      "productName": "PTZ Camera (POE20X)",
+      "quantity": 1.0,
+      "unitPrice": 85523.0,
+      "total": 85523.0,
+      "vat": 11117.99
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "SHASA ENTERPRISES",
+      "invoiceNumber": "1",
+      "date": "2023-03-31",
+      "productName": "PTZ Controller(KBC10)",
+      "quantity": 1.0,
+      "unitPrice": 74518.5,
+      "total": 74518.5,
+      "vat": 9687.405
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "SHASA ENTERPRISES",
+      "invoiceNumber": "1",
+      "date": "2023-03-31",
+      "productName": "VIDEO Switcher(L2Plus)",
+      "quantity": 1.0,
+      "unitPrice": 64648.5,
+      "total": 64648.5,
+      "vat": 8404.305
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "SHASA ENTERPRISES",
+      "invoiceNumber": "1",
+      "date": "2023-03-31",
+      "productName": "video fiber converter(8channel)",
+      "quantity": 2.0,
+      "unitPrice": 93806.125,
+      "total": 187612.25,
+      "vat": 24389.592500000002
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "SHASA ENTERPRISES",
+      "invoiceNumber": "1",
+      "date": "2023-03-31",
+      "productName": "audio fiber converter(XLR 4 Channel 2in 2 out)",
+      "quantity": 2.0,
+      "unitPrice": 23317.875,
+      "total": 46635.75,
+      "vat": 6062.6475
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "nav solutions",
+      "invoiceNumber": "12",
+      "date": "2023-04-11",
+      "productName": "BY-M8C",
+      "quantity": 4.0,
+      "unitPrice": 5100.0,
+      "total": 20400.0,
+      "vat": 2652.0
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "nav solutions",
+      "invoiceNumber": "15",
+      "date": "2023-04-28",
+      "productName": "SC-542N4 HDMI input card",
+      "quantity": 1.0,
+      "unitPrice": 53097.35,
+      "total": 53097.35,
+      "vat": 6902.6555
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "cloud tech",
+      "invoiceNumber": "558",
+      "date": "2023-05-18",
+      "productName": "ATCOM A20W IP PHONE",
+      "quantity": 1.0,
+      "unitPrice": 6200.0,
+      "total": 6200.0,
+      "vat": 806.0
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "AV BIONICS",
+      "invoiceNumber": "1",
+      "date": "2023-06-11",
+      "productName": "CONTROLLER KT-KD50X",
+      "quantity": 2.0,
+      "unitPrice": 82830.0,
+      "total": 165660.0,
+      "vat": 21535.8
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "AV BIONICS",
+      "invoiceNumber": "1",
+      "date": "2023-06-11",
+      "productName": "HDMI BONDING VIDEO CONVERTER",
+      "quantity": 2.0,
+      "unitPrice": 134400.0,
+      "total": 268800.0,
+      "vat": 34944.0
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "AV BIONICS",
+      "invoiceNumber": "2",
+      "date": "2023-06-18",
+      "productName": "Dell 35 11 13 4/1tb",
+      "quantity": 10.0,
+      "unitPrice": 64022.11,
+      "total": 640221.1,
+      "vat": 83228.743
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "AV BIONICS",
+      "invoiceNumber": "2",
+      "date": "2023-06-18",
+      "productName": "Monitor 18.5\"",
+      "quantity": 10.0,
+      "unitPrice": 9077.25,
+      "total": 90772.5,
+      "vat": 11800.425000000001
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "AV BIONICS",
+      "invoiceNumber": "2",
+      "date": "2023-06-18",
+      "productName": "Monitor19\"",
+      "quantity": 50.0,
+      "unitPrice": 5664.75,
+      "total": 283237.5,
+      "vat": 36820.875
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "AV BIONICS",
+      "invoiceNumber": "2",
+      "date": "2023-06-18",
+      "productName": "router BL Wush LB-link",
+      "quantity": 20.0,
+      "unitPrice": 1365.0,
+      "total": 27300.0,
+      "vat": 3549.0
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "AV BIONICS",
+      "invoiceNumber": "2",
+      "date": "2023-06-18",
+      "productName": "SSD 128",
+      "quantity": 20.0,
+      "unitPrice": 2047.5,
+      "total": 40950.0,
+      "vat": 5323.5
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "AV BIONICS",
+      "invoiceNumber": "2",
+      "date": "2023-06-18",
+      "productName": "SSD256",
+      "quantity": 20.0,
+      "unitPrice": 4026.75,
+      "total": 80535.0,
+      "vat": 10469.550000000001
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "AV",
+      "invoiceNumber": "3",
+      "date": "2023-06-25",
+      "productName": "3 HP victus 16i5/8/512/1650",
+      "quantity": 10.0,
+      "unitPrice": 172754.4,
+      "total": 1727544.0,
+      "vat": 224580.72
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "AV",
+      "invoiceNumber": "3",
+      "date": "2023-06-25",
+      "productName": "Prizma induction desktop",
+      "quantity": 20.0,
+      "unitPrice": 3958.5,
+      "total": 79170.0,
+      "vat": 10292.1
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "BALKUMARI ELECTRONICS",
+      "invoiceNumber": "534",
+      "date": "2023-07-02",
+      "productName": "43\" LED TV",
+      "quantity": 3.0,
+      "unitPrice": 44395.28,
+      "total": 133185.84,
+      "vat": 17314.159200000002
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "BALKUMARI ELECTRONICS",
+      "invoiceNumber": "534",
+      "date": "2023-07-02",
+      "productName": "WALL MOUNT",
+      "quantity": 3.0,
+      "unitPrice": 1900.0,
+      "total": 5700.0,
+      "vat": 741.0
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "AV",
+      "invoiceNumber": "4",
+      "date": "2023-07-07",
+      "productName": "4 Nitro 5 i5/16/512/3060",
+      "quantity": 5.0,
+      "unitPrice": 142539.82,
+      "total": 712699.1000000001,
+      "vat": 92650.88300000002
+    },
+    {
+      "fiscalYear": "79-80",
+      "vendor": "AV",
+      "invoiceNumber": "4",
+      "date": "2023-07-07",
+      "productName": "HP victus 16 i7/16/512/3060",
+      "quantity": 5.0,
+      "unitPrice": 259131.6,
+      "total": 1295658.0,
+      "vat": 168435.54
+    },
+    {
+      "fiscalYear": "80-81",
+      "vendor": "DIGITAL CAMERA",
+      "invoiceNumber": "PUR-80-81-003",
+      "date": "2023-04-01",
+      "productName": "LED 60 LIGHT",
+      "quantity": 1.0,
+      "unitPrice": 15500.0,
+      "total": 15500.0,
+      "vat": 0.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "vendor": "AV BIONICS",
+      "invoiceNumber": "3",
+      "date": "2023-08-22",
+      "productName": "SDI TO HDMI CONVERTER",
+      "quantity": 1.0,
+      "unitPrice": 6017.7,
+      "total": 6017.7,
+      "vat": 782.301
+    },
+    {
+      "fiscalYear": "80-81",
+      "vendor": "AV BIONICS",
+      "invoiceNumber": "3",
+      "date": "2023-08-22",
+      "productName": "4K*2K HDMI SPLITTER",
+      "quantity": 4.0,
+      "unitPrice": 3539.82,
+      "total": 14159.28,
+      "vat": 1840.7064000000003
+    },
+    {
+      "fiscalYear": "80-81",
+      "vendor": "AV BIONICS",
+      "invoiceNumber": "4",
+      "date": "2023-09-01",
+      "productName": "YPLO LIV BOX PRO EM",
+      "quantity": 1.0,
+      "unitPrice": 130000.0,
+      "total": 130000.0,
+      "vat": 16900.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "vendor": "AV BIONICS",
+      "invoiceNumber": "7",
+      "date": "2023-10-16",
+      "productName": "HDMI 4K 50M",
+      "quantity": 1.0,
+      "unitPrice": 18000.0,
+      "total": 18000.0,
+      "vat": 2340.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "vendor": "AV BIONICS",
+      "invoiceNumber": "7",
+      "date": "2023-10-16",
+      "productName": "HDMI 4K 30M",
+      "quantity": 1.0,
+      "unitPrice": 9000.0,
+      "total": 9000.0,
+      "vat": 1170.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "vendor": "AV BIONICS",
+      "invoiceNumber": "11",
+      "date": "2023-11-25",
+      "productName": "server Dell T40",
+      "quantity": 1.0,
+      "unitPrice": 92500.0,
+      "total": 92500.0,
+      "vat": 12025.0
+    }
+  ],
+  "sales": [
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "DHULIKHEL HOSPITAL",
+      "billNumber": "1",
+      "date": "BS:2079-12-19",
+      "productName": "VIDEO FIBER CONVERTER 8 CH",
+      "quantity": 2.0,
+      "unitPrice": 117500.0,
+      "total": 235000.0,
+      "vat": 30550.0
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "DHULIKHEL HOSPITAL",
+      "billNumber": "1",
+      "date": "BS:2079-12-19",
+      "productName": "VIDEO SWITCHER L2-PLUS",
+      "quantity": 1.0,
+      "unitPrice": 170000.0,
+      "total": 170000.0,
+      "vat": 22100.0
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "DHULIKHEL HOSPITAL",
+      "billNumber": "2",
+      "date": "BS:2079-12-19",
+      "productName": "BMD MICRO SDI TO HDMI CONVERTER",
+      "quantity": 3.0,
+      "unitPrice": 15000.0,
+      "total": 45000.0,
+      "vat": 5850.0
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "DHULIKHEL HOSPITAL",
+      "billNumber": "2",
+      "date": "BS:2079-12-19",
+      "productName": "BMD HDMI TO SDI MICRO CONVERTER",
+      "quantity": 1.0,
+      "unitPrice": 15000.0,
+      "total": 15000.0,
+      "vat": 1950.0
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "DHULIKHEL HOSPITAL",
+      "billNumber": "2",
+      "date": "BS:2079-12-19",
+      "productName": "PTZ CONTROLLER KBC 10",
+      "quantity": 1.0,
+      "unitPrice": 140000.0,
+      "total": 140000.0,
+      "vat": 18200.0
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "DHULIKHEL HOSPITAL",
+      "billNumber": "2",
+      "date": "BS:2079-12-19",
+      "productName": "PTZ CAMERA POE 20X",
+      "quantity": 1.0,
+      "unitPrice": 175000.0,
+      "total": 175000.0,
+      "vat": 22750.0
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "DHULIKHEL HOSPITAL",
+      "billNumber": "3",
+      "date": "BS:2079-12-19",
+      "productName": "SYSTEM DESIGN AND INSTALLATION",
+      "quantity": 1.0,
+      "unitPrice": 50000.0,
+      "total": 50000.0,
+      "vat": 6500.0
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "DHULIKHEL HOSPITAL",
+      "billNumber": "3",
+      "date": "BS:2079-12-19",
+      "productName": "X VIVE IN EAR MONITOR WIRELESS SYSTEM",
+      "quantity": 1.0,
+      "unitPrice": 45000.0,
+      "total": 45000.0,
+      "vat": 5850.0
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "DHULIKHEL HOSPITAL",
+      "billNumber": "3",
+      "date": "BS:2079-12-19",
+      "productName": "BOYA -WM6",
+      "quantity": 1.0,
+      "unitPrice": 45000.0,
+      "total": 45000.0,
+      "vat": 5850.0
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "DHULIKHEL HOSPITAL",
+      "billNumber": "3",
+      "date": "BS:2079-12-19",
+      "productName": "CABLE AND CONNECTORS",
+      "quantity": 1.0,
+      "unitPrice": 65000.0,
+      "total": 65000.0,
+      "vat": 8450.0
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "DHULIKHEL HOSPITAL",
+      "billNumber": "4",
+      "date": "BS:2079-12-19",
+      "productName": "AUDIO FIBER CONVERTER (XLR 4CH,2 IN 2 OUT",
+      "quantity": 2.0,
+      "unitPrice": 55000.0,
+      "total": 110000.0,
+      "vat": 14300.0
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "TV TODAY NETWORK PVT LTD",
+      "billNumber": "5",
+      "date": "BS:2079-12-29",
+      "productName": "BY-M8C (LAVATIOR MIC)",
+      "quantity": 4.0,
+      "unitPrice": 5600.0,
+      "total": 22400.0,
+      "vat": 2912.0
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "RIDDHI SIDDHI MULTIPURPOSE",
+      "billNumber": "6",
+      "date": "BS:2080-01-16",
+      "productName": "SC542 HDMI INPUT CARD",
+      "quantity": 1.0,
+      "unitPrice": 53097.35,
+      "total": 53097.35,
+      "vat": 6902.6555
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "RIDDHI SIDDHI MULTIPURPOSE",
+      "billNumber": "7",
+      "date": "BS:2080-02-29",
+      "productName": "HDMI BONDING VIDEO CONVERTER",
+      "quantity": 1.0,
+      "unitPrice": 135000.0,
+      "total": 135000.0,
+      "vat": 17550.0
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "KATHMANDU UNIVERSITY",
+      "billNumber": "8",
+      "date": "BS:2080-03-17",
+      "productName": "43\"LED ANDROID TV",
+      "quantity": 1.0,
+      "unitPrice": 55000.0,
+      "total": 55000.0,
+      "vat": 7150.0
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "KATHMANDU UNIVERSITY",
+      "billNumber": "8",
+      "date": "BS:2080-03-17",
+      "productName": "MOVING TV WALL MOUNT",
+      "quantity": 1.0,
+      "unitPrice": 2000.0,
+      "total": 2000.0,
+      "vat": 260.0
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "KATHMANDU UNIVERSITY",
+      "billNumber": "9",
+      "date": "BS:2080-03-17",
+      "productName": "43\"LED ANDROID TV",
+      "quantity": 1.0,
+      "unitPrice": 55000.0,
+      "total": 55000.0,
+      "vat": 7150.0
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "KATHMANDU UNIVERSITY",
+      "billNumber": "9",
+      "date": "BS:2080-03-17",
+      "productName": "MOVING TV WALL MOUNT",
+      "quantity": 1.0,
+      "unitPrice": 2000.0,
+      "total": 2000.0,
+      "vat": 260.0
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "KATHMANDU UNIVERSITY",
+      "billNumber": "11",
+      "date": "BS:2080-03-17",
+      "productName": "43\"LED ANDROID TV",
+      "quantity": 1.0,
+      "unitPrice": 55000.0,
+      "total": 55000.0,
+      "vat": 7150.0
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "KATHMANDU UNIVERSITY",
+      "billNumber": "11",
+      "date": "BS:2080-03-17",
+      "productName": "MOVING TV WALL MOUNT",
+      "quantity": 1.0,
+      "unitPrice": 2000.0,
+      "total": 2000.0,
+      "vat": 260.0
+    },
+    {
+      "fiscalYear": "SALES 79-80",
+      "client": "FEWA TV LTD",
+      "billNumber": "12",
+      "date": "BS:2080-03-17",
+      "productName": "SUPPORT CHARGE",
+      "quantity": 1.0,
+      "unitPrice": 28761.0,
+      "total": 28761.0,
+      "vat": 3738.9300000000003
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "RIDDHI SIDDHI MULTIPURPOSE",
+      "billNumber": "1",
+      "date": "2023-07-17",
+      "productName": "CONTROLLER kt",
+      "quantity": 1.0,
+      "unitPrice": 88500.0,
+      "total": 88500.0,
+      "vat": 11505.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "BAGMATI TV NETWORK",
+      "billNumber": "10",
+      "date": "2023-12-04",
+      "productName": "HDMI VIDEO BONDING CONVERTER",
+      "quantity": 1.0,
+      "unitPrice": 176992.0,
+      "total": 176992.0,
+      "vat": 23008.96
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "BAGMATI TV NETWORK",
+      "billNumber": "10",
+      "date": "2023-12-04",
+      "productName": "(DSNG 4CH - SN 231210093) P2",
+      "quantity": 1.0,
+      "unitPrice": 0.0,
+      "total": 0.0,
+      "vat": 0.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "PRIME MINISTER OFFICE",
+      "billNumber": "no",
+      "date": "2023-09-13",
+      "productName": "BONDING DEVICE P2",
+      "quantity": 1.0,
+      "unitPrice": 200000.0,
+      "total": 200000.0,
+      "vat": 0.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "NEPAL NEWS BANK",
+      "billNumber": "19",
+      "date": "2023-06-28",
+      "productName": "P2 BONDING DEVICE",
+      "quantity": 1.0,
+      "unitPrice": 150000.0,
+      "total": 150000.0,
+      "vat": 19500.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "RIDDHI SIDDHI MULTIPURPOSE",
+      "billNumber": "no",
+      "date": "2023-06-28",
+      "productName": "YOLO LIV",
+      "quantity": 1.0,
+      "unitPrice": 154867.25,
+      "total": 154867.25,
+      "vat": 20132.7425
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "RIDDHI SIDDHI MULTIPURPOSE",
+      "billNumber": "no",
+      "date": "2023-06-28",
+      "productName": "HDMI SPLITTER DTECH",
+      "quantity": 4.0,
+      "unitPrice": 5000.0,
+      "total": 20000.0,
+      "vat": 0.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "COMP.PVT LTD",
+      "billNumber": "no",
+      "date": "2023-06-28",
+      "productName": "SDI TO HDMI CONVERTER DTECH",
+      "quantity": 1.0,
+      "unitPrice": 7000.0,
+      "total": 7000.0,
+      "vat": 0.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "tv today",
+      "billNumber": "no",
+      "date": "2023-09-14",
+      "productName": "BOYA VM01 R",
+      "quantity": 1.0,
+      "unitPrice": 0.0,
+      "total": 0.0,
+      "vat": 0.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "tv today",
+      "billNumber": "no",
+      "date": "2023-09-14",
+      "productName": "STEREO CABLE 3.5 MM MALE TO 3.5MM FEMALE 3METER",
+      "quantity": 1.0,
+      "unitPrice": 0.0,
+      "total": 0.0,
+      "vat": 0.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "kayhmandu university",
+      "billNumber": "5",
+      "date": "2023-10-05",
+      "productName": "43\"led Smart TV",
+      "quantity": 1.0,
+      "unitPrice": 55000.0,
+      "total": 55000.0,
+      "vat": 7150.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "kayhmandu university",
+      "billNumber": "5",
+      "date": "2023-10-05",
+      "productName": "Wall Mount",
+      "quantity": 1.0,
+      "unitPrice": 2000.0,
+      "total": 2000.0,
+      "vat": 260.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "kayhmandu university",
+      "billNumber": "5",
+      "date": "2023-10-05",
+      "productName": "kstar 1 KVA UPS hp 910cs",
+      "quantity": 2.0,
+      "unitPrice": 52000.0,
+      "total": 104000.0,
+      "vat": 13520.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "kathmandu university",
+      "billNumber": "6",
+      "date": "2023-10-06",
+      "productName": "Kstar 1KVA Ups HP 910cs",
+      "quantity": 1.0,
+      "unitPrice": 52000.0,
+      "total": 52000.0,
+      "vat": 6760.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "kathmandu university",
+      "billNumber": "7",
+      "date": "2023-10-06",
+      "productName": "Kstar 1 KVA HP 910  cs",
+      "quantity": 1.0,
+      "unitPrice": 52000.0,
+      "total": 52000.0,
+      "vat": 6760.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "kathmandu university",
+      "billNumber": "8",
+      "date": "2023-10-08",
+      "productName": "Kstar 1 KVA HP 910  cs",
+      "quantity": 1.0,
+      "unitPrice": 52000.0,
+      "total": 52000.0,
+      "vat": 6760.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "dhulikhel hospital",
+      "billNumber": "9",
+      "date": "2023-10-16",
+      "productName": "Hdmi 4k 50m",
+      "quantity": 1.0,
+      "unitPrice": 26500.0,
+      "total": 26500.0,
+      "vat": 3445.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "dhulikhel hospital",
+      "billNumber": "9",
+      "date": "2023-10-16",
+      "productName": "hdmi4k 30m",
+      "quantity": 1.0,
+      "unitPrice": 16500.0,
+      "total": 16500.0,
+      "vat": 2145.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "kathmandu university",
+      "billNumber": "12",
+      "date": "2023-12-04",
+      "productName": "Kstar 1 KVA HP 910  cs",
+      "quantity": 1.0,
+      "unitPrice": 52000.0,
+      "total": 52000.0,
+      "vat": 6760.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "kathmandu university",
+      "billNumber": "13",
+      "date": "2023-12-04",
+      "productName": "Signage schedule software on premises cloud",
+      "quantity": 1.0,
+      "unitPrice": 180000.0,
+      "total": 180000.0,
+      "vat": 23400.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "kathmandu university",
+      "billNumber": "13",
+      "date": "2023-12-04",
+      "productName": "server Dell T40",
+      "quantity": 1.0,
+      "unitPrice": 180000.0,
+      "total": 180000.0,
+      "vat": 23400.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "DIM MOVIES",
+      "billNumber": "no",
+      "date": "2023-12-26",
+      "productName": "yolo liv",
+      "quantity": 1.0,
+      "unitPrice": 175000.0,
+      "total": 175000.0,
+      "vat": 0.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "kathmandu university",
+      "billNumber": "14",
+      "date": "2023-12-04",
+      "productName": "server deployment of digital signage and insatallation of smart tv tonline ups on block 6,7,028B and 12",
+      "quantity": 1.0,
+      "unitPrice": 50000.0,
+      "total": 50000.0,
+      "vat": 6500.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "kathmandu university",
+      "billNumber": "15",
+      "date": "2023-12-04",
+      "productName": "media player",
+      "quantity": 1.0,
+      "unitPrice": 35000.0,
+      "total": 35000.0,
+      "vat": 4550.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "kathmandu university",
+      "billNumber": "15",
+      "date": "2023-12-04",
+      "productName": "display ucence player",
+      "quantity": 1.0,
+      "unitPrice": 35000.0,
+      "total": 35000.0,
+      "vat": 4550.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "kathmandu university",
+      "billNumber": "16",
+      "date": "2023-12-04",
+      "productName": "media player",
+      "quantity": 1.0,
+      "unitPrice": 35000.0,
+      "total": 35000.0,
+      "vat": 4550.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "kathmandu university",
+      "billNumber": "16",
+      "date": "2023-12-04",
+      "productName": "display ucence player",
+      "quantity": 1.0,
+      "unitPrice": 35000.0,
+      "total": 35000.0,
+      "vat": 4550.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "kathmandu university",
+      "billNumber": "17",
+      "date": "2023-12-04",
+      "productName": "media player",
+      "quantity": 1.0,
+      "unitPrice": 35000.0,
+      "total": 35000.0,
+      "vat": 4550.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "kathmandu university",
+      "billNumber": "17",
+      "date": "2023-12-04",
+      "productName": "display ucence player",
+      "quantity": 1.0,
+      "unitPrice": 35000.0,
+      "total": 35000.0,
+      "vat": 4550.0
+    },
+    {
+      "fiscalYear": "80-81",
+      "client": "black swan nepal",
+      "billNumber": "NO",
+      "date": "2023-10-20",
+      "productName": "1RU 3G-SDI 16 Channel multiviewer & Switcher",
+      "quantity": 1.0,
+      "unitPrice": 171681.0,
+      "total": 171681.0,
+      "vat": 22318.530000000002
+    }
+  ],
+  "payments": [
+    {
+      "client": "riddhi siddhi multipurpose",
+      "amount": 100000.0,
+      "date": "2023-06-22",
+      "billNumber": null,
+      "method": "o",
+      "remarks": null
+    },
+    {
+      "client": "nepal news",
+      "amount": 50000.0,
+      "date": "2023-06-28",
+      "billNumber": null,
+      "method": "o",
+      "remarks": null
+    },
+    {
+      "client": "KU",
+      "amount": 190657.0,
+      "date": "2023-07-13",
+      "billNumber": null,
+      "method": "cq",
+      "remarks": null
+    },
+    {
+      "client": "aashi traders",
+      "amount": 3390.0,
+      "date": "2023-08-06",
+      "billNumber": null,
+      "method": "Bank Transfer",
+      "remarks": null
+    },
+    {
+      "client": "primeminister office",
+      "amount": 200000.0,
+      "date": "2023-09-13",
+      "billNumber": null,
+      "method": "c",
+      "remarks": null
+    },
+    {
+      "client": "tv today",
+      "amount": 3700.0,
+      "date": "2023-09-14",
+      "billNumber": null,
+      "method": "o",
+      "remarks": null
+    },
+    {
+      "client": "riddhi siddhi multipurpose",
+      "amount": 27000.0,
+      "date": "2023-09-15",
+      "billNumber": null,
+      "method": "o",
+      "remarks": null
+    },
+    {
+      "client": "riddhi siddhi multipurpose",
+      "amount": 100000.0,
+      "date": "2023-09-25",
+      "billNumber": null,
+      "method": "o",
+      "remarks": null
+    },
+    {
+      "client": "riddhi siddhi multipurpose",
+      "amount": 50000.0,
+      "date": "2023-09-26",
+      "billNumber": null,
+      "method": "C",
+      "remarks": null
+    },
+    {
+      "client": "bagmati tv",
+      "amount": 50000.0,
+      "date": "2023-10-18",
+      "billNumber": null,
+      "method": "o",
+      "remarks": null
+    },
+    {
+      "client": "KU",
+      "amount": 353447.0,
+      "date": "2023-10-19",
+      "billNumber": null,
+      "method": "cq",
+      "remarks": null
+    },
+    {
+      "client": "nepal news",
+      "amount": 50000.0,
+      "date": "2023-10-20",
+      "billNumber": null,
+      "method": "o",
+      "remarks": null
+    },
+    {
+      "client": "bagmati tv",
+      "amount": 50000.0,
+      "date": "2023-11-10",
+      "billNumber": null,
+      "method": "o",
+      "remarks": null
+    },
+    {
+      "client": "black swan (santosh singh)",
+      "amount": 50000.0,
+      "date": "2023-11-10",
+      "billNumber": null,
+      "method": "o",
+      "remarks": null
+    },
+    {
+      "client": "dim movies",
+      "amount": 175000.0,
+      "date": "2023-12-26",
+      "billNumber": null,
+      "method": "o",
+      "remarks": null
+    },
+    {
+      "client": "dhulukhel hospital",
+      "amount": 47945.0,
+      "date": "2024-01-02",
+      "billNumber": null,
+      "method": "cq",
+      "remarks": null
+    },
+    {
+      "client": "black swan (santosh singh)",
+      "amount": 100000.0,
+      "date": "2024-01-04",
+      "billNumber": null,
+      "method": "c",
+      "remarks": null
+    },
+    {
+      "client": "",
+      "amount": 1601139.0,
+      "date": "2023-08-01",
+      "billNumber": null,
+      "method": "Bank Transfer",
+      "remarks": null
+    }
+  ],
+  "officeExpenses": [
+    {
+      "date": "2023-03-05",
+      "particular": "bank charged",
+      "amount": 110.0
+    },
+    {
+      "date": "2023-03-07",
+      "particular": "bank charged",
+      "amount": 10.0
+    },
+    {
+      "date": "2023-03-09",
+      "particular": "bank charged",
+      "amount": 10.0
+    },
+    {
+      "date": "2023-03-17",
+      "particular": "bank charged",
+      "amount": 100.0
+    },
+    {
+      "date": "2023-03-22",
+      "particular": "bank charged",
+      "amount": 100.0
+    },
+    {
+      "date": "2023-04-03",
+      "particular": "website payment",
+      "amount": 20000.0
+    },
+    {
+      "date": "2023-04-09",
+      "particular": "visiting card",
+      "amount": 2010.0
+    },
+    {
+      "date": "2023-05-09",
+      "particular": "FUND TRF TO IBFTPAYABLE",
+      "amount": 1640.0
+    },
+    {
+      "date": "2023-05-17",
+      "particular": "bank charged",
+      "amount": 60.0
+    },
+    {
+      "date": "2023-06-02",
+      "particular": "refreshment",
+      "amount": 475.0
+    },
+    {
+      "date": "2023-06-04",
+      "particular": "dhl for av",
+      "amount": 500.0
+    },
+    {
+      "date": "2023-06-08",
+      "particular": "family refreshment",
+      "amount": 2780.0
+    },
+    {
+      "date": "2023-06-13",
+      "particular": "bank charged",
+      "amount": 100.0
+    },
+    {
+      "date": "2023-06-20",
+      "particular": "meeting indreni",
+      "amount": 865.0
+    },
+    {
+      "date": "2023-07-07",
+      "particular": "bank charged",
+      "amount": 100.0
+    },
+    {
+      "date": "2023-07-09",
+      "particular": "tax amount paid",
+      "amount": 190010.0
+    },
+    {
+      "date": "2023-07-23",
+      "particular": "meeting indreni",
+      "amount": 1335.0
+    },
+    {
+      "date": "2023-07-30",
+      "particular": "house rent tax paid",
+      "amount": 16010.0
+    },
+    {
+      "date": "2023-08-11",
+      "particular": "air tv breakfast",
+      "amount": 1510.0
+    },
+    {
+      "date": "2023-08-16",
+      "particular": "bank charged",
+      "amount": 200.0
+    },
+    {
+      "date": "2023-09-13",
+      "particular": "lunch at nada",
+      "amount": 780.0
+    },
+    {
+      "date": "2023-04-01",
+      "particular": "General Office Expense",
+      "amount": 238705.0
+    }
+  ],
+  "clients": [
+    "7 STAR TV",
+    "BAGMATI",
+    "BAGMATI TV NETWORK",
+    "COMP.PVT LTD",
+    "DHULIKHEL HOSPITAL",
+    "DIM MOVIES",
+    "Dhulikhel",
+    "FEWA TV LTD",
+    "KATHMANDU UNIVERSITY",
+    "KU",
+    "NEPAL NEWS",
+    "NEPAL NEWS BANK",
+    "PRIME MINISTER OFFICE",
+    "RIDDHI SIDDHI MULTIPURPOSE",
+    "SUJAY",
+    "TV TODAY",
+    "TV TODAY NETWORK PVT LTD",
+    "aashi traders",
+    "bagmati tv",
+    "black swan",
+    "black swan (santosh singh)",
+    "black swan nepal",
+    "dhulikhel hospital",
+    "dhulukhel hospital",
+    "dim movies",
+    "kathmandu university",
+    "kayhmandu university",
+    "nepal news",
+    "primeminister office",
+    "riddhi siddhi multipurpose",
+    "simul",
+    "tv today"
+  ],
+  "vendors": [
+    "AIR",
+    "AV BIONICS",
+    "BALKUMARI ELECTRONICS",
+    "DIGITAL CAMERA",
+    "LOKESH AGARWAL",
+    "NEOTERIC NEPAL P. LTD",
+    "NEPAL MAX TECH. PVT LTD",
+    "QUICK",
+    "SHASA ENTERPRISES",
+    "SIMULCAST",
+    "SPYKAR COMPANY PVT LTD",
+    "cloud tech",
+    "illya",
+    "max",
+    "nav solutions",
+    "nav solutions pvt ltd",
+    "smart enterprisespvt ltd",
+    "vianet"
+  ]
+}
