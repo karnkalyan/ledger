@@ -2460,7 +2460,7 @@ textarea { resize: vertical; }
 .table-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
 .table-toolbar h3 { margin: 0; font-size: 15px; }
 .table-scroll, .data-table-container { min-width: 0; max-width: 100%; }
-.data-table-scroll { overflow-x: auto; max-width: 100%; border-radius: var(--radius-sm); }
+.data-table-scroll { overflow-x: auto; max-width: 100%; border-radius: var(--radius-sm); min-height: 120px; }
 .data-table-scroll:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .responsive-table, .data-table, .invoice-items-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
 .responsive-table th, .data-table th, .invoice-items-table th { padding: 12px 16px; background: var(--soft); color: var(--text-muted); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; border-bottom: 1px solid var(--line-strong); white-space: nowrap; text-align: left; }
@@ -2495,20 +2495,29 @@ textarea { resize: vertical; }
   border-color: var(--line-strong, #cbd5e1);
 }
 .row-action-dropdown-panel {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 4px;
-  min-width: 175px;
+  position: fixed;
+  min-width: 190px;
+  max-width: 280px;
   background: var(--surface, #ffffff);
   border: 1px solid var(--line, #e2e8f0);
   border-radius: var(--radius, 8px);
-  box-shadow: var(--shadow-md, 0 4px 16px rgba(0, 0, 0, 0.12));
-  padding: 4px;
-  z-index: 60;
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.16), 0 4px 10px -2px rgba(0, 0, 0, 0.1);
+  padding: 5px;
+  z-index: 999999;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  animation: rowActionMenuFade 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes rowActionMenuFade {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 .row-action-dropdown-item {
   display: flex;
@@ -2521,47 +2530,65 @@ textarea { resize: vertical; }
   text-decoration: none;
   background: transparent;
   border: none;
-  border-radius: var(--radius-sm, 4px);
+  border-radius: var(--radius-sm, 5px);
   cursor: pointer;
   width: 100%;
   text-align: left;
-  transition: background 0.12s ease;
+  transition: all 0.12s ease;
+  font-family: inherit;
 }
 .row-action-dropdown-item:hover {
   background: var(--soft, #f1f5f9);
+  color: var(--text, #0f172a);
+}
+.row-action-dropdown-item:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.row-action-dropdown-item.warning {
+  color: #d97706; /* amber-600 */
+}
+.row-action-dropdown-item.warning:hover {
+  background: #fef3c7; /* amber-100 */
+  color: #b45309;
 }
 .row-action-dropdown-item.danger {
-  color: var(--danger, #ef4444);
+  color: #dc2626; /* red-600 */
 }
 .row-action-dropdown-item.danger:hover {
-  background: var(--danger-soft, #fee2e2);
+  background: #fee2e2; /* red-100 */
+  color: #991b1b;
 }
 .row-action-dropdown-item.has-submenu {
-  position: relative;
   justify-content: space-between;
 }
-.row-action-subpanel {
-  position: absolute;
-  top: 0;
-  right: 100%;
-  margin-right: 4px;
-  min-width: 150px;
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--line, #e2e8f0);
-  border-radius: var(--radius, 8px);
-  box-shadow: var(--shadow-md, 0 4px 16px rgba(0, 0, 0, 0.12));
-  padding: 4px;
-  z-index: 61;
+.row-action-divider {
+  height: 1px;
+  background: var(--line, #e2e8f0);
+  margin: 4px 2px;
+}
+.row-action-status-section {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+.row-action-inline-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 3px;
+  margin-left: 8px;
+  border-left: 2px solid var(--line-strong, #cbd5e1);
+  background: var(--soft, #f8fafc);
+  border-radius: 4px;
 }
 .row-action-subitem {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 5px 8px;
-  font-size: 11.5px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
   border: none;
   background: transparent;
   color: var(--text, #0f172a);
@@ -2569,14 +2596,17 @@ textarea { resize: vertical; }
   cursor: pointer;
   text-align: left;
   width: 100%;
+  transition: all 0.1s ease;
+  font-family: inherit;
 }
 .row-action-subitem:hover {
-  background: var(--soft, #f1f5f9);
+  background: var(--surface, #ffffff);
+  color: var(--brand, #2563eb);
 }
 .row-action-subitem.active {
   background: var(--brand-soft, #eff6ff);
   color: var(--brand, #2563eb);
-  font-weight: 600;
+  font-weight: 700;
 }
 /* TABLE CLIENT-SIDE INSTANT SEARCH BAR */
 .table-search-toolbar {

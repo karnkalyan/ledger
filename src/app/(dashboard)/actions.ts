@@ -986,6 +986,270 @@ export async function deleteQuoteAction(formData: FormData) {
   revalidatePath(`/${orgId}`);
 }
 
+export async function hardDeleteRecordAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  await orgAccess(orgId);
+  const resource = s(formData, "resource");
+  const id = s(formData, "id");
+  if (!id || !resource) return;
+
+  const moduleMap: Record<string, string> = {
+    purchase: "purchase",
+    sales: "sales",
+    invoice: "invoices",
+    quote: "quotes",
+    expense: "expenses",
+    recurring_expense: "expenses",
+    income: "income",
+    contact: "crm",
+    lead: "leads",
+    task: "tasks",
+    product: "stock",
+    leave: "leaves",
+    reminder: "reminders",
+    license: "licenses",
+    loan: "loans",
+    payroll: "payroll",
+    bank_tx: "banking",
+    milk_log: "expenses",
+    project: "projects",
+    employee: "staff",
+  };
+
+  await db.$transaction(async (tx) => {
+    switch (resource) {
+      case "purchase":
+        await tx.purchasePayment.deleteMany({ where: { purchaseOrderId: id } });
+        await tx.purchaseOrderItem.deleteMany({ where: { purchaseOrderId: id } });
+        await tx.purchaseOrder.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      case "sales":
+        await tx.salesOrderItem.deleteMany({ where: { salesOrderId: id } });
+        await tx.salesOrder.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      case "invoice":
+        await tx.invoicePayment.deleteMany({ where: { invoiceId: id } });
+        await tx.invoiceItem.deleteMany({ where: { invoiceId: id } });
+        await tx.invoice.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      case "quote":
+        await tx.quoteItem.deleteMany({ where: { quoteId: id } });
+        await tx.quote.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      case "expense":
+        await tx.bankTransaction.updateMany({ where: { expenseId: id }, data: { expenseId: null } });
+        await tx.expense.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      case "recurring_expense":
+        await tx.expense.updateMany({ where: { recurringExpenseId: id }, data: { recurringExpenseId: null } });
+        await tx.recurringExpense.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      case "income":
+        await tx.bankTransaction.updateMany({ where: { incomeId: id }, data: { incomeId: null } });
+        await tx.income.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      case "contact":
+        await tx.contact.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      case "lead":
+        await tx.lead.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      case "task":
+        await tx.workLog.updateMany({ where: { taskId: id }, data: { taskId: null } });
+        await tx.task.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      case "product":
+        await tx.stockMovement.deleteMany({ where: { productId: id } });
+        await tx.product.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      case "leave":
+        await tx.leaveRequest.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      case "reminder":
+        await tx.reminder.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      case "license":
+        await tx.licenseRecord.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      case "loan":
+        await tx.loanPayment.deleteMany({ where: { loanId: id } });
+        await tx.loan.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      case "payroll":
+        await tx.payroll.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      case "bank_tx":
+        await tx.bankTransaction.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      case "milk_log":
+        await tx.milkMonthlyLog.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      case "project":
+        await tx.project.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      case "employee":
+        await tx.employee.deleteMany({ where: { id, organizationId: orgId } });
+        break;
+
+      default:
+        break;
+    }
+  });
+
+  const targetModule = moduleMap[resource] || "";
+  refresh(orgId, targetModule);
+  if (targetModule) revalidatePath(`/${orgId}/${targetModule}`);
+  revalidatePath(`/${orgId}`);
+  if (resource === "purchase" || resource === "sales" || resource === "product") {
+    revalidatePath(`/${orgId}/stock`);
+  }
+}
+
+export async function softDeleteRecordAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  await orgAccess(orgId);
+  const resource = s(formData, "resource");
+  const id = s(formData, "id");
+  if (!id || !resource) return;
+
+  const moduleMap: Record<string, string> = {
+    purchase: "purchase",
+    sales: "sales",
+    invoice: "invoices",
+    quote: "quotes",
+    expense: "expenses",
+    recurring_expense: "expenses",
+    income: "income",
+    contact: "crm",
+    lead: "leads",
+    task: "tasks",
+    product: "stock",
+    leave: "leaves",
+    reminder: "reminders",
+    license: "licenses",
+    loan: "loans",
+    payroll: "payroll",
+    bank_tx: "banking",
+    milk_log: "expenses",
+    project: "projects",
+    employee: "staff",
+  };
+
+  switch (resource) {
+    case "purchase":
+      await db.purchaseOrder.updateMany({ where: { id, organizationId: orgId }, data: { status: "CANCELLED" } });
+      break;
+
+    case "sales":
+      await db.salesOrder.updateMany({ where: { id, organizationId: orgId }, data: { status: "CANCELLED" } });
+      break;
+
+    case "invoice":
+      await db.invoice.updateMany({ where: { id, organizationId: orgId }, data: { status: "CANCELLED" } });
+      break;
+
+    case "quote":
+      await db.quote.updateMany({ where: { id, organizationId: orgId }, data: { status: "CANCELLED" } });
+      break;
+
+    case "lead":
+      await db.lead.updateMany({ where: { id, organizationId: orgId }, data: { status: "LOST" } });
+      break;
+
+    case "task":
+      await db.task.updateMany({ where: { id, organizationId: orgId }, data: { status: "BLOCKED" } });
+      break;
+
+    case "leave":
+      await db.leaveRequest.updateMany({ where: { id, organizationId: orgId }, data: { status: "CANCELLED" } });
+      break;
+
+    case "reminder":
+      await db.reminder.updateMany({ where: { id, organizationId: orgId }, data: { status: "DISMISSED" } });
+      break;
+
+    case "license":
+      await db.licenseRecord.updateMany({ where: { id, organizationId: orgId }, data: { status: "CANCELLED" } });
+      break;
+
+    case "product":
+      await db.product.updateMany({ where: { id, organizationId: orgId }, data: { active: false } });
+      break;
+
+    case "recurring_expense":
+      await db.recurringExpense.updateMany({ where: { id, organizationId: orgId }, data: { active: false } });
+      break;
+
+    case "loan":
+      await db.loan.updateMany({ where: { id, organizationId: orgId }, data: { status: "SETTLED" } });
+      break;
+
+    case "employee":
+      await db.employee.updateMany({ where: { id, organizationId: orgId }, data: { status: "INACTIVE" } });
+      break;
+
+    case "expense": {
+      const exp = await db.expense.findFirst({ where: { id, organizationId: orgId } });
+      if (exp && !exp.notes?.includes("[CANCELLED]")) {
+        await db.expense.update({
+          where: { id },
+          data: { notes: `[CANCELLED] ${exp.notes || ""}`.trim() },
+        });
+      }
+      break;
+    }
+
+    case "income": {
+      const inc = await db.income.findFirst({ where: { id, organizationId: orgId } });
+      if (inc && !inc.notes?.includes("[CANCELLED]")) {
+        await db.income.update({
+          where: { id },
+          data: { notes: `[CANCELLED] ${inc.notes || ""}`.trim() },
+        });
+      }
+      break;
+    }
+
+    case "contact": {
+      const cnt = await db.contact.findFirst({ where: { id, organizationId: orgId } });
+      if (cnt && !cnt.notes?.includes("[INACTIVE]")) {
+        await db.contact.update({
+          where: { id },
+          data: { notes: `[INACTIVE] ${cnt.notes || ""}`.trim() },
+        });
+      }
+      break;
+    }
+
+    default:
+      break;
+  }
+
+  const targetModule = moduleMap[resource] || "";
+  refresh(orgId, targetModule);
+  if (targetModule) revalidatePath(`/${orgId}/${targetModule}`);
+  revalidatePath(`/${orgId}`);
+}
+
 export async function updateTaskAction(formData: FormData) {
   const orgId = s(formData, "orgId");
   await orgAccess(orgId);

@@ -582,6 +582,7 @@ export default async function ModulePage({
                     <th>Formula</th>
                     <th>Type</th>
                     <th>Amount</th>
+                    <th style={{ width: 60, textAlign: "center" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -612,11 +613,20 @@ export default async function ModulePage({
                       <td data-label="Amount">
                         <strong>{money(x.amount, currency)}</strong>
                       </td>
+                      <td data-label="Actions" style={{ textAlign: "center" }}>
+                        <RowActionMenu
+                          orgId={orgId}
+                          resource="expense"
+                          id={x.id}
+                          recordTitle={x.title}
+                          viewHref={`/${orgId}/expenses`}
+                        />
+                      </td>
                     </tr>
                   ))}
                   {!expenses.length && (
                     <tr>
-                      <td colSpan={6}>
+                      <td colSpan={7}>
                         <Empty>No expenses recorded yet.</Empty>
                       </td>
                     </tr>
@@ -638,6 +648,7 @@ export default async function ModulePage({
                     <th>Recurrence</th>
                     <th>Formula</th>
                     <th>Est. Monthly</th>
+                    <th style={{ width: 60, textAlign: "center" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -656,11 +667,20 @@ export default async function ModulePage({
                       <td data-label="Est. Monthly">
                         <strong>{money(estimateRecurringExpense(r, now), currency)}</strong>
                       </td>
+                      <td data-label="Actions" style={{ textAlign: "center" }}>
+                        <RowActionMenu
+                          orgId={orgId}
+                          resource="recurring_expense"
+                          id={r.id}
+                          recordTitle={r.title}
+                          viewHref={`/${orgId}/expenses`}
+                        />
+                      </td>
                     </tr>
                   ))}
                   {!recurring.length && (
                     <tr>
-                      <td colSpan={4}>
+                      <td colSpan={5}>
                         <Empty>No recurring rules. Add rent, electricity or subscriptions.</Empty>
                       </td>
                     </tr>
@@ -851,6 +871,7 @@ export default async function ModulePage({
                         <th style={{ textAlign: "right" }}>Total Liters</th>
                         <th style={{ textAlign: "right" }}>Total Amount</th>
                         <th>Status</th>
+                        <th style={{ width: 60, textAlign: "center" }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -868,6 +889,15 @@ export default async function ModulePage({
                           </td>
                           <td data-label="Status">
                             <span className="badge green">LOGGED IN LEDGER</span>
+                          </td>
+                          <td data-label="Actions" style={{ textAlign: "center" }}>
+                            <RowActionMenu
+                              orgId={orgId}
+                              resource="milk_log"
+                              id={m.id}
+                              recordTitle={`Milk Bill ${m.month}`}
+                              viewHref={`/${orgId}/expenses`}
+                            />
                           </td>
                         </tr>
                       ))}
@@ -932,6 +962,7 @@ export default async function ModulePage({
                   <th>Title</th>
                   <th>Source</th>
                   <th>Amount</th>
+                  <th style={{ width: 60, textAlign: "center" }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -944,11 +975,20 @@ export default async function ModulePage({
                     <td data-label="Title" className="table-title">{x.title}</td>
                     <td data-label="Source">{x.source || "—"}</td>
                     <td data-label="Amount" className="amount-pos">+ {money(x.amount, currency)}</td>
+                    <td data-label="Actions" style={{ textAlign: "center" }}>
+                      <RowActionMenu
+                        orgId={orgId}
+                        resource="income"
+                        id={x.id}
+                        recordTitle={x.title}
+                        viewHref={`/${orgId}/income`}
+                      />
+                    </td>
                   </tr>
                 ))}
                 {!items.length && (
                   <tr>
-                    <td colSpan={4}>
+                    <td colSpan={5}>
                       <Empty>No income entries recorded yet.</Empty>
                     </td>
                   </tr>
@@ -1509,6 +1549,7 @@ export default async function ModulePage({
                   <th style={{ textAlign: "right", width: 120, minWidth: 120 }}>Balance</th>
                   <th style={{ width: 85, minWidth: 85 }}>Ref / Cheque</th>
                   <th className="print-hide-col" style={{ width: 75 }}>Ledger Sync</th>
+                  <th className="print-hide-col" style={{ width: 60, textAlign: "center" }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1576,11 +1617,20 @@ export default async function ModulePage({
                         <span className="badge amber">Direct</span>
                       )}
                     </td>
+                    <td data-label="Actions" className="print-hide-col" style={{ textAlign: "center" }}>
+                      <RowActionMenu
+                        orgId={orgId}
+                        resource="bank_tx"
+                        id={t.id}
+                        recordTitle={`${t.type} ${money(t.amount, currency)}`}
+                        viewHref={`/${orgId}/banking`}
+                      />
+                    </td>
                   </tr>
                 ))}
                 {!transactions.length && (
                   <tr>
-                    <td colSpan={9}>
+                    <td colSpan={10}>
                       <Empty>
                         No bank transactions found matching the selected conditions. Try adjusting the keywords, flow type, or amount thresholds.
                       </Empty>
@@ -1707,8 +1757,11 @@ export default async function ModulePage({
                     <td data-label="Action" style={{ textAlign: "center" }}>
                       <RowActionMenu
                         orgId={orgId}
+                        resource="contact"
                         id={c.id}
+                        recordTitle={c.companyName || c.name}
                         viewHref={`/${orgId}/crm/${c.id}`}
+                        editHref={`/${orgId}/crm/${c.id}`}
                       />
                     </td>
                   </tr>
@@ -1766,7 +1819,17 @@ export default async function ModulePage({
                     <td data-label="Value"><strong>{money(l.value, currency)}</strong></td>
                     <td data-label="Follow-up">{shortDate(l.nextFollowUpAt)}</td>
                     <td data-label="Status"><Badge value={l.status} /></td>
-                    <td data-label="Action"><StatusForm orgId={orgId} resource="lead" id={l.id} current={l.status} options={["NEW", "CONTACTED", "QUALIFIED", "PROPOSAL", "WON", "LOST"]} /></td>
+                    <td data-label="Action" style={{ textAlign: "center" }}>
+                      <RowActionMenu
+                        orgId={orgId}
+                        resource="lead"
+                        id={l.id}
+                        recordTitle={l.title}
+                        currentStatus={l.status}
+                        statusOptions={["NEW", "CONTACTED", "QUALIFIED", "PROPOSAL", "WON", "LOST"]}
+                        viewHref={`/${orgId}/leads`}
+                      />
+                    </td>
                   </tr>
                 ))}
                 {!leads.length && <tr><td colSpan={6}><Empty>No leads recorded yet.</Empty></td></tr>}
@@ -1837,7 +1900,7 @@ export default async function ModulePage({
             </div>
             <div className="table-scroll">
               <DataTable className="responsive-table">
-                <thead><tr><th>SKU</th><th>Product</th><th>Stock</th><th>Buy</th><th>Sell</th><th>Status</th><th>Audit</th></tr></thead>
+                <thead><tr><th>SKU</th><th>Product</th><th>Stock</th><th>Buy</th><th>Sell</th><th>Status</th><th>Audit</th><th style={{ width: 60, textAlign: "center" }}>Action</th></tr></thead>
                 <tbody>
                   {products.map((p) => {
                     const drawerProduct = {
@@ -1907,10 +1970,19 @@ export default async function ModulePage({
                             triggerText={<span className="secondary-btn" style={{ padding: "2px 8px", fontSize: 11, cursor: "pointer" }}><Eye size={11} /> Trace</span>}
                           />
                         </td>
+                        <td data-label="Action" style={{ textAlign: "center" }}>
+                          <RowActionMenu
+                            orgId={orgId}
+                            resource="product"
+                            id={p.id}
+                            recordTitle={p.name}
+                            viewHref={`/${orgId}/stock`}
+                          />
+                        </td>
                       </tr>
                     );
                   })}
-                  {!products.length && <tr><td colSpan={7}><Empty>No products added yet.</Empty></td></tr>}
+                  {!products.length && <tr><td colSpan={8}><Empty>No products added yet.</Empty></td></tr>}
                 </tbody>
               </DataTable>
             </div>
@@ -1997,7 +2069,7 @@ export default async function ModulePage({
         <div className="table-card">
           <div className="table-scroll">
             <DataTable className="responsive-table">
-              <thead><tr><th>Month</th><th>Employee</th><th>Basic</th><th>Additions</th><th>Deductions</th><th>Net Pay</th><th>Status</th></tr></thead>
+              <thead><tr><th>Month</th><th>Employee</th><th>Basic</th><th>Additions</th><th>Deductions</th><th>Net Pay</th><th>Status</th><th style={{ width: 60, textAlign: "center" }}>Action</th></tr></thead>
               <tbody>
                 {payrolls.map((p) => (
                   <tr key={p.id}>
@@ -2008,9 +2080,18 @@ export default async function ModulePage({
                     <td data-label="Deductions">{money(Number(p.deduction) + Number(p.tax), currency)}</td>
                     <td data-label="Net Pay"><strong>{money(p.netPay, currency)}</strong></td>
                     <td data-label="Status">{p.paidAt ? <Badge value="PAID" /> : <Badge value="PENDING" />}</td>
+                    <td data-label="Action" style={{ textAlign: "center" }}>
+                      <RowActionMenu
+                        orgId={orgId}
+                        resource="payroll"
+                        id={p.id}
+                        recordTitle={`${p.employee.name} (${p.month.toLocaleString("en", { month: "short", year: "numeric" })})`}
+                        viewHref={`/${orgId}/payroll`}
+                      />
+                    </td>
                   </tr>
                 ))}
-                {!payrolls.length && <tr><td colSpan={7}><Empty>No payroll records created yet.</Empty></td></tr>}
+                {!payrolls.length && <tr><td colSpan={8}><Empty>No payroll records created yet.</Empty></td></tr>}
               </tbody>
             </DataTable>
           </div>
@@ -2038,7 +2119,7 @@ export default async function ModulePage({
         <div className="table-card">
           <div className="table-scroll">
             <DataTable className="responsive-table">
-              <thead><tr><th>Employee</th><th>Type</th><th>Duration</th><th>Days</th><th>Status</th><th>Action</th></tr></thead>
+              <thead><tr><th>Employee</th><th>Type</th><th>Duration</th><th>Days</th><th>Status</th><th style={{ width: 60, textAlign: "center" }}>Action</th></tr></thead>
               <tbody>
                 {items.map((x) => (
                   <tr key={x.id}>
@@ -2047,7 +2128,17 @@ export default async function ModulePage({
                     <td data-label="Duration">{shortDate(x.fromDate)} → {shortDate(x.toDate)}</td>
                     <td data-label="Days"><strong>{Number(x.days)}</strong></td>
                     <td data-label="Status"><Badge value={x.status} /></td>
-                    <td data-label="Action"><StatusForm orgId={orgId} resource="leave" id={x.id} current={x.status} options={["PENDING", "APPROVED", "REJECTED", "CANCELLED"]} /></td>
+                    <td data-label="Action" style={{ textAlign: "center" }}>
+                      <RowActionMenu
+                        orgId={orgId}
+                        resource="leave"
+                        id={x.id}
+                        recordTitle={`${x.employee.name} (${x.leaveType})`}
+                        currentStatus={x.status}
+                        statusOptions={["PENDING", "APPROVED", "REJECTED", "CANCELLED"]}
+                        viewHref={`/${orgId}/leaves`}
+                      />
+                    </td>
                   </tr>
                 ))}
                 {!items.length && <tr><td colSpan={6}><Empty>No leave requests found.</Empty></td></tr>}
@@ -2184,8 +2275,10 @@ export default async function ModulePage({
                             orgId={orgId}
                             resource="task"
                             id={x.id}
+                            recordTitle={x.title}
                             currentStatus={x.status}
                             statusOptions={["TODO", "IN_PROGRESS", "BLOCKED", "DONE"]}
+                            viewHref={`/${orgId}/tasks`}
                           />
                         </div>
                       </td>
@@ -2403,7 +2496,7 @@ export default async function ModulePage({
         <div className="table-card">
           <div className="table-scroll">
             <DataTable className="responsive-table">
-              <thead><tr><th>License</th><th>Vendor</th><th>Seats</th><th>Expiry</th><th>Renewal</th><th>Status</th></tr></thead>
+              <thead><tr><th>License</th><th>Vendor</th><th>Seats</th><th>Expiry</th><th>Renewal</th><th>Status</th><th style={{ width: 60, textAlign: "center" }}>Action</th></tr></thead>
               <tbody>
                 {items.map((x) => {
                   const effective = x.expiryDate && x.expiryDate < now ? "EXPIRED" : x.expiryDate && x.expiryDate.getTime() - now.getTime() <= 60 * 86400000 ? "EXPIRING" : x.status;
@@ -2415,10 +2508,21 @@ export default async function ModulePage({
                       <td data-label="Expiry">{shortDate(x.expiryDate)}</td>
                       <td data-label="Renewal">{money(x.renewalCost || 0, currency)}</td>
                       <td data-label="Status"><Badge value={effective} /></td>
+                      <td data-label="Action" style={{ textAlign: "center" }}>
+                        <RowActionMenu
+                          orgId={orgId}
+                          resource="license"
+                          id={x.id}
+                          recordTitle={x.name}
+                          currentStatus={effective}
+                          statusOptions={["ACTIVE", "EXPIRING", "EXPIRED", "CANCELLED"]}
+                          viewHref={`/${orgId}/licenses`}
+                        />
+                      </td>
                     </tr>
                   );
                 })}
-                {!items.length && <tr><td colSpan={6}><Empty>No license records tracked.</Empty></td></tr>}
+                {!items.length && <tr><td colSpan={7}><Empty>No license records tracked.</Empty></td></tr>}
               </tbody>
             </DataTable>
           </div>
@@ -2443,7 +2547,7 @@ export default async function ModulePage({
         <div className="table-card">
           <div className="table-scroll">
             <DataTable className="responsive-table">
-              <thead><tr><th>Reminder</th><th>Due Date</th><th>Reference</th><th>Status</th><th>Action</th></tr></thead>
+              <thead><tr><th>Reminder</th><th>Due Date</th><th>Reference</th><th>Status</th><th style={{ width: 60, textAlign: "center" }}>Action</th></tr></thead>
               <tbody>
                 {items.map((x) => (
                   <tr key={x.id}>
@@ -2451,10 +2555,20 @@ export default async function ModulePage({
                     <td data-label="Due Date">{shortDate(x.dueAt)}</td>
                     <td data-label="Reference">{x.referenceType || "Manual"}</td>
                     <td data-label="Status"><Badge value={x.status} /></td>
-                    <td data-label="Action"><StatusForm orgId={orgId} resource="reminder" id={x.id} current={x.status} options={["PENDING", "DONE", "DISMISSED"]} /></td>
+                    <td data-label="Action" style={{ textAlign: "center" }}>
+                      <RowActionMenu
+                        orgId={orgId}
+                        resource="reminder"
+                        id={x.id}
+                        recordTitle={x.title}
+                        currentStatus={x.status}
+                        statusOptions={["PENDING", "DONE", "DISMISSED"]}
+                        viewHref={`/${orgId}/reminders`}
+                      />
+                    </td>
                   </tr>
                 ))}
-                {!items.length && <tr><td colSpan={5}><Empty>No reminders scheduled.</Empty></td></tr>}
+                {!items.length && <tr><td colSpan={6}><Empty>No reminders scheduled.</Empty></td></tr>}
               </tbody>
             </DataTable>
           </div>
@@ -2523,6 +2637,7 @@ export default async function ModulePage({
                         orgId={orgId}
                         resource="invoice"
                         id={inv.id}
+                        recordTitle={inv.invoiceNumber}
                         currentStatus={inv.status}
                         statusOptions={["DRAFT", "SENT", "ACCEPTED", "PAID", "PARTIAL", "OVERDUE", "CANCELLED"]}
                         viewHref={`/${orgId}/invoices/${inv.id}`}
@@ -2599,6 +2714,7 @@ export default async function ModulePage({
                         orgId={orgId}
                         resource="quote"
                         id={q.id}
+                        recordTitle={q.quoteNumber}
                         currentStatus={q.status}
                         statusOptions={["DRAFT", "SENT", "ACCEPTED", "REJECTED", "CANCELLED"]}
                         viewHref={`/${orgId}/quotes/${q.id}`}
@@ -2669,9 +2785,11 @@ export default async function ModulePage({
                         orgId={orgId}
                         resource="sales"
                         id={x.id}
+                        recordTitle={x.orderNumber}
                         currentStatus={x.status}
                         statusOptions={["DRAFT", "CONFIRMED", "PROCESSING", "COMPLETED", "CANCELLED"]}
                         viewHref={`/${orgId}/sales/${x.id}`}
+                        editHref={`/${orgId}/sales/${x.id}`}
                       />
                     </td>
                   </tr>
@@ -2767,9 +2885,11 @@ export default async function ModulePage({
                           orgId={orgId}
                           resource="purchase"
                           id={x.id}
+                          recordTitle={x.orderNumber}
                           currentStatus={x.status}
                           statusOptions={["DRAFT", "CONFIRMED", "PROCESSING", "COMPLETED", "CANCELLED"]}
                           viewHref={`/${orgId}/purchase/${x.id}`}
+                          editHref={`/${orgId}/purchase/${x.id}`}
                         />
                       </td>
                     </tr>
@@ -2936,12 +3056,17 @@ export default async function ModulePage({
                       {money(l.totalDue, currency)}
                     </td>
                     <td data-label="Status"><Badge value={l.status} /></td>
-                    <td data-label="Actions">
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <Link href={`/${orgId}/loans/${l.id}`} className="secondary-btn" style={{ padding: "3px 8px", fontSize: 11 }}>
-                          <Eye size={12} /> Settle / View
-                        </Link>
-                      </div>
+                    <td data-label="Actions" style={{ textAlign: "center" }}>
+                      <RowActionMenu
+                        orgId={orgId}
+                        resource="loan"
+                        id={l.id}
+                        recordTitle={l.partyName}
+                        currentStatus={l.status}
+                        statusOptions={["ACTIVE", "SETTLED", "DEFAULTED"]}
+                        viewHref={`/${orgId}/loans/${l.id}`}
+                        editHref={`/${orgId}/loans/${l.id}`}
+                      />
                     </td>
                   </tr>
                 ))}
