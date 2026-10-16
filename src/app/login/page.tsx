@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { loginAction } from "./actions";
-import { ArrowUpRight, BarChart3, Building2, CheckCircle2, LockKeyhole, Shield, Store, UserPlus } from "lucide-react";
+import { ArrowUpRight, BarChart3, CheckCircle2, LockKeyhole, Store } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export default async function LoginPage({
@@ -65,23 +65,29 @@ export default async function LoginPage({
 
           <label className="field">
             <span>Email</span>
-            <input name="email" type="email" defaultValue="admin@simulcast.local" required />
+            <input 
+              name="email" 
+              type="email" 
+              placeholder="name@company.com" 
+              autoComplete="email" 
+              required 
+            />
           </label>
 
           <label className="field">
             <span>Password</span>
-            <input name="password" type="password" defaultValue="Admin@123" required />
+            <input 
+              name="password" 
+              type="password" 
+              placeholder="••••••••" 
+              autoComplete="current-password" 
+              required 
+            />
           </label>
 
           <button className="primary-btn full-btn" type="submit">
             Sign in
           </button>
-
-          <div className="demo-credentials-box">
-            <div className="demo-title">Quick Demo Logins:</div>
-            <div><Building2 size={13} style={{ verticalAlign: "middle", marginRight: 4 }} /> <strong>Vendor:</strong> <code>admin@simulcast.local</code> / <code>Admin@123</code></div>
-            <div><Shield size={13} style={{ verticalAlign: "middle", marginRight: 4 }} /> <strong>Super Admin:</strong> <code>superadmin@kashtrix.com</code> / <code>Admin@123</code></div>
-          </div>
 
           <div className="auth-footer-links">
             <span>Need to register your business?</span>
