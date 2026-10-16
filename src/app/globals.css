@@ -648,9 +648,9 @@ textarea { resize: vertical; }
   width: 100%;
 }
 .sidebar {
-  width: 260px;
-  min-width: 260px;
-  flex: 0 0 260px;
+  width: 280px;
+  min-width: 280px;
+  flex: 0 0 280px;
   position: sticky;
   top: 0;
   height: 100vh;
@@ -730,7 +730,13 @@ textarea { resize: vertical; }
   padding: 2px 2px 10px;
   border-bottom: 1px solid var(--line);
   margin-bottom: 8px;
-  gap: 6px;
+  gap: 8px;
+}
+.sidebar-head .brand-mark {
+  white-space: normal;
+  flex: 1 1 auto;
+  min-width: 0;
+  text-decoration: none;
 }
 .sidebar-collapse-btn {
   display: flex;

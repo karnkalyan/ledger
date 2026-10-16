@@ -72,15 +72,17 @@ export function Sidebar({
                 </span>
               )}
               {!isCollapsed && (
-                <div style={{ minWidth: 0, flex: 1, overflow: "hidden" }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
                   <span
                     style={{
                       display: "block",
                       fontWeight: 700,
                       fontSize: 13,
-                      lineHeight: 1.3,
-                      wordBreak: "break-word",
+                      lineHeight: 1.25,
                       color: "var(--text)",
+                      whiteSpace: "normal",
+                      wordBreak: "normal",
+                      overflowWrap: "break-word",
                     }}
                     title={orgName}
                   >
@@ -94,6 +96,7 @@ export function Sidebar({
                       color: "var(--text-muted)",
                       marginTop: 2,
                       fontWeight: 600,
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {taxNumber ? `PAN: ${taxNumber}` : kind === "COMPANY" ? "CORPORATE ERP" : "HOUSEHOLD SUITE"}
