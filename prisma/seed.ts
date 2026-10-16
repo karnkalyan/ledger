@@ -216,7 +216,11 @@ async function main() {
   // Electricity: 15 rupees per unit (100 units = 1,500)
   // Milk: 115 per liter (1.5 ltr × 115 × 30 days = 5,175)
   console.log("\n--- CONFIGURING HOUSEHOLD COMMITMENTS (MY HOUSE) ---");
+  await prisma.expense.deleteMany({ where: { organizationId: household.id } });
+  await prisma.income.deleteMany({ where: { organizationId: household.id } });
   await prisma.recurringExpense.deleteMany({ where: { organizationId: household.id } });
+  await prisma.loanPayment.deleteMany({ where: { loan: { organizationId: household.id } } });
+  await prisma.loan.deleteMany({ where: { organizationId: household.id } });
 
   const homeRentCat = await prisma.expenseCategory.findUnique({
     where: { organizationId_name: { organizationId: household.id, name: "House Rent" } },
@@ -349,11 +353,45 @@ async function main() {
     },
   });
 
-  // 5. OFFICE COMMITMENTS (SIMULCAST)
+  // 5. COMPLETE CLEAN TRUNCATE OF ALL PREVIOUS COMPANY DATA (FRESH SLATE FOR SEED & IMPORT)
+  console.log("\n--- CLEANING ALL PREVIOUS COMPANY DATA (FRESH SLATE FOR NEW IMPORT) ---");
+  await prisma.bankTransaction.deleteMany({ where: { organizationId: company.id } });
+  await prisma.invoicePayment.deleteMany({ where: { invoice: { organizationId: company.id } } });
+  await prisma.invoiceItem.deleteMany({ where: { invoice: { organizationId: company.id } } });
+  await prisma.invoice.deleteMany({ where: { organizationId: company.id } });
+  await prisma.salesOrderItem.deleteMany({ where: { salesOrder: { organizationId: company.id } } });
+  await prisma.salesOrder.deleteMany({ where: { organizationId: company.id } });
+  await prisma.purchasePayment.deleteMany({ where: { purchaseOrder: { organizationId: company.id } } });
+  await prisma.purchaseOrderItem.deleteMany({ where: { purchaseOrder: { organizationId: company.id } } });
+  await prisma.purchaseOrder.deleteMany({ where: { organizationId: company.id } });
+  await prisma.quoteItem.deleteMany({ where: { quote: { organizationId: company.id } } });
+  await prisma.quote.deleteMany({ where: { organizationId: company.id } });
+  await prisma.lead.deleteMany({ where: { organizationId: company.id } });
+  await prisma.stockMovement.deleteMany({ where: { organizationId: company.id } });
+  await prisma.product.deleteMany({ where: { organizationId: company.id } });
+  await prisma.workLog.deleteMany({ where: { organizationId: company.id } });
+  await prisma.task.deleteMany({ where: { organizationId: company.id } });
+  await prisma.projectMember.deleteMany({ where: { project: { organizationId: company.id } } });
+  await prisma.project.deleteMany({ where: { organizationId: company.id } });
+  await prisma.walletTransaction.deleteMany({ where: { wallet: { organizationId: company.id } } });
+  await prisma.projectWallet.deleteMany({ where: { organizationId: company.id } });
+  await prisma.leaveRequest.deleteMany({ where: { organizationId: company.id } });
+  await prisma.payroll.deleteMany({ where: { organizationId: company.id } });
+  await prisma.employee.deleteMany({ where: { organizationId: company.id } });
+  await prisma.contact.deleteMany({ where: { organizationId: company.id } });
+  await prisma.income.deleteMany({ where: { organizationId: company.id } });
+  await prisma.expense.deleteMany({ where: { organizationId: company.id } });
+  await prisma.recurringExpense.deleteMany({ where: { organizationId: company.id } });
+  await prisma.loanPayment.deleteMany({ where: { loan: { organizationId: company.id } } });
+  await prisma.loan.deleteMany({ where: { organizationId: company.id } });
+  await prisma.licenseRecord.deleteMany({ where: { organizationId: company.id } });
+  await prisma.reminder.deleteMany({ where: { organizationId: company.id } });
+  console.log("All previous company records cleaned successfully.");
+
+  // 6. OFFICE COMMITMENTS (SIMULCAST)
   // Office Rent: 17,500
   // Office Electricity: 15 rupees per unit (150 units = 2,250)
   console.log("\n--- CONFIGURING OFFICE COMMITMENTS (SIMULCAST) ---");
-  await prisma.recurringExpense.deleteMany({ where: { organizationId: company.id } });
 
   const officeRentCat = await prisma.expenseCategory.findUnique({
     where: { organizationId_name: { organizationId: company.id, name: "Office Rent" } },
