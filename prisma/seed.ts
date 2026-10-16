@@ -439,24 +439,25 @@ async function main() {
   const officeVendor = await prisma.contact.upsert({
     where: { id: "c-office-interiors-vendor" },
     update: {
-      name: "Commercial Tech & Office Interiors",
-      companyName: "Commercial Tech & Office Interiors Pvt Ltd",
-      taxNumber: "602381944",
-      address: "Putalisadak, Kathmandu",
-      phone: "+977-1-4268900",
-      email: "sales@officeinteriors.np",
+      name: "Commercial Tech & Office Interiors Pvt Ltd",
+      companyName: null,
+      taxNumber: null,
+      address: null,
+      phone: null,
+      email: null,
+      notes: null,
     },
     create: {
       id: "c-office-interiors-vendor",
       organizationId: company.id,
       type: ContactType.VENDOR,
-      name: "Commercial Tech & Office Interiors",
-      companyName: "Commercial Tech & Office Interiors Pvt Ltd",
-      taxNumber: "602381944",
-      address: "Putalisadak, Kathmandu",
-      phone: "+977-1-4268900",
-      email: "sales@officeinteriors.np",
-      notes: "Approved vendor for commercial workstations, rack infrastructure and interior setup",
+      name: "Commercial Tech & Office Interiors Pvt Ltd",
+      companyName: null,
+      taxNumber: null,
+      address: null,
+      phone: null,
+      email: null,
+      notes: null,
     },
   });
 
@@ -617,37 +618,37 @@ async function main() {
       },
     });
 
-    const CANONICAL_CONTACTS: Record<string, { companyName: string; name: string; taxNumber?: string; address?: string; phone?: string; email?: string; type?: ContactType }> = {
-      "simulcast": { companyName: "Simulcast Technologies Pvt Ltd", name: "Simulcast Technologies", taxNumber: "601928374", address: "Kathmandu, Nepal", phone: "+977-1-4412345", email: "accounts@simulcast.local", type: ContactType.BOTH },
-      "nav solutions": { companyName: "Nav Solutions Pvt Ltd", name: "Navin Adhikari", taxNumber: "603928172", address: "New Baneshwor, Kathmandu", phone: "+977-1-4782390", email: "support@navsolutions.com.np", type: ContactType.VENDOR },
-      "av bionics": { companyName: "AV Bionics Pvt Ltd", name: "Anand Verma", taxNumber: "602381944", address: "Putalisadak, Kathmandu", phone: "+977-1-4245678", email: "info@avbionics.com.np", type: ContactType.BOTH },
-      "kathmandu university": { companyName: "Kathmandu University", name: "Procurement Directorate", taxNumber: "300182940", address: "Dhulikhel, Kavre", phone: "+977-11-415100", email: "procurement@ku.edu.np", type: ContactType.CUSTOMER },
-      "dhulikhel": { companyName: "Dhulikhel Hospital - Kathmandu University Hospital", name: "Administration & IT Dept", taxNumber: "300182749", address: "Dhulikhel, Kavre", phone: "+977-11-490497", email: "it@dhulikhelhospital.org", type: ContactType.CUSTOMER },
-      "prime minister": { companyName: "Office of the Prime Minister and Council of Ministers", name: "IT & Media Cell", taxNumber: "300000001", address: "Singha Durbar, Kathmandu", phone: "+977-1-4211000", email: "info@opmcm.gov.np", type: ContactType.CUSTOMER },
-      "nepal max tech": { companyName: "Nepal Max Tech Pvt Ltd", name: "Mukesh Yadav", taxNumber: "601293847", address: "Maitighar, Kathmandu", phone: "+977-1-4267123", email: "support@nepalmaxtech.np", type: ContactType.VENDOR },
-      "balkumari electronics": { companyName: "Balkumari Electronics Pvt Ltd", name: "Bikash Shrestha", taxNumber: "601827364", address: "Balkumari, Lalitpur", phone: "+977-1-5548900", email: "sales@balkumarielectronics.np", type: ContactType.VENDOR },
-      "digital camera": { companyName: "Digital Camera & Broadcast Media Pvt Ltd", name: "Dinesh Manandhar", taxNumber: "302819283", address: "New Road, Kathmandu", phone: "+977-1-4228910", email: "orders@digitalcamera.np", type: ContactType.VENDOR },
-      "shasa enterprises": { companyName: "Shasa Enterprises Pvt Ltd", name: "Shashank Joshi", taxNumber: "604192837", address: "Tripureshwor, Kathmandu", phone: "+977-1-4261892", email: "shasa.enterprises@gmail.com", type: ContactType.VENDOR },
-      "spykar company": { companyName: "Spykar Company Pvt Ltd", name: "Sunil Karki", taxNumber: "605928374", address: "Kamaladi, Kathmandu", phone: "+977-1-4438290", email: "info@spykar.com.np", type: ContactType.VENDOR },
-      "neoteric nepal": { companyName: "Neoteric Nepal Pvt Ltd", name: "Sanjay Golchha", taxNumber: "300182736", address: "Jawalakhel, Lalitpur", phone: "+977-1-5538901", email: "sales@neoteric.com.np", type: ContactType.VENDOR },
-      "smart enterprises": { companyName: "Smart Enterprises Pvt Ltd", name: "Suraj Pradhan", taxNumber: "602819283", address: "Teku, Kathmandu", phone: "+977-1-4219876", email: "smart.ent.np@gmail.com", type: ContactType.VENDOR },
-      "cloud tech": { companyName: "Cloud Tech Solutions Pvt Ltd", name: "Chandan Roy", taxNumber: "608192837", address: "Thapathali, Kathmandu", phone: "+977-1-4102938", email: "cloudtech@npmail.net", type: ContactType.VENDOR },
-      "lokesh agarwal": { companyName: "Lokesh Agarwal Trading", name: "Lokesh Agarwal", taxNumber: "302819284", address: "Indrachowk, Kathmandu", phone: "+977-9851029384", email: "lokesh.agarwal@outlook.com", type: ContactType.VENDOR },
-      "vianet": { companyName: "Vianet Communications Pvt Ltd", name: "Corporate Helpdesk", taxNumber: "301829384", address: "Jawalakhel, Lalitpur", phone: "+977-1-5970444", email: "corporate@vianet.com.np", type: ContactType.VENDOR },
-      "commercial tech": { companyName: "Commercial Tech & Office Interiors Pvt Ltd", name: "Kiran Basnet", taxNumber: "602381944", address: "Putalisadak, Kathmandu", phone: "+977-1-4268900", email: "sales@officeinteriors.np", type: ContactType.VENDOR },
-      "riddhi siddhi": { companyName: "Riddhi Siddhi Multipurpose Pvt Ltd", name: "Riddhi Siddhi Multipurpose", taxNumber: "603819201", address: "Kathmandu, Nepal", type: ContactType.CUSTOMER },
-      "aashi traders": { companyName: "Aashi Traders Pvt Ltd", name: "Aashi Traders", taxNumber: "604819280", address: "Kathmandu, Nepal", type: ContactType.CUSTOMER },
-      "sujay": { companyName: "Sujay Enterprises", name: "Sujay", address: "Kathmandu, Nepal", type: ContactType.CUSTOMER },
-      "illya": { companyName: "Illya Electronics", name: "Illya", address: "Kathmandu, Nepal", type: ContactType.VENDOR },
-      "quick": { companyName: "Quick Logistics", name: "Quick", address: "Kathmandu, Nepal", type: ContactType.VENDOR },
-      "air": { companyName: "Air Logistics", name: "Air", address: "Kathmandu, Nepal", type: ContactType.VENDOR },
-      "bagmati": { companyName: "Bagmati TV Network Pvt Ltd", name: "Bishal Thapa", taxNumber: "601928374", address: "Chabahil, Kathmandu", phone: "+977-1-4478900", email: "broadcast@bagmatitv.com", type: ContactType.CUSTOMER },
-      "nepal news": { companyName: "Nepal News Bank Pvt Ltd", name: "Narayan Gautam", taxNumber: "604819283", address: "Anamnagar, Kathmandu", phone: "+977-1-4771234", email: "editor@nepalnews.com", type: ContactType.CUSTOMER },
-      "tv today": { companyName: "TV Today Network Pvt Ltd", name: "Janak Rijal", taxNumber: "602918273", address: "Tinkune, Kathmandu", phone: "+977-1-4111890", email: "accounts@tvtoday.com.np", type: ContactType.CUSTOMER },
-      "black swan": { companyName: "Black Swan Nepal Pvt Ltd", name: "Santosh Singh", taxNumber: "605192837", address: "Jhamsikhel, Lalitpur", phone: "+977-1-5529810", email: "santosh@blackswan.com.np", type: ContactType.CUSTOMER },
-      "7 star tv": { companyName: "7 Star TV Network Pvt Ltd", name: "Rajendra Shah", taxNumber: "603819284", address: "Pokhara / Kathmandu", phone: "+977-1-4412389", email: "broadcast@7startv.np", type: ContactType.CUSTOMER },
-      "dim movies": { companyName: "DIM Movies Production Pvt Ltd", name: "Deepak Shrestha", taxNumber: "604928172", address: "Gairidhara, Kathmandu", phone: "+977-1-4428190", email: "deepak@dimmovies.np", type: ContactType.CUSTOMER },
-      "fewa tv": { companyName: "Fewa Television Ltd", name: "Kishor Sharma", taxNumber: "601829304", address: "Pokhara, Gandaki", phone: "+977-61-524180", email: "fewatv@fewa.com.np", type: ContactType.CUSTOMER },
+    const CANONICAL_CONTACTS: Record<string, { name: string; type?: ContactType }> = {
+      "simulcast": { name: "Simulcast Technologies Pvt Ltd", type: ContactType.BOTH },
+      "nav solutions": { name: "Nav Solutions Pvt Ltd", type: ContactType.VENDOR },
+      "av bionics": { name: "AV Bionics Pvt Ltd", type: ContactType.BOTH },
+      "kathmandu university": { name: "Kathmandu University", type: ContactType.CUSTOMER },
+      "dhulikhel": { name: "Dhulikhel Hospital", type: ContactType.CUSTOMER },
+      "prime minister": { name: "Prime Minister Office", type: ContactType.CUSTOMER },
+      "nepal max tech": { name: "Nepal Max Tech Pvt Ltd", type: ContactType.VENDOR },
+      "balkumari electronics": { name: "Balkumari Electronics", type: ContactType.VENDOR },
+      "digital camera": { name: "Digital Camera", type: ContactType.VENDOR },
+      "shasa enterprises": { name: "Shasa Enterprises", type: ContactType.VENDOR },
+      "spykar company": { name: "Spykar Company Pvt Ltd", type: ContactType.VENDOR },
+      "neoteric nepal": { name: "Neoteric Nepal Pvt Ltd", type: ContactType.VENDOR },
+      "smart enterprises": { name: "Smart Enterprises Pvt Ltd", type: ContactType.VENDOR },
+      "cloud tech": { name: "Cloud Tech", type: ContactType.VENDOR },
+      "lokesh agarwal": { name: "Lokesh Agarwal", type: ContactType.VENDOR },
+      "vianet": { name: "Vianet", type: ContactType.VENDOR },
+      "commercial tech": { name: "Commercial Tech & Office Interiors Pvt Ltd", type: ContactType.VENDOR },
+      "riddhi siddhi": { name: "Riddhi Siddhi Multipurpose", type: ContactType.CUSTOMER },
+      "aashi traders": { name: "Aashi Traders", type: ContactType.CUSTOMER },
+      "sujay": { name: "Sujay", type: ContactType.CUSTOMER },
+      "illya": { name: "Illya", type: ContactType.VENDOR },
+      "quick": { name: "Quick", type: ContactType.VENDOR },
+      "air": { name: "Air", type: ContactType.VENDOR },
+      "bagmati": { name: "Bagmati TV Network", type: ContactType.CUSTOMER },
+      "nepal news": { name: "Nepal News Bank", type: ContactType.CUSTOMER },
+      "tv today": { name: "TV Today Network", type: ContactType.CUSTOMER },
+      "black swan": { name: "Black Swan Nepal", type: ContactType.CUSTOMER },
+      "7 star tv": { name: "7 Star TV", type: ContactType.CUSTOMER },
+      "dim movies": { name: "DIM Movies", type: ContactType.CUSTOMER },
+      "fewa tv": { name: "Fewa TV Ltd", type: ContactType.CUSTOMER },
     };
 
     function matchCanonicalKey(rawName: string): string | null {
@@ -674,6 +675,8 @@ async function main() {
     }
 
     const contactMap = new Map<string, string>();
+    contactMap.set("commercial tech", "c-office-interiors-vendor");
+    contactMap.set("commercial tech & office interiors pvt ltd", "c-office-interiors-vendor");
 
     // Process clients
     for (const clientName of data.clients) {
@@ -681,7 +684,7 @@ async function main() {
       const raw = clientName.trim();
       const canonKey = matchCanonicalKey(raw);
       const meta = canonKey ? CANONICAL_CONTACTS[canonKey] : null;
-      const compName = meta ? meta.companyName : toTitleCase(raw);
+      const compName = meta ? meta.name : toTitleCase(raw);
       const key = (canonKey || raw).toLowerCase();
 
       if (contactMap.has(key)) continue;
@@ -690,18 +693,18 @@ async function main() {
         data: {
           organizationId: company.id,
           type: meta?.type || ContactType.CUSTOMER,
-          name: meta ? meta.name : compName,
-          companyName: compName,
-          taxNumber: meta?.taxNumber || null,
-          address: meta?.address || null,
-          phone: meta?.phone || null,
-          email: meta?.email || null,
-          notes: "Imported from Simulcast client directory",
+          name: compName,
+          companyName: null,
+          taxNumber: null,
+          address: null,
+          phone: null,
+          email: null,
+          notes: null,
         },
       });
       contactMap.set(key, c.id);
       contactMap.set(raw.toLowerCase(), c.id);
-      if (meta) contactMap.set(meta.companyName.toLowerCase(), c.id);
+      if (meta) contactMap.set(meta.name.toLowerCase(), c.id);
     }
 
     // Process vendors
@@ -710,16 +713,15 @@ async function main() {
       const raw = vendorName.trim();
       const canonKey = matchCanonicalKey(raw);
       const meta = canonKey ? CANONICAL_CONTACTS[canonKey] : null;
-      const compName = meta ? meta.companyName : toTitleCase(raw);
+      const compName = meta ? meta.name : toTitleCase(raw);
       const key = (canonKey || raw).toLowerCase();
 
-      const existingId = contactMap.get(key) || (meta ? contactMap.get(meta.companyName.toLowerCase()) : undefined);
+      const existingId = contactMap.get(key) || (meta ? contactMap.get(meta.name.toLowerCase()) : undefined);
       if (existingId) {
         await prisma.contact.update({
           where: { id: existingId },
           data: {
             type: ContactType.BOTH,
-            ...(meta ? { taxNumber: meta.taxNumber, address: meta.address, phone: meta.phone, email: meta.email, companyName: meta.companyName } : {}),
           },
         });
         contactMap.set(raw.toLowerCase(), existingId);
@@ -728,18 +730,18 @@ async function main() {
           data: {
             organizationId: company.id,
             type: meta?.type || ContactType.VENDOR,
-            name: meta ? meta.name : compName,
-            companyName: compName,
-            taxNumber: meta?.taxNumber || null,
-            address: meta?.address || null,
-            phone: meta?.phone || null,
-            email: meta?.email || null,
-            notes: "Imported from Simulcast vendor directory",
+            name: compName,
+            companyName: null,
+            taxNumber: null,
+            address: null,
+            phone: null,
+            email: null,
+            notes: null,
           },
         });
         contactMap.set(key, c.id);
         contactMap.set(raw.toLowerCase(), c.id);
-        if (meta) contactMap.set(meta.companyName.toLowerCase(), c.id);
+        if (meta) contactMap.set(meta.name.toLowerCase(), c.id);
       }
     }
 

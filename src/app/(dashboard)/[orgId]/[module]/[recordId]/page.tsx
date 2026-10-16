@@ -1049,7 +1049,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
                 )}
               </div>
               <h2 style={{ margin: 0, fontSize: 20 }}>{contact.companyName || contact.name}</h2>
-              {contact.companyName && contact.name && (
+              {contact.companyName && contact.name && contact.companyName.trim().toLowerCase() !== contact.name.trim().toLowerCase() && (
                 <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 2 }}>
                   Contact Representative: <strong>{contact.name}</strong>
                 </div>
@@ -1086,11 +1086,11 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
             </div>
             <div>
               <span style={{ color: "var(--text-muted)" }}>Registered Office Address:</span>
-              <div style={{ fontWeight: 600 }}>{contact.address || "Kathmandu, Nepal"}</div>
+              <div style={{ fontWeight: 600 }}>{contact.address || "—"}</div>
             </div>
             <div>
               <span style={{ color: "var(--text-muted)" }}>Profile Notes:</span>
-              <div style={{ fontWeight: 600 }}>{contact.notes || "Standard corporate account"}</div>
+              <div style={{ fontWeight: 600 }}>{contact.notes || "—"}</div>
             </div>
           </div>
         </div>

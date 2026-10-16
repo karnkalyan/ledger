@@ -1794,7 +1794,7 @@ export default async function ModulePage({
                       <Link href={`/${orgId}/crm/${c.id}`} className="table-clickable-title">
                         {c.companyName || c.name}
                       </Link>
-                      <div className="table-sub">{c.companyName ? c.name : ""}</div>
+                      <div className="table-sub">{c.companyName && c.name && c.companyName.trim().toLowerCase() !== c.name.trim().toLowerCase() ? c.name : ""}</div>
                     </td>
                     {!filterType && (
                       <td data-label="Type">
