@@ -5,10 +5,11 @@ RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy dependency definitions
+# Copy dependency definitions and prisma schema
 COPY package.json package-lock.json ./
+COPY prisma ./prisma/
 
-# Install dependencies (including devDependencies required for Prisma and TypeScript seed)
+# Install dependencies
 RUN npm ci
 
 # Copy application source code
