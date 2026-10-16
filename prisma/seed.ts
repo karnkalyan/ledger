@@ -59,6 +59,10 @@ function toTitleCase(str?: string | null): string {
 async function main() {
   console.log("=== KASHTRIX LEDGER & EXPENSE SUITE MASTER PRODUCTION SEED ===");
 
+  try {
+    await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 0;");
+  } catch {}
+
   const passwordHash = await bcrypt.hash("Admin@123", 12);
   const vendorPasswordHash = await bcrypt.hash("Vendor@123", 12);
 
@@ -1100,4 +1104,9 @@ main()
     console.error("SEEDING ERROR:", e);
     process.exit(1);
   })
-  .finally(async () => prisma.$disconnect());
+  .finally(async () => {
+    try {
+      await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 1;");
+    } catch {}
+    await prisma.$disconnect();
+  });
