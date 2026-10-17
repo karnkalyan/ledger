@@ -56,6 +56,76 @@ export async function createExpenseAction(formData: FormData) {
   refresh(orgId,"expenses");
 }
 
+export async function updateExpenseAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  await orgAccess(orgId);
+  const id = s(formData, "id");
+  if (!id) return;
+
+  const quantity = n(formData, "quantity", 1);
+  const rate = n(formData, "unitRate", 0);
+  const days = n(formData, "daysCount", 1);
+  const entered = n(formData, "amount", 0);
+  const formulaAmount = quantity * rate * days;
+  const amount = entered > 0 ? entered : formulaAmount;
+  const title = s(formData, "title");
+  if (!title || amount <= 0) return;
+
+  const requestedCategory = s(formData, "categoryId");
+  const categoryId = requestedCategory && (await db.expenseCategory.findFirst({ where: { id: requestedCategory, organizationId: orgId }, select: { id: true } })) ? requestedCategory : null;
+  const occurredAt = d(formData, "occurredAt") ?? new Date();
+  const vendor = s(formData, "vendor") || null;
+  const notes = s(formData, "notes") || null;
+  const type = (s(formData, "type") || "ONE_TIME") as never;
+
+  await db.$transaction(async (tx) => {
+    const oldExpense = await tx.expense.findFirst({ where: { id, organizationId: orgId } });
+    if (!oldExpense) return;
+
+    await tx.expense.update({
+      where: { id },
+      data: {
+        title,
+        amount,
+        categoryId,
+        vendor,
+        type,
+        quantity: quantity || null,
+        unit: s(formData, "unit") || null,
+        unitRate: rate || null,
+        daysCount: days || null,
+        occurredAt,
+        notes,
+      },
+    });
+
+    // If coupled with bank transaction, adjust amount and description
+    const linkedTx = await tx.bankTransaction.findFirst({ where: { expenseId: id } });
+    if (linkedTx) {
+      const oldAmt = Number(linkedTx.amount);
+      const diff = amount - oldAmt; // withdrawal increase means balance drops
+      await tx.bankTransaction.update({
+        where: { id: linkedTx.id },
+        data: {
+          amount,
+          description: title,
+          transactionDate: occurredAt,
+        },
+      });
+      if (diff !== 0) {
+        await tx.bankAccount.update({
+          where: { id: linkedTx.bankAccountId },
+          data: { currentBalance: { decrement: diff } },
+        });
+      }
+    }
+  });
+
+  refresh(orgId, "expenses");
+  refresh(orgId, "banking");
+  revalidatePath(`/${orgId}/reports`);
+}
+
 export async function createRecurringExpenseAction(formData: FormData) {
   const orgId = s(formData,"orgId"); await orgAccess(orgId);
   const recurrence = (s(formData,"recurrence") || "MONTHLY") as Recurrence;
@@ -182,6 +252,116 @@ export async function createIncomeAction(formData: FormData) {
   if (bankAccountId) {
     refresh(orgId, "banking");
   }
+  if (contactId) {
+    refresh(orgId, "crm");
+  }
+  revalidatePath(`/${orgId}/reports`);
+}
+
+export async function updateIncomeAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  await orgAccess(orgId);
+  const id = s(formData, "id");
+  if (!id) return;
+
+  const amount = n(formData, "amount");
+  const title = s(formData, "title");
+  if (!title || amount <= 0) return;
+
+  const rawContactId = s(formData, "contactId");
+  const validContact = rawContactId
+    ? await db.contact.findFirst({ where: { id: rawContactId, organizationId: orgId } })
+    : null;
+  const contactId = validContact ? validContact.id : null;
+
+  const paymentMethod = (s(formData, "paymentMethod") || "CASH").toUpperCase();
+  const rawBankAccountId = s(formData, "bankAccountId");
+  let bankAccountId: string | null = null;
+  let targetBank = null;
+
+  if (paymentMethod === "BANK" && rawBankAccountId) {
+    targetBank = await db.bankAccount.findFirst({
+      where: { id: rawBankAccountId, organizationId: orgId },
+    });
+    if (targetBank) {
+      bankAccountId = targetBank.id;
+    }
+  }
+
+  let source = s(formData, "source") || null;
+  if (!source && validContact) {
+    source = validContact.companyName || validContact.name;
+  }
+  const receivedAt = d(formData, "receivedAt") ?? new Date();
+  const notes = s(formData, "notes") || null;
+
+  await db.$transaction(async (tx) => {
+    const existing = await tx.income.findFirst({
+      where: { id, organizationId: orgId },
+    });
+    if (!existing) return;
+
+    const oldAmount = Number(existing.amount);
+    const oldBankAccountId = existing.bankAccountId;
+    const oldPaymentMethod = existing.paymentMethod;
+
+    // 1. Revert old bank balance if old income was deposited into bank
+    if (oldPaymentMethod === "BANK" && oldBankAccountId) {
+      await tx.bankAccount.update({
+        where: { id: oldBankAccountId },
+        data: { currentBalance: { decrement: oldAmount } },
+      });
+      await tx.bankTransaction.deleteMany({
+        where: { incomeId: id },
+      });
+    }
+
+    // 2. Apply new bank balance if new income is BANK
+    if (paymentMethod === "BANK" && bankAccountId && targetBank) {
+      const freshAcc = await tx.bankAccount.findUnique({ where: { id: bankAccountId } });
+      const curBal = Number(freshAcc?.currentBalance || 0);
+      const newBal = curBal + amount;
+
+      await tx.bankAccount.update({
+        where: { id: bankAccountId },
+        data: { currentBalance: newBal },
+      });
+
+      await tx.bankTransaction.create({
+        data: {
+          organizationId: orgId,
+          bankAccountId,
+          transactionDate: receivedAt,
+          type: "DEPOSIT",
+          amount,
+          balance: newBal,
+          description: `Income Receipt: ${title}`,
+          reference: source || (validContact ? (validContact.companyName || validContact.name) : null),
+          category: "Payment Received",
+          incomeId: id,
+          contactId,
+        },
+      });
+    }
+
+    // 3. Update the Income record
+    await tx.income.update({
+      where: { id },
+      data: {
+        title,
+        amount,
+        receivedAt,
+        source,
+        paymentMethod: paymentMethod === "BANK" ? "BANK" : paymentMethod === "OTHER" ? "OTHER" : "CASH",
+        bankAccountId: paymentMethod === "BANK" ? bankAccountId : null,
+        contactId,
+        notes,
+      },
+    });
+  });
+
+  refresh(orgId, "income");
+  refresh(orgId, "banking");
   if (contactId) {
     refresh(orgId, "crm");
   }
@@ -599,6 +779,102 @@ export async function recordBankTransactionAction(formData: FormData) {
   if (contactId) {
     refresh(orgId, "crm");
   }
+  revalidatePath(`/${orgId}/reports`);
+}
+
+export async function updateBankTransactionAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  await orgAccess(orgId);
+  const id = s(formData, "id");
+  if (!id) return;
+
+  const targetBankAccountId = s(formData, "bankAccountId");
+  const newType = (s(formData, "type") || "DEPOSIT").toUpperCase() as "DEPOSIT" | "WITHDRAWAL";
+  const newAmount = n(formData, "amount");
+  const transactionDate = d(formData, "transactionDate") ?? new Date();
+  const description = s(formData, "description");
+  const category = s(formData, "category") || null;
+  const reference = s(formData, "reference") || null;
+  const chequeNumber = s(formData, "chequeNumber") || null;
+  const rawContactId = s(formData, "contactId");
+
+  if (!targetBankAccountId || newAmount <= 0) return;
+
+  await db.$transaction(async (tx) => {
+    const existing = await tx.bankTransaction.findFirst({
+      where: { id, organizationId: orgId },
+    });
+    if (!existing) return;
+
+    const oldBankAccountId = existing.bankAccountId;
+    const oldType = existing.type;
+    const oldAmount = Number(existing.amount);
+
+    // Revert old effect
+    const oldRevertDelta = oldType === "DEPOSIT" ? -oldAmount : oldAmount;
+    await tx.bankAccount.update({
+      where: { id: oldBankAccountId },
+      data: { currentBalance: { increment: oldRevertDelta } },
+    });
+
+    // Apply new effect
+    const newApplyDelta = newType === "DEPOSIT" ? newAmount : -newAmount;
+    const updatedTargetAccount = await tx.bankAccount.update({
+      where: { id: targetBankAccountId },
+      data: { currentBalance: { increment: newApplyDelta } },
+    });
+
+    const validContact = rawContactId
+      ? await tx.contact.findFirst({ where: { id: rawContactId, organizationId: orgId } })
+      : null;
+
+    await tx.bankTransaction.update({
+      where: { id },
+      data: {
+        bankAccountId: targetBankAccountId,
+        type: newType,
+        amount: newAmount,
+        transactionDate,
+        description: description || `${newType === "DEPOSIT" ? "Deposit" : "Withdrawal"} record`,
+        category,
+        reference,
+        chequeNumber,
+        balance: updatedTargetAccount.currentBalance,
+        contactId: validContact ? validContact.id : null,
+      },
+    });
+
+    // Synchronize coupled income record if present
+    if (existing.incomeId) {
+      await tx.income.updateMany({
+        where: { id: existing.incomeId, organizationId: orgId },
+        data: {
+          amount: newAmount,
+          receivedAt: transactionDate,
+          title: description || undefined,
+          bankAccountId: targetBankAccountId,
+          contactId: validContact ? validContact.id : undefined,
+        },
+      });
+    }
+
+    // Synchronize coupled expense record if present
+    if (existing.expenseId) {
+      await tx.expense.updateMany({
+        where: { id: existing.expenseId, organizationId: orgId },
+        data: {
+          amount: newAmount,
+          occurredAt: transactionDate,
+          title: description || undefined,
+        },
+      });
+    }
+  });
+
+  refresh(orgId, "banking");
+  refresh(orgId, "income");
+  refresh(orgId, "expenses");
+  refresh(orgId, "crm");
   revalidatePath(`/${orgId}/reports`);
 }
 

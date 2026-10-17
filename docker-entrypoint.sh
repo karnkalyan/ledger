@@ -28,5 +28,5 @@ else
   echo "==> [Seed] SEED_ON_STARTUP is false. Skipping seed data."
 fi
 
-echo "==> Starting Mediko Next.js server on port ${PORT:-3080}..."
+echo "==> Starting Mediko Next.js server on port ${PORT:-3081}..."
 exec "$@"

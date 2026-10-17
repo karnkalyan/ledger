@@ -26,10 +26,10 @@ RUN npm run build
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
-EXPOSE 3080
+EXPOSE 3081
 
 ENV NODE_ENV=production
-ENV PORT=3080
+ENV PORT=3081
 ENV HOSTNAME="0.0.0.0"
 
 ENTRYPOINT ["/docker-entrypoint.sh"]

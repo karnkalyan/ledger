@@ -636,6 +636,7 @@ export default async function ModulePage({
                           resource="expense"
                           id={x.id}
                           recordTitle={x.title}
+                          editHref={`/${orgId}/expenses/${x.id}/edit`}
                           viewHref={`/${orgId}/expenses`}
                         />
                       </td>
@@ -1180,6 +1181,7 @@ export default async function ModulePage({
                         resource="income"
                         id={x.id}
                         recordTitle={x.title}
+                        editHref={`/${orgId}/income/${x.id}/edit`}
                         viewHref={`/${orgId}/income`}
                       />
                     </td>
