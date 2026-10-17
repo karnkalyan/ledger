@@ -1005,9 +1005,30 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
         },
         quotes: { orderBy: { issueDate: "desc" } },
         salesOrders: { orderBy: { orderDate: "desc" } },
+        incomes: {
+          include: { bankAccount: true },
+          orderBy: { receivedAt: "desc" },
+        },
+        bankTransactions: {
+          include: { bankAccount: true },
+          orderBy: { transactionDate: "desc" },
+        },
       },
     });
     if (!contact) notFound();
+
+    // Fetch any direct operational expenses booked under this vendor name / companyName
+    const vendorExpenses = await db.expense.findMany({
+      where: {
+        organizationId: orgId,
+        OR: [
+          { vendor: contact.name },
+          ...(contact.companyName ? [{ vendor: contact.companyName }] : []),
+        ],
+      },
+      include: { category: true },
+      orderBy: { occurredAt: "desc" },
+    });
 
     const totalPurchases = contact.purchaseOrders.reduce((s, x) => s + Number(x.total), 0);
     const totalPaidToVendor = contact.purchaseOrders.reduce((s, x) => s + Number(x.paidAmount), 0);
@@ -1016,6 +1037,106 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
     const totalSales = contact.invoices.reduce((s, x) => s + Number(x.total), 0);
     const totalCollected = contact.invoices.reduce((s, x) => s + Number(x.paidAmount), 0);
     const customerReceivables = Math.max(0, totalSales - totalCollected);
+
+    const totalIncomeReceived = contact.incomes.reduce((s, x) => s + Number(x.amount), 0);
+    const totalDirectExpenses = vendorExpenses.reduce((s, x) => s + Number(x.amount), 0);
+
+    // Build unified chronological statement entries
+    type StatementRow = {
+      id: string;
+      date: Date;
+      type: "PURCHASE" | "PO_PAYMENT" | "INVOICE" | "INV_PAYMENT" | "INCOME" | "DIRECT_EXPENSE" | "BANK_TX";
+      typeLabel: string;
+      reference: string;
+      description: string;
+      debit: number;  // increases dues/receivable
+      credit: number; // payment/receipt settling balance
+    };
+
+    const statementRows: StatementRow[] = [
+      ...contact.purchaseOrders.map((po) => ({
+        id: `po-${po.id}`,
+        date: po.orderDate,
+        type: "PURCHASE" as const,
+        typeLabel: "Procurement Bill",
+        reference: po.orderNumber,
+        description: `Purchase order (${po.items.length} line items)`,
+        debit: Number(po.total),
+        credit: 0,
+      })),
+      ...contact.purchaseOrders.flatMap((po) =>
+        po.payments.map((p) => ({
+          id: `popay-${p.id}`,
+          date: p.paidAt,
+          type: "PO_PAYMENT" as const,
+          typeLabel: "Vendor Payment",
+          reference: `Payment for ${po.orderNumber}`,
+          description: `Disbursement via ${p.paymentMethod || "Bank/Cash"}${p.reference ? ` (${p.reference})` : ""}`,
+          debit: 0,
+          credit: Number(p.amount),
+        }))
+      ),
+      ...contact.invoices.map((inv) => ({
+        id: `inv-${inv.id}`,
+        date: inv.issueDate,
+        type: "INVOICE" as const,
+        typeLabel: "Sales Invoice",
+        reference: inv.invoiceNumber,
+        description: `Sales invoice (${inv.items.length} line items)`,
+        debit: Number(inv.total),
+        credit: 0,
+      })),
+      ...contact.invoices.flatMap((inv) =>
+        inv.payments.map((p) => ({
+          id: `invpay-${p.id}`,
+          date: p.paidAt,
+          type: "INV_PAYMENT" as const,
+          typeLabel: "Sales Collection",
+          reference: `Payment for ${inv.invoiceNumber}`,
+          description: `Client settlement via ${p.paymentMethod || "Bank/Cash"}${p.reference ? ` (${p.reference})` : ""}`,
+          debit: 0,
+          credit: Number(p.amount),
+        }))
+      ),
+      ...contact.incomes.map((inc) => ({
+        id: `inc-${inc.id}`,
+        date: inc.receivedAt,
+        type: "INCOME" as const,
+        typeLabel: "Income / Inflow",
+        reference: inc.source || "Direct Receipt",
+        description: `${inc.title}${inc.bankAccount ? ` [Bank: ${inc.bankAccount.name}]` : inc.paymentMethod === "CASH" ? " [Cash in Hand]" : ""}`,
+        debit: 0,
+        credit: Number(inc.amount),
+      })),
+      ...vendorExpenses.map((exp) => ({
+        id: `exp-${exp.id}`,
+        date: exp.occurredAt,
+        type: "DIRECT_EXPENSE" as const,
+        typeLabel: "Direct Expense",
+        reference: exp.category?.name || "Expense",
+        description: `${exp.title}${exp.notes ? ` (${exp.notes})` : ""}`,
+        debit: Number(exp.amount),
+        credit: 0,
+      })),
+      ...contact.bankTransactions.map((tx) => ({
+        id: `btx-${tx.id}`,
+        date: tx.transactionDate,
+        type: "BANK_TX" as const,
+        typeLabel: tx.type === "DEPOSIT" ? "Bank Deposit" : "Bank Withdrawal",
+        reference: `${tx.bankAccount.name} (${tx.reference || "N/A"})`,
+        description: tx.description || `${tx.type} transaction`,
+        debit: tx.type === "WITHDRAWAL" ? Number(tx.amount) : 0,
+        credit: tx.type === "DEPOSIT" ? Number(tx.amount) : 0,
+      })),
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    // Calculate chronological running balance (ascending then reversed)
+    let running = 0;
+    const sortedAsc = [...statementRows].reverse();
+    const rowsWithBalance = sortedAsc.map((r) => {
+      running += r.debit - r.credit;
+      return { ...r, balance: running };
+    }).reverse();
 
     return (
       <main className="page-wrap">
@@ -1026,13 +1147,22 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
               Back to CRM Directory
             </Link>
             <h1 style={{ marginTop: 6 }}>{contact.companyName || contact.name}</h1>
-            <p>Complete enterprise vendor &amp; customer ledger, company tax credentials, and order history.</p>
+            <p>Complete enterprise vendor &amp; customer statement, payment receipts, orders, and ledger history.</p>
           </div>
-          <div className="page-actions">
+          <div className="page-actions" style={{ flexWrap: "wrap", gap: 8 }}>
             <PrintButton label="Print Statement / Profile" />
-            <Link href={`/${orgId}/purchase/new?type=new-purchase-order`} className="primary-btn">
-              + New Purchase Order
+            <Link
+              href={`/${orgId}/income/new?type=record-income&contactId=${contact.id}`}
+              className="success-btn"
+              style={{ fontSize: 13 }}
+            >
+              + Record Payment Received / Income
             </Link>
+            {organization.kind === "COMPANY" && (
+              <Link href={`/${orgId}/purchase/new?type=new-purchase-order`} className="primary-btn" style={{ fontSize: 13 }}>
+                + New Purchase Order
+              </Link>
+            )}
           </div>
         </div>
 
@@ -1055,7 +1185,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
                 </div>
               )}
             </div>
-            <div style={{ display: "flex", gap: 20, textAlign: "right" }}>
+            <div style={{ display: "flex", gap: 16, textAlign: "right", flexWrap: "wrap" }}>
               {(contact.type === "VENDOR" || contact.type === "BOTH") && (
                 <div>
                   <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)" }}>Vendor Dues (Payable)</div>
@@ -1069,6 +1199,20 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
                   <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)" }}>Receivables (Due from Client)</div>
                   <strong style={{ fontSize: 18, color: customerReceivables > 0 ? "var(--brand)" : "var(--success)" }}>
                     {money(customerReceivables, organization.currency)}
+                  </strong>
+                </div>
+              )}
+              <div>
+                <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)" }}>Total Payments Received</div>
+                <strong style={{ fontSize: 18, color: "var(--success)" }}>
+                  {money(totalIncomeReceived, organization.currency)}
+                </strong>
+              </div>
+              {totalDirectExpenses > 0 && (
+                <div>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)" }}>Direct Operational Bills</div>
+                  <strong style={{ fontSize: 18, color: "var(--text-muted)" }}>
+                    {money(totalDirectExpenses, organization.currency)}
                   </strong>
                 </div>
               )}
@@ -1095,10 +1239,154 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
           </div>
         </div>
 
+        {/* PAYMENTS RECEIVED & INCOMES LOG FROM THIS CONTACT */}
+        <div className="table-card" style={{ marginBottom: 20 }}>
+          <div className="table-toolbar">
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <h3>Payments Received &amp; Incomes ({contact.incomes.length})</h3>
+              <span className="badge green">Total: {money(totalIncomeReceived, organization.currency)}</span>
+            </div>
+            <Link
+              href={`/${orgId}/income/new?type=record-income&contactId=${contact.id}`}
+              className="primary-btn"
+              style={{ fontSize: 12, padding: "5px 10px" }}
+            >
+              + Record Payment
+            </Link>
+          </div>
+          <div className="table-scroll">
+            <DataTable className="responsive-table">
+              <thead>
+                <tr>
+                  <th>Date (BS / AD)</th>
+                  <th>Receipt / Inflow Title</th>
+                  <th>Payment Channel / Account</th>
+                  <th>Source / Ref</th>
+                  <th style={{ textAlign: "right" }}>Amount Received</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contact.incomes.map((inc) => (
+                  <tr key={inc.id}>
+                    <td data-label="Date">
+                      <div>{formatDualDate(inc.receivedAt)}</div>
+                    </td>
+                    <td data-label="Title" className="table-title">
+                      <strong>{inc.title}</strong>
+                      {inc.notes && <div className="table-sub">{inc.notes}</div>}
+                    </td>
+                    <td data-label="Channel">
+                      {inc.paymentMethod === "BANK" ? (
+                        <span className="badge purple" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          🏦 {inc.bankAccount?.name ? `Bank: ${inc.bankAccount.name}` : "Bank Account"}
+                        </span>
+                      ) : inc.paymentMethod === "CASH" ? (
+                        <span className="badge green" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          💵 Cash in Hand
+                        </span>
+                      ) : (
+                        <span className="badge cyan">🔄 {inc.paymentMethod || "Other"}</span>
+                      )}
+                    </td>
+                    <td data-label="Source">{inc.source || "—"}</td>
+                    <td data-label="Amount" className="amount-pos" style={{ textAlign: "right", fontWeight: 700 }}>
+                      + {money(inc.amount, organization.currency)}
+                    </td>
+                  </tr>
+                ))}
+                {!contact.incomes.length && (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: "center", padding: "16px 12px", color: "var(--text-muted)" }}>
+                      No direct income payments recorded from this contact yet.{" "}
+                      <Link
+                        href={`/${orgId}/income/new?type=record-income&contactId=${contact.id}`}
+                        style={{ color: "var(--brand)", textDecoration: "underline", marginLeft: 4 }}
+                      >
+                        Record first payment
+                      </Link>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </DataTable>
+          </div>
+        </div>
+
+        {/* ALL-IN-ONE COMPREHENSIVE STATEMENT & LEDGER */}
+        <div className="table-card" style={{ marginBottom: 20 }}>
+          <div className="table-toolbar">
+            <div>
+              <h3>All-in-One Comprehensive Account Statement</h3>
+              <p style={{ margin: "2px 0 0 0", fontSize: 12, color: "var(--text-muted)" }}>
+                Chronological transaction ledger combining purchases, payments, invoices, income receipts, and bank postings.
+              </p>
+            </div>
+            <span className="badge cyan">{rowsWithBalance.length} ledger transactions</span>
+          </div>
+          <div className="table-scroll">
+            <DataTable className="responsive-table">
+              <thead>
+                <tr>
+                  <th>Date (BS / AD)</th>
+                  <th>Transaction Type</th>
+                  <th>Reference</th>
+                  <th>Description</th>
+                  <th style={{ textAlign: "right" }}>Debit (Dr)</th>
+                  <th style={{ textAlign: "right" }}>Credit (Cr)</th>
+                  <th style={{ textAlign: "right" }}>Net Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rowsWithBalance.map((row) => (
+                  <tr key={row.id}>
+                    <td data-label="Date">
+                      <div>{formatDualDate(row.date)}</div>
+                    </td>
+                    <td data-label="Type">
+                      <span
+                        className={`badge ${
+                          row.type === "PURCHASE" || row.type === "DIRECT_EXPENSE"
+                            ? "amber"
+                            : row.type === "PO_PAYMENT" || row.type === "INCOME" || row.type === "INV_PAYMENT"
+                            ? "green"
+                            : row.type === "INVOICE"
+                            ? "cyan"
+                            : "purple"
+                        }`}
+                        style={{ fontSize: 10 }}
+                      >
+                        {row.typeLabel}
+                      </span>
+                    </td>
+                    <td data-label="Reference" style={{ fontWeight: 600 }}>{row.reference}</td>
+                    <td data-label="Description" style={{ fontSize: 12 }}>{row.description}</td>
+                    <td data-label="Debit" style={{ textAlign: "right", color: row.debit > 0 ? "var(--danger)" : "inherit" }}>
+                      {row.debit > 0 ? money(row.debit, organization.currency) : "—"}
+                    </td>
+                    <td data-label="Credit" style={{ textAlign: "right", color: row.credit > 0 ? "var(--success)" : "inherit", fontWeight: row.credit > 0 ? 600 : 400 }}>
+                      {row.credit > 0 ? money(row.credit, organization.currency) : "—"}
+                    </td>
+                    <td data-label="Balance" style={{ textAlign: "right", fontWeight: 700, color: row.balance > 0 ? "var(--danger)" : row.balance < 0 ? "var(--success)" : "inherit" }}>
+                      {money(Math.abs(row.balance), organization.currency)} {row.balance > 0 ? "Dr" : row.balance < 0 ? "Cr" : ""}
+                    </td>
+                  </tr>
+                ))}
+                {!rowsWithBalance.length && (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: "center", padding: 18, color: "var(--text-muted)" }}>
+                      No ledger transactions found for this party.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </DataTable>
+          </div>
+        </div>
+
         {/* Vendor Procurement / Purchase Orders Table */}
         <div className="table-card" style={{ marginBottom: 20 }}>
           <div className="table-toolbar">
-            <h3>Procurement Orders &amp; Invoices ({contact.purchaseOrders.length})</h3>
+            <h3>Procurement Orders &amp; Bills ({contact.purchaseOrders.length})</h3>
             <span className="badge purple">Total: {money(totalPurchases, organization.currency)}</span>
           </div>
           <div className="table-scroll">
