@@ -63,6 +63,7 @@ export function MobileMenuPageContent({
   userRole: string;
 }) {
   const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
 
   const sections: MenuSection[] = useMemo(() => {
     const list: MenuSection[] = [
@@ -336,12 +337,30 @@ export function MobileMenuPageContent({
     return list;
   }, [orgId, userRole]);
 
-  // Filter sections by search query
+  // Categories list for interactive filter tabs
+  const categories = useMemo(() => {
+    const totalCount = sections.reduce((sum, s) => sum + s.items.length, 0);
+    return [
+      { id: "ALL", label: "All Modules", count: totalCount },
+      ...sections.map((s) => ({
+        id: s.title,
+        label: s.title.split("&")[0].trim(),
+        fullTitle: s.title,
+        count: s.items.length,
+      })),
+    ];
+  }, [sections]);
+
+  // Filter sections by category and search query
   const filteredSections = useMemo(() => {
-    if (!search.trim()) return sections;
+    let list = sections;
+    if (selectedCategory !== "ALL") {
+      list = list.filter((s) => s.title === selectedCategory);
+    }
+    if (!search.trim()) return list;
     const q = search.toLowerCase();
 
-    return sections
+    return list
       .map((sec) => {
         const matchesSection = sec.title.toLowerCase().includes(q) || sec.description.toLowerCase().includes(q);
         const filteredItems = sec.items.filter((item) => {
@@ -358,56 +377,92 @@ export function MobileMenuPageContent({
         };
       })
       .filter(Boolean) as MenuSection[];
-  }, [sections, search]);
+  }, [sections, search, selectedCategory]);
+
+  const totalFilteredModules = useMemo(() => {
+    return filteredSections.reduce((sum, s) => sum + s.items.length, 0);
+  }, [filteredSections]);
 
   return (
-    <div className="mobile-menu-page-container" style={{ maxWidth: 840, margin: "0 auto", paddingBottom: 60 }}>
+    <div
+      className="module-directory-container"
+      style={{
+        width: "100%",
+        maxWidth: 1440,
+        margin: "0 auto",
+        paddingBottom: 60,
+      }}
+    >
+      <style>{`
+        .module-card-item {
+          transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        }
+        .module-card-item:hover {
+          transform: translateY(-2px);
+          border-color: var(--brand) !important;
+          box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.08) !important;
+        }
+        .module-shortcut-btn {
+          transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        }
+        .module-shortcut-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+      `}</style>
+
       {/* HEADER BANNER */}
       <div
         style={{
           background: "linear-gradient(135deg, var(--surface) 0%, var(--soft) 100%)",
           borderRadius: 14,
-          padding: "20px 18px",
-          marginBottom: 16,
+          padding: "20px 22px",
+          marginBottom: 20,
           border: "1px solid var(--line)",
           boxShadow: "0 2px 10px rgba(0,0,0,0.04)",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
           <div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-              <span className="badge purple" style={{ fontSize: 10, textTransform: "uppercase" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
+              <span className="badge purple" style={{ fontSize: 10, textTransform: "uppercase", padding: "3px 8px" }}>
                 {kind === "COMPANY" ? "🏢 Commercial Enterprise" : "🏡 Household Suite"}
               </span>
               {taxNumber && (
-                <span className="badge cyan" style={{ fontSize: 10 }}>
-                  PAN: {taxNumber}
+                <span className="badge cyan" style={{ fontSize: 10, padding: "3px 8px" }}>
+                  PAN/VAT: {taxNumber}
                 </span>
               )}
+              <span className="badge green" style={{ fontSize: 10, padding: "3px 8px" }}>
+                Currency: {currency}
+              </span>
+              <span style={{ fontSize: 10.5, color: "var(--text-muted)", fontWeight: 600 }}>
+                {totalFilteredModules} Modules Available
+              </span>
             </div>
-            <h1 style={{ fontSize: 22, margin: "4px 0 2px 0", fontWeight: 800 }}>
-              {orgName} · Module Directory
+            <h1 style={{ fontSize: 24, margin: "2px 0 4px 0", fontWeight: 800, color: "var(--text)" }}>
+              {orgName} · Module Directory & Apps Hub
             </h1>
-            <p style={{ margin: 0, fontSize: 12.5, color: "var(--text-secondary)" }}>
-              Access any ledger, transaction book, or administrative tool with instant sub-item actions.
+            <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)" }}>
+              Access any ledger, transaction book, sales pipeline, or administrative utility with one-click direct actions.
             </p>
           </div>
           <Link
             href={`/${orgId}`}
             className="secondary-btn"
-            style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 4, flexShrink: 0 }}
+            style={{ fontSize: 12.5, display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 14px", flexShrink: 0 }}
           >
-            <Home size={14} /> Dashboard
+            <Home size={15} /> Dashboard Home
           </Link>
         </div>
 
         {/* SEARCH BAR */}
-        <div style={{ marginTop: 14, position: "relative" }}>
+        <div style={{ marginTop: 16, position: "relative" }}>
           <Search
-            size={16}
+            size={18}
             style={{
               position: "absolute",
-              left: 12,
+              left: 14,
               top: "50%",
               transform: "translateY(-50%)",
               color: "var(--text-muted)",
@@ -418,129 +473,264 @@ export function MobileMenuPageContent({
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search all modules, invoices, reports, staff, banking..."
+            placeholder="Search all modules, invoices, reports, staff, banking, utilities..."
             style={{
               width: "100%",
-              padding: "10px 12px 10px 38px",
+              padding: "11px 14px 11px 42px",
               borderRadius: 10,
               border: "1px solid var(--line)",
               background: "var(--surface)",
-              fontSize: 13.5,
+              fontSize: 14,
               outline: "none",
+              color: "var(--text)",
+              boxSizing: "border-box",
             }}
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              style={{
+                position: "absolute",
+                right: 12,
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "none",
+                border: "none",
+                fontSize: 12,
+                fontWeight: 600,
+                color: "var(--text-muted)",
+                cursor: "pointer",
+              }}
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        {/* INTERACTIVE CATEGORY TABS ROW */}
+        <div
+          style={{
+            marginTop: 14,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            flexWrap: "wrap",
+            paddingTop: 12,
+            borderTop: "1px solid var(--line)",
+          }}
+        >
+          <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-muted)", marginRight: 4, textTransform: "uppercase" }}>
+            Categories:
+          </span>
+          {categories.map((cat) => {
+            const isSelected = selectedCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setSelectedCategory(cat.id)}
+                style={{
+                  padding: "4px 10px",
+                  borderRadius: 20,
+                  fontSize: 11.5,
+                  fontWeight: isSelected ? 700 : 500,
+                  background: isSelected ? "var(--brand)" : "var(--surface)",
+                  color: isSelected ? "#ffffff" : "var(--text-secondary)",
+                  border: isSelected ? "1px solid var(--brand)" : "1px solid var(--line)",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <span>{cat.label}</span>
+                <span
+                  style={{
+                    fontSize: 9.5,
+                    padding: "1px 5px",
+                    borderRadius: 10,
+                    background: isSelected ? "rgba(255, 255, 255, 0.25)" : "var(--soft)",
+                    color: isSelected ? "#ffffff" : "var(--text-muted)",
+                    fontWeight: 700,
+                  }}
+                >
+                  {cat.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* QUICK SHORTCUTS ROW */}
+      {/* QUICK SHORTCUTS ROW (RESPONSIVE DESKTOP LAUNCHPAD) */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-          gap: 8,
-          marginBottom: 20,
+          gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))",
+          gap: 10,
+          marginBottom: 24,
         }}
       >
         <Link
+          href={`/${orgId}/invoices/new?type=new-invoice`}
+          className="module-shortcut-btn"
+          style={{
+            background: "var(--brand-soft)",
+            color: "var(--brand)",
+            padding: "10px 14px",
+            borderRadius: 10,
+            textDecoration: "none",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 12.5,
+            fontWeight: 700,
+            border: "1px solid var(--brand-border)",
+          }}
+        >
+          <ReceiptText size={16} /> + New Invoice
+        </Link>
+        <Link
           href={`/${orgId}/expenses/new?type=new-expense`}
+          className="module-shortcut-btn"
           style={{
             background: "var(--danger-soft)",
             color: "var(--danger)",
-            padding: "10px 12px",
+            padding: "10px 14px",
             borderRadius: 10,
             textDecoration: "none",
             display: "flex",
             alignItems: "center",
             gap: 8,
-            fontSize: 12,
+            fontSize: 12.5,
             fontWeight: 700,
-            border: "1px solid rgba(239, 68, 68, 0.2)",
+            border: "1px solid rgba(239, 68, 68, 0.25)",
           }}
         >
-          <Plus size={15} /> + New Expense
+          <Plus size={16} /> + Record Expense
         </Link>
         <Link
           href={`/${orgId}/income/new?type=record-income`}
+          className="module-shortcut-btn"
           style={{
             background: "var(--success-soft)",
             color: "var(--success)",
-            padding: "10px 12px",
+            padding: "10px 14px",
             borderRadius: 10,
             textDecoration: "none",
             display: "flex",
             alignItems: "center",
             gap: 8,
-            fontSize: 12,
+            fontSize: 12.5,
             fontWeight: 700,
-            border: "1px solid rgba(22, 163, 74, 0.2)",
+            border: "1px solid rgba(22, 163, 74, 0.25)",
           }}
         >
-          <Plus size={15} /> + Record Income
+          <TrendingUp size={16} /> + Record Income
         </Link>
         <Link
           href={`/${orgId}/banking/new?type=record-deposit`}
+          className="module-shortcut-btn"
           style={{
             background: "var(--cyan-soft)",
             color: "var(--cyan)",
-            padding: "10px 12px",
+            padding: "10px 14px",
             borderRadius: 10,
             textDecoration: "none",
             display: "flex",
             alignItems: "center",
             gap: 8,
-            fontSize: 12,
+            fontSize: 12.5,
             fontWeight: 700,
-            border: "1px solid rgba(6, 182, 212, 0.2)",
+            border: "1px solid rgba(6, 182, 212, 0.25)",
           }}
         >
-          <Plus size={15} /> + Bank Deposit
+          <Landmark size={16} /> + Bank Deposit
         </Link>
         <Link
           href={`/${orgId}/reports?reportType=director`}
+          className="module-shortcut-btn"
           style={{
             background: "var(--purple-soft)",
             color: "var(--purple)",
-            padding: "10px 12px",
+            padding: "10px 14px",
             borderRadius: 10,
             textDecoration: "none",
             display: "flex",
             alignItems: "center",
             gap: 8,
-            fontSize: 12,
+            fontSize: 12.5,
             fontWeight: 700,
-            border: "1px solid rgba(139, 92, 246, 0.2)",
+            border: "1px solid rgba(139, 92, 246, 0.25)",
           }}
         >
-          <UserCheck size={15} /> Director Ledger
+          <UserCheck size={16} /> Director Ledger
+        </Link>
+        <Link
+          href={`/${orgId}/quotes/new?type=new-quote`}
+          className="module-shortcut-btn"
+          style={{
+            background: "var(--soft)",
+            color: "var(--text)",
+            padding: "10px 14px",
+            borderRadius: 10,
+            textDecoration: "none",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 12.5,
+            fontWeight: 700,
+            border: "1px solid var(--line)",
+          }}
+        >
+          <FileText size={16} /> + Create Quote
         </Link>
       </div>
 
       {/* CATEGORIZED MODULE SECTIONS */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
         {filteredSections.map((sec, sIdx) => (
-          <div key={sIdx} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ borderBottom: "1px solid var(--line)", paddingBottom: 6 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div
-                  style={{
-                    width: 4,
-                    height: 16,
-                    borderRadius: 2,
-                    background: sec.color,
-                  }}
-                />
-                <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>{sec.title}</h2>
+          <div key={sIdx} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "1px solid var(--line)", paddingBottom: 8, gap: 12 }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div
+                    style={{
+                      width: 4,
+                      height: 18,
+                      borderRadius: 2,
+                      background: sec.color,
+                    }}
+                  />
+                  <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "var(--text)" }}>{sec.title}</h2>
+                </div>
+                <p style={{ margin: "3px 0 0 12px", fontSize: 12, color: "var(--text-muted)" }}>
+                  {sec.description}
+                </p>
               </div>
-              <p style={{ margin: "2px 0 0 12px", fontSize: 11.5, color: "var(--text-muted)" }}>
-                {sec.description}
-              </p>
+              <span
+                style={{
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  padding: "2px 8px",
+                  borderRadius: 12,
+                  background: "var(--soft)",
+                  color: "var(--text-secondary)",
+                  border: "1px solid var(--line)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {sec.items.length} {sec.items.length === 1 ? "Module" : "Modules"}
+              </span>
             </div>
 
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                gap: 12,
+                gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+                gap: 14,
               }}
             >
               {sec.items.map((item, iIdx) => {
@@ -548,36 +738,38 @@ export function MobileMenuPageContent({
                 return (
                   <div
                     key={iIdx}
+                    className="module-card-item"
                     style={{
                       background: "var(--surface)",
-                      borderRadius: 12,
+                      borderRadius: 14,
                       border: "1px solid var(--line)",
-                      padding: "14px",
+                      padding: "16px",
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
-                      gap: 10,
+                      gap: 12,
                       boxShadow: "0 1px 4px rgba(0,0,0,0.03)",
-                      transition: "transform 0.15s ease, box-shadow 0.15s ease",
                     }}
                   >
                     <div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
                         <Link
                           href={item.href}
                           style={{
                             display: "flex",
-                            alignItems: "center",
-                            gap: 10,
+                            alignItems: "flex-start",
+                            gap: 12,
                             textDecoration: "none",
                             color: "inherit",
+                            flex: 1,
+                            minWidth: 0,
                           }}
                         >
                           <div
                             style={{
-                              width: 36,
-                              height: 36,
-                              borderRadius: 9,
+                              width: 40,
+                              height: 40,
+                              borderRadius: 10,
                               background: "var(--soft)",
                               display: "flex",
                               alignItems: "center",
@@ -587,18 +779,18 @@ export function MobileMenuPageContent({
                               border: "1px solid var(--line)",
                             }}
                           >
-                            <IconComponent size={18} />
+                            <IconComponent size={20} />
                           </div>
-                          <div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              <strong style={{ fontSize: 13.5, color: "var(--text)" }}>{item.title}</strong>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                              <strong style={{ fontSize: 14, color: "var(--text)" }}>{item.title}</strong>
                               {item.badge && (
-                                <span className="badge purple" style={{ fontSize: 9, padding: "1px 5px" }}>
+                                <span className="badge purple" style={{ fontSize: 9.5, padding: "1px 6px" }}>
                                   {item.badge}
                                 </span>
                               )}
                             </div>
-                            <span style={{ fontSize: 11, color: "var(--text-muted)", display: "block", marginTop: 1 }}>
+                            <span style={{ fontSize: 12, color: "var(--text-secondary)", display: "block", marginTop: 2, lineHeight: 1.4 }}>
                               {item.description}
                             </span>
                           </div>
@@ -607,13 +799,17 @@ export function MobileMenuPageContent({
                           href={item.href}
                           style={{
                             color: "var(--text-muted)",
-                            padding: 4,
+                            padding: 6,
+                            borderRadius: 6,
                             display: "inline-flex",
                             alignItems: "center",
+                            background: "var(--soft)",
+                            border: "1px solid var(--line)",
+                            flexShrink: 0,
                           }}
                           aria-label={`Open ${item.title}`}
                         >
-                          <ChevronRight size={16} />
+                          <ChevronRight size={15} />
                         </Link>
                       </div>
                     </div>
@@ -625,7 +821,7 @@ export function MobileMenuPageContent({
                           display: "flex",
                           flexWrap: "wrap",
                           gap: 6,
-                          paddingTop: 8,
+                          paddingTop: 10,
                           borderTop: "1px dashed var(--line)",
                         }}
                       >
@@ -634,17 +830,18 @@ export function MobileMenuPageContent({
                             key={subIdx}
                             href={sub.href}
                             style={{
-                              fontSize: 11,
+                              fontSize: 11.5,
                               fontWeight: sub.isCreate ? 700 : 500,
-                              padding: "3px 8px",
+                              padding: "4px 9px",
                               borderRadius: 6,
                               textDecoration: "none",
                               background: sub.isCreate ? "var(--brand-soft)" : "var(--soft)",
                               color: sub.isCreate ? "var(--brand)" : "var(--text-secondary)",
-                              border: "1px solid var(--line)",
+                              border: sub.isCreate ? "1px solid var(--brand-border)" : "1px solid var(--line)",
                               display: "inline-flex",
                               alignItems: "center",
-                              gap: 3,
+                              gap: 4,
+                              transition: "all 0.15s ease",
                             }}
                           >
                             {sub.label}
@@ -662,16 +859,27 @@ export function MobileMenuPageContent({
         {filteredSections.length === 0 && (
           <div
             style={{
-              padding: "40px 20px",
+              padding: "48px 24px",
               textAlign: "center",
               background: "var(--surface)",
-              borderRadius: 12,
+              borderRadius: 14,
               border: "1px solid var(--line)",
             }}
           >
-            <p style={{ margin: 0, color: "var(--text-muted)", fontSize: 14 }}>
-              No modules or actions matching &quot;{search}&quot;.
+            <p style={{ margin: "0 0 10px 0", color: "var(--text)", fontSize: 15, fontWeight: 600 }}>
+              No modules or actions matching &quot;{search}&quot; in this category.
             </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSearch("");
+                setSelectedCategory("ALL");
+              }}
+              className="secondary-btn"
+              style={{ fontSize: 12.5 }}
+            >
+              Reset Filters
+            </button>
           </div>
         )}
       </div>
