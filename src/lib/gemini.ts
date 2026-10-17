@@ -103,8 +103,17 @@ export interface MediaPart {
   base64Data: string;
 }
 
+const GEMINI_FALLBACK_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-flash-latest",
+  "gemini-3.5-flash",
+  "gemini-3.1-flash-lite",
+  "gemini-3-flash-preview",
+];
+
 /**
- * Calls Gemini 2.5 Flash with multimodal parts (text, image, pdf base64)
+ * Calls Gemini with multimodal parts (text, image, pdf base64)
+ * Features resilient multi-model failover and retries to guard against HTTP 503 (high demand) / HTTP 429.
  */
 export async function generateGeminiContent({
   prompt,
@@ -118,7 +127,6 @@ export async function generateGeminiContent({
   responseJson?: boolean;
 }): Promise<string> {
   const apiKey = getGeminiApiKey();
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
   const parts: Array<Record<string, unknown>> = [];
 
@@ -160,28 +168,71 @@ export async function generateGeminiContent({
     };
   }
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+  let lastError: Error | null = null;
 
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`Gemini API error (HTTP ${res.status}): ${errorText}`);
+  // Try candidate models in high-availability sequence
+  for (const model of GEMINI_FALLBACK_MODELS) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          const candidate = json?.candidates?.[0];
+          const replyText = candidate?.content?.parts?.[0]?.text;
+          if (replyText) {
+            return replyText;
+          }
+        }
+
+        const errorText = await res.text();
+        const isSpikeOrRateLimit =
+          res.status === 503 || res.status === 429 || res.status >= 500;
+
+        console.warn(
+          `[Gemini HA Failover] Model ${model} (attempt ${attempt}) returned HTTP ${res.status}: ${errorText.slice(0, 100)}`
+        );
+
+        lastError = new Error(
+          `Gemini API error (HTTP ${res.status}): ${errorText}`
+        );
+
+        // If it's a temporary 503 spike, wait briefly before retrying or switching models
+        if (isSpikeOrRateLimit && attempt === 1) {
+          await new Promise((resolve) => setTimeout(resolve, 600));
+          continue;
+        }
+
+        // Move to the next model in the fallback cascade
+        break;
+      } catch (err: any) {
+        console.warn(
+          `[Gemini Network Error] Model ${model} failed: ${err?.message}`
+        );
+        lastError = err;
+        if (attempt === 1) {
+          await new Promise((resolve) => setTimeout(resolve, 600));
+          continue;
+        }
+        break;
+      }
+    }
   }
 
-  const json = await res.json();
-  const candidate = json?.candidates?.[0];
-  const replyText = candidate?.content?.parts?.[0]?.text;
-
-  if (!replyText) {
-    throw new Error("No text response returned by Gemini model");
-  }
-
-  return replyText;
+  throw (
+    lastError ||
+    new Error(
+      "Kashtrix AI engine is temporarily busy. Please try your request again in a few seconds."
+    )
+  );
 }
 
 /**

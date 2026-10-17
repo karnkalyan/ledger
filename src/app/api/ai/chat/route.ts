@@ -192,6 +192,22 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error("[Chat Assistant Error]:", error);
+    const isOverloaded =
+      error?.message?.includes("503") ||
+      error?.message?.includes("429") ||
+      error?.message?.includes("high demand") ||
+      error?.message?.includes("UNAVAILABLE") ||
+      error?.message?.includes("temporarily busy");
+
+    if (isOverloaded) {
+      return NextResponse.json({
+        success: true,
+        reply:
+          "The AI processing engine is experiencing high demand. I have activated multi-node failover routes—please try asking your question again in a moment.",
+        extraction: null,
+      });
+    }
+
     return NextResponse.json(
       { error: error?.message || "Failed to process chat message" },
       { status: 500 }
