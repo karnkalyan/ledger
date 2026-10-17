@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
+import { isMasterApiKey } from "@/lib/mcp-auth";
 import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
@@ -41,7 +42,7 @@ export async function GET(request: Request) {
   }
 
   // Redirect user's browser to the branded interactive login & consent dialog
-  const envUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://ledger.simulcast.com.np").replace(/\/$/, "");
+  const envUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://leader.simulcast.com.np").replace(/\/$/, "");
   const forwardedHost = request.headers.get("x-forwarded-host");
   const host = forwardedHost || request.headers.get("host") || "";
   const forwardedProto = request.headers.get("x-forwarded-proto");
@@ -96,10 +97,8 @@ export async function POST(request: Request) {
   let targetOrgId = orgId || "";
   let targetOrgSlug = "";
 
-  const masterKey = process.env.MCP_API_KEY || "leader_master_mcp_api_key_2026_sec";
-
   // 1. Check Master Key
-  if (apiKey && apiKey.trim() === masterKey) {
+  if (apiKey && isMasterApiKey(apiKey)) {
     const defaultOrg = await db.organization.findFirst({ select: { id: true, slug: true } });
     targetOrgId = targetOrgId || defaultOrg?.id || "";
     targetOrgSlug = defaultOrg?.slug || "";

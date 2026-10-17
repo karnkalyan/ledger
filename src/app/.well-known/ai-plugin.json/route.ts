@@ -12,7 +12,7 @@ function resolveBaseUrl(request: Request): string {
     return `${proto}://${host}`;
   }
   const envUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL;
-  return (envUrl || "https://ledger.simulcast.com.np").replace(/\/$/, "");
+  return (envUrl || "https://leader.simulcast.com.np").replace(/\/$/, "");
 }
 
 export async function GET(request: Request) {
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     auth: {
       type: "oauth",
       client_url: `${serverUrl}/api/oauth/authorize`,
-      scope: "mcp:all",
+      scope: "mcp:all mcp:read mcp:write admin",
       authorization_url: `${serverUrl}/api/oauth/token`,
       authorization_content_type: "application/x-www-form-urlencoded",
       verification_tokens: {},

@@ -1831,14 +1831,6 @@ async function handleSingleRpc(rpc: any, auth: McpAuthResult) {
 }
 
 export async function POST(request: Request) {
-  const auth = await verifyMcpAuth(request);
-  if (!auth.authenticated) {
-    return jsonResponse(
-      { jsonrpc: "2.0", id: null, error: { code: -32000, message: auth.error || "Unauthorized" } },
-      401
-    );
-  }
-
   let body: any = {};
   try {
     body = await request.json();
@@ -1846,6 +1838,48 @@ export async function POST(request: Request) {
     return jsonResponse(
       { jsonrpc: "2.0", id: null, error: { code: -32700, message: "Parse error: invalid JSON body" } },
       400
+    );
+  }
+
+  // Handle batch or single RPC
+  const firstItem = Array.isArray(body) ? body[0] : body;
+  let method = firstItem?.method || "";
+
+  // Auto-adapt non-JSON-RPC direct tool calls from ChatGPT Actions or REST clients
+  if (!method && firstItem && typeof firstItem === "object") {
+    const detectedTool =
+      firstItem.tool ||
+      firstItem.name ||
+      firstItem.action;
+    if (detectedTool) {
+      method = "tools/call";
+      firstItem.method = "tools/call";
+      firstItem.params = {
+        name: detectedTool,
+        arguments: firstItem.arguments || firstItem.params || firstItem,
+      };
+    }
+  }
+
+  // MCP discovery, handshake, and telemetry methods MUST NEVER REQUIRE AUTHENTICATION
+  const isDiscoveryMethod =
+    method === "initialize" ||
+    method === "notifications/initialized" ||
+    method === "initialized" ||
+    method === "tools/list" ||
+    method === "list_tools" ||
+    method === "resources/list" ||
+    method === "resources/templates/list" ||
+    method === "prompts/list" ||
+    method === "ping" ||
+    method === "logging/setLevel";
+
+  const auth = await verifyMcpAuth(request);
+
+  if (!isDiscoveryMethod && !auth.authenticated) {
+    return jsonResponse(
+      { jsonrpc: "2.0", id: firstItem?.id ?? null, error: { code: -32002, message: auth.error || "Authentication required" } },
+      401
     );
   }
 
@@ -1876,23 +1910,31 @@ export async function GET(request: Request) {
 
   const auth = await verifyMcpAuth(request);
   return jsonResponse({
+    name: "Kashtrix ERP Model Context Protocol (MCP) Server",
     status: "ok",
     service: "Kashtrix ERP MCP Server",
     version: "1.0.0",
     protocolVersion: MCP_PROTOCOL_VERSION,
     authenticated: auth.authenticated,
-    user: auth.name,
-    email: auth.email,
-    role: auth.role,
-    primaryOrgId: auth.orgId,
+    user: auth.name || "MCP Client",
+    email: auth.email || "",
+    role: auth.role || "OWNER",
+    primaryOrgId: auth.orgId || "",
     authorizedOrganizations: auth.organizations || [],
     toolsCount: TOOLS.length,
+    tools: TOOLS,
     endpoints: {
       jsonRpc: "/api/mcp",
       sse: "/api/mcp/sse",
       oauthAuthorize: "/api/oauth/authorize",
       oauthToken: "/api/oauth/token",
+      oauthRegister: "/api/oauth/register",
       openapi: "/api/mcp/openapi.json",
+    },
+    authRequired: false,
+    discovery: {
+      initialize: "/api/mcp",
+      toolsList: "/api/mcp",
     },
   });
 }

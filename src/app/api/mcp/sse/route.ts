@@ -20,20 +20,15 @@ function resolveBaseUrl(request: Request): string {
     return `${proto}://${host}`;
   }
   const envUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL;
-  return (envUrl || "https://ledger.simulcast.com.np").replace(/\/$/, "");
+  return (envUrl || "https://leader.simulcast.com.np").replace(/\/$/, "");
 }
 
 /**
  * SSE Transport for Model Context Protocol (MCP 2024-11-05 standard)
  */
 export async function GET(request: Request) {
+  // ChatGPT connects to SSE to discover the POST endpoint; allow connection even if unauthenticated
   const auth = await verifyMcpAuth(request);
-  if (!auth.authenticated) {
-    return NextResponse.json(
-      { error: auth.error || "Unauthorized" },
-      { status: 401, headers: CORS_HEADERS }
-    );
-  }
 
   const serverUrl = resolveBaseUrl(request);
   const encoder = new TextEncoder();

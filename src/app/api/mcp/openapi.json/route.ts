@@ -161,6 +161,9 @@ export async function GET(request: Request) {
               tokenUrl: `${serverUrl}/api/oauth/token`,
               scopes: {
                 "mcp:all": "Full read & write access to organization ledger",
+                "mcp:read": "Read-only access to organizations, balances and transactions",
+                "mcp:write": "Write access to record journals, transactions and invoices",
+                "admin": "Administrative access across all organizations",
               },
             },
           },
@@ -178,7 +181,7 @@ export async function GET(request: Request) {
         },
       },
     },
-    security: [{ OAuth2: ["mcp:all"] }, { BearerAuth: [] }],
+    security: [{ OAuth2: ["mcp:all", "mcp:read", "mcp:write", "admin"] }, { BearerAuth: [] }],
   };
 
   return NextResponse.json(openapiSpec, {

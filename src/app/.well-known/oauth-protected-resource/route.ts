@@ -12,7 +12,7 @@ function resolveBaseUrl(request: Request): string {
     return `${proto}://${host}`;
   }
   const envUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL;
-  return (envUrl || "https://ledger.simulcast.com.np").replace(/\/$/, "");
+  return (envUrl || "https://leader.simulcast.com.np").replace(/\/$/, "");
 }
 
 export async function GET(request: Request) {
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   const protectedResourceMetadata = {
     resource: serverUrl,
     authorization_servers: [serverUrl],
-    scopes_supported: ["mcp:all", "openid", "profile", "email"],
+    scopes_supported: ["mcp:all", "mcp:read", "mcp:write", "admin", "openid", "profile", "email"],
     bearer_methods_supported: ["header"],
     resource_documentation: `${serverUrl}/api/mcp`,
   };

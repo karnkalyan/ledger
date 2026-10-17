@@ -76,7 +76,7 @@ export async function POST(request: Request) {
       token_type: "Bearer",
       expires_in: 2592000, // 30 days
       refresh_token: accessToken,
-      scope: "mcp:all",
+      scope: "mcp:all mcp:read mcp:write admin",
       token: accessToken,
       orgId,
       orgIds,

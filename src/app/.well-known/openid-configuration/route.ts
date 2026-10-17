@@ -12,7 +12,7 @@ function resolveBaseUrl(request: Request): string {
     return `${proto}://${host}`;
   }
   const envUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL;
-  return (envUrl || "https://ledger.simulcast.com.np").replace(/\/$/, "");
+  return (envUrl || "https://leader.simulcast.com.np").replace(/\/$/, "");
 }
 
 export async function GET(request: Request) {
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     response_types_supported: ["code"],
     grant_types_supported: ["authorization_code", "client_credentials", "refresh_token"],
     token_endpoint_auth_methods_supported: ["client_secret_post", "client_secret_basic", "none"],
-    scopes_supported: ["mcp:all", "openid", "profile", "email"],
+    scopes_supported: ["mcp:all", "mcp:read", "mcp:write", "admin", "openid", "profile", "email"],
     code_challenge_methods_supported: ["S256", "plain"],
   };
 
