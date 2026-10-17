@@ -1071,7 +1071,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
           type: "PO_PAYMENT" as const,
           typeLabel: "Vendor Payment",
           reference: `Payment for ${po.orderNumber}`,
-          description: `Disbursement via ${p.paymentMethod || "Bank/Cash"}${p.reference ? ` (${p.reference})` : ""}`,
+          description: `Disbursement via ${p.method || "Bank/Cash"}${p.reference ? ` (${p.reference})` : ""}`,
           debit: 0,
           credit: Number(p.amount),
         }))
@@ -1093,7 +1093,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
           type: "INV_PAYMENT" as const,
           typeLabel: "Sales Collection",
           reference: `Payment for ${inv.invoiceNumber}`,
-          description: `Client settlement via ${p.paymentMethod || "Bank/Cash"}${p.reference ? ` (${p.reference})` : ""}`,
+          description: `Client settlement via ${p.method || "Bank/Cash"}${p.reference ? ` (${p.reference})` : ""}`,
           debit: 0,
           credit: Number(p.amount),
         }))
@@ -1104,7 +1104,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
         type: "INCOME" as const,
         typeLabel: "Income / Inflow",
         reference: inc.source || "Direct Receipt",
-        description: `${inc.title}${inc.bankAccount ? ` [Bank: ${inc.bankAccount.name}]` : inc.paymentMethod === "CASH" ? " [Cash in Hand]" : ""}`,
+        description: `${inc.title}${inc.bankAccount ? ` [Bank: ${inc.bankAccount.bankName} - ${inc.bankAccount.accountName}]` : inc.paymentMethod === "CASH" ? " [Cash in Hand]" : ""}`,
         debit: 0,
         credit: Number(inc.amount),
       })),
@@ -1123,7 +1123,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
         date: tx.transactionDate,
         type: "BANK_TX" as const,
         typeLabel: tx.type === "DEPOSIT" ? "Bank Deposit" : "Bank Withdrawal",
-        reference: `${tx.bankAccount.name} (${tx.reference || "N/A"})`,
+        reference: `${tx.bankAccount.bankName} (${tx.reference || "N/A"})`,
         description: tx.description || `${tx.type} transaction`,
         debit: tx.type === "WITHDRAWAL" ? Number(tx.amount) : 0,
         credit: tx.type === "DEPOSIT" ? Number(tx.amount) : 0,
@@ -1278,7 +1278,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
                     <td data-label="Channel">
                       {inc.paymentMethod === "BANK" ? (
                         <span className="badge purple" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                          🏦 {inc.bankAccount?.name ? `Bank: ${inc.bankAccount.name}` : "Bank Account"}
+                          🏦 {inc.bankAccount ? `Bank: ${inc.bankAccount.bankName}` : "Bank Account"}
                         </span>
                       ) : inc.paymentMethod === "CASH" ? (
                         <span className="badge green" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
