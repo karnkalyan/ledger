@@ -51,6 +51,7 @@ import { ElectricityReadingForm } from "@/components/electricity-reading-form";
 import { MobileMenuPageContent } from "@/components/mobile-menu-page";
 import { BankingClientSection } from "@/components/banking-client-section";
 import { RentalHouseSection } from "@/components/rental-house-section";
+import { MonthlyGeneratorModal } from "@/components/monthly-generator-modal";
 import { cookies } from "next/headers";
 import { resolveActiveFiscalYear, buildFiscalYearFromStart } from "@/lib/fiscal-year";
 import {
@@ -422,14 +423,23 @@ export default async function ModulePage({
           title={organization.kind === "COMPANY" ? "Office Expense Suite" : "Personal & Household Expenses"}
           description="Track daily actual expenses, one-time costs, and formula-based recurring monthly commitments with Nepali Bikram Sambat date calculations."
         >
-          <form action={generateMonthlyEstimatesAction} style={{ display: "flex", gap: 6 }}>
-            <input type="hidden" name="orgId" value={orgId} />
-            <input type="text" placeholder="YYYY-MM" pattern="[0-9]{4}-(0[1-9]|1[0-2])" name="month" defaultValue={monthKey(now)} style={{ width: 135, padding: "5px 8px", minHeight: 32 }} />
-            <button className="ghost-btn">
-              <RefreshCw size={13} style={{ verticalAlign: "middle", marginRight: 4 }} />
-              Generate
-            </button>
-          </form>
+          <MonthlyGeneratorModal
+            orgId={orgId}
+            currentMonth={monthKey(now)}
+            currency={currency}
+            isCompany={organization.kind === "COMPANY"}
+            recurringItems={recurring.filter((r) => r.active).map((r) => ({
+              id: r.id,
+              title: r.title,
+              vendor: r.vendor,
+              recurrence: r.recurrence,
+              fixedAmount: r.fixedAmount ? Number(r.fixedAmount) : null,
+              unitRate: r.unitRate ? Number(r.unitRate) : null,
+              quantity: r.quantity ? Number(r.quantity) : null,
+              estimatedAmount: estimateRecurringExpense(r, now),
+              categoryName: r.category?.name,
+            }))}
+          />
           <Link href={"/" + orgId + "/expenses/new?type=recurring-rule"} className="secondary-btn"><Plus size={14} /> Recurring Rule</Link>
           <Link href={"/" + orgId + "/expenses/new?type=new-expense"} className="primary-btn"><Plus size={14} /> New Expense</Link>
         </Header>

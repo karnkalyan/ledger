@@ -39,7 +39,7 @@ export function formatAccountType(type?: string | null): string {
   if (upper === "SB" || upper.includes("SAVING")) return "Savings Account";
   if (upper.includes("FIXED")) return "Fixed Deposit";
   if (upper.includes("OVERDRAFT") || upper === "OD") return "Overdraft";
-  if (upper.includes("CALL")) return "Call Account";
+  if (upper.includes("WALLET") || upper === "DIGITAL_WALLET" || upper.includes("ESEWA") || upper.includes("KHALTI")) return "Digital Wallet";
   return type.replace(/_/g, " ");
 }
 

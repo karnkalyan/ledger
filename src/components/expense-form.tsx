@@ -3,21 +3,37 @@
 import { useMemo, useState } from "react";
 import { createExpenseAction, createRecurringExpenseAction } from "@/app/(dashboard)/actions";
 import { NepaliDatePicker } from "@/components/nepali-date-picker";
-import { Calculator, DollarSign } from "lucide-react";
+import { Calculator, DollarSign, Banknote, Landmark, AlertTriangle, Wallet2 } from "lucide-react";
 
 type Category = { id: string; name: string };
+export type BankAccountOption = {
+  id: string;
+  bankName: string;
+  accountNumber: string;
+  accountType?: string | null;
+  currentBalance?: number;
+};
 
 export function ExpenseForm({
   orgId,
   categories,
+  bankAccounts = [],
+  cashInHandBalance = 0,
   recurring = false,
   action: pageAction,
 }: {
   orgId: string;
   categories: Category[];
+  bankAccounts?: BankAccountOption[];
+  cashInHandBalance?: number;
   recurring?: boolean;
   action?: (formData: FormData) => Promise<void>;
 }) {
+  // Payment Method: Default to CASH ("Cash in Hand")
+  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "BANK" | "WALLET">("CASH");
+  const [selectedBankId, setSelectedBankId] = useState(bankAccounts[0]?.id || "");
+  const [walletName, setWalletName] = useState("eSewa");
+
   // Mode selection: "DIRECT" vs "CALCULATED"
   const [calcMode, setCalcMode] = useState<"DIRECT" | "CALCULATED">("DIRECT");
 
@@ -88,14 +104,167 @@ export function ExpenseForm({
             </select>
           </label>
         ) : (
-          <label className="field full">
-            <span className="field-label">Expense Type</span>
-            <select name="type">
-              <option value="ONE_TIME">One Time</option>
-              <option value="DAILY">Daily Operational</option>
-              <option value="RECURRING">Recurring Actual</option>
-            </select>
-          </label>
+          <>
+            <label className="field full">
+              <span className="field-label">Expense Type</span>
+              <select name="type">
+                <option value="ONE_TIME">One Time</option>
+                <option value="DAILY">Daily Operational</option>
+                <option value="RECURRING">Recurring Actual</option>
+              </select>
+            </label>
+
+            {/* PAYMENT METHOD & FUND SOURCE (Default: Cash in Hand) */}
+            <div className="field full" style={{ border: "1px solid var(--line)", padding: 12, borderRadius: 8, background: "var(--soft)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 6 }}>
+                <span className="field-label" style={{ margin: 0, fontWeight: 700 }}>Payment Method &amp; Fund Source</span>
+                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                  Available Cash in Hand: <strong style={{ color: cashInHandBalance > 0 ? "var(--success)" : "var(--danger)", fontFamily: "Consolas, monospace" }}>NPR {cashInHandBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
+                </span>
+              </div>
+              <input type="hidden" name="paymentMethod" value={paymentMethod} />
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 8, marginBottom: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("CASH")}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                    padding: "8px 12px",
+                    borderRadius: 6,
+                    border: "1px solid",
+                    borderColor: paymentMethod === "CASH" ? "var(--success)" : "var(--line)",
+                    background: paymentMethod === "CASH" ? "var(--success-soft)" : "var(--surface)",
+                    color: paymentMethod === "CASH" ? "var(--success)" : "var(--text-secondary)",
+                    fontWeight: 650,
+                    cursor: "pointer",
+                    fontSize: 12,
+                  }}
+                >
+                  <Banknote size={15} />
+                  <span>Cash in Hand (Default)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("BANK")}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                    padding: "8px 12px",
+                    borderRadius: 6,
+                    border: "1px solid",
+                    borderColor: paymentMethod === "BANK" ? "var(--cyan)" : "var(--line)",
+                    background: paymentMethod === "BANK" ? "var(--cyan-soft)" : "var(--surface)",
+                    color: paymentMethod === "BANK" ? "var(--cyan)" : "var(--text-secondary)",
+                    fontWeight: 650,
+                    cursor: "pointer",
+                    fontSize: 12,
+                  }}
+                >
+                  <Landmark size={15} />
+                  <span>Bank Account ({bankAccounts.length})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("WALLET")}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                    padding: "8px 12px",
+                    borderRadius: 6,
+                    border: "1px solid",
+                    borderColor: paymentMethod === "WALLET" ? "var(--purple)" : "var(--line)",
+                    background: paymentMethod === "WALLET" ? "var(--purple-soft)" : "var(--surface)",
+                    color: paymentMethod === "WALLET" ? "var(--purple)" : "var(--text-secondary)",
+                    fontWeight: 650,
+                    cursor: "pointer",
+                    fontSize: 12,
+                  }}
+                >
+                  <Wallet2 size={15} />
+                  <span>Digital Wallet (eSewa / Khalti)</span>
+                </button>
+              </div>
+
+              {paymentMethod === "BANK" && (
+                <div style={{ marginTop: 8 }}>
+                  <label className="field" style={{ margin: 0 }}>
+                    <span className="field-label" style={{ fontSize: 11 }}>Select Deducting Bank Account</span>
+                    <select
+                      name="bankAccountId"
+                      value={selectedBankId}
+                      onChange={(e) => setSelectedBankId(e.target.value)}
+                      required={paymentMethod === "BANK"}
+                    >
+                      {bankAccounts.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.bankName} (A/C: {b.accountNumber}) · Balance: NPR {Number(b.currentBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              )}
+
+              {paymentMethod === "WALLET" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+                  <label className="field" style={{ margin: 0 }}>
+                    <span className="field-label" style={{ fontSize: 11 }}>Digital Wallet Name</span>
+                    <select
+                      name="walletProvider"
+                      value={walletName}
+                      onChange={(e) => setWalletName(e.target.value)}
+                    >
+                      <option value="eSewa">eSewa Wallet</option>
+                      <option value="Khalti">Khalti Digital Wallet</option>
+                      <option value="IME Pay">IME Pay</option>
+                      <option value="Prabhu Pay">Prabhu Pay</option>
+                      <option value="Other">Other Wallet</option>
+                    </select>
+                  </label>
+                  <label className="field" style={{ margin: 0 }}>
+                    <span className="field-label" style={{ fontSize: 11 }}>Wallet ID / Linked Mobile</span>
+                    <input name="walletId" placeholder="98XXXXXXXX" />
+                  </label>
+                </div>
+              )}
+
+              {/* Insufficient Cash in Hand Warning / Guidance */}
+              {paymentMethod === "CASH" && cashInHandBalance <= 0 && finalAmount > 0 && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 8,
+                    padding: "8px 10px",
+                    background: "rgba(239, 68, 68, 0.08)",
+                    border: "1px solid var(--danger)",
+                    borderRadius: 6,
+                    color: "var(--danger)",
+                    fontSize: 11.5,
+                    marginTop: 8,
+                  }}
+                >
+                  <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
+                  <div>
+                    <strong>Notice: No recorded Cash in Hand balance available (NPR {cashInHandBalance.toLocaleString()}).</strong>
+                    <div style={{ marginTop: 2, color: "var(--text-muted)", fontSize: 11 }}>
+                      To prevent untracked cash gaps, record an income, bank ATM withdrawal, or wallet transfer first, or switch payment method to your Bank Account above.
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
         )}
 
         {/* CALCULATION MODE SWITCHER */}

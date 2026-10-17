@@ -62,19 +62,69 @@ export async function createExpenseAction(formData: FormData) {
     }
   }
 
-  const requestedCategory = s(formData,"categoryId");
+  const paymentMethod = (s(formData, "paymentMethod") || "CASH").toUpperCase();
+  const rawBankAccountId = s(formData, "bankAccountId");
+
+  const requestedCategory = s(formData, "categoryId");
   const categoryId = requestedCategory && await db.expenseCategory.findFirst({ where: { id: requestedCategory, organizationId: orgId }, select: { id: true } }) ? requestedCategory : null;
-  await db.expense.create({ data: {
-    organizationId: orgId,
-    categoryId,
-    title,
-    vendor,
-    type: (s(formData,"type") || "ONE_TIME") as never,
-    quantity: quantity || null, unit: s(formData,"unit") || null, unitRate: rate || null,
-    daysCount: days || null, amount,
-    occurredAt: d(formData,"occurredAt") ?? new Date(), notes,
-  }});
-  refresh(orgId,"expenses");
+  const occurredAt = d(formData, "occurredAt") ?? new Date();
+
+  await db.$transaction(async (tx) => {
+    let targetBank = null;
+    if (paymentMethod === "BANK" && rawBankAccountId) {
+      targetBank = await tx.bankAccount.findFirst({
+        where: { id: rawBankAccountId, organizationId: orgId },
+      });
+    }
+
+    const exp = await tx.expense.create({
+      data: {
+        organizationId: orgId,
+        categoryId,
+        title,
+        vendor,
+        type: (s(formData, "type") || "ONE_TIME") as never,
+        quantity: quantity || null,
+        unit: s(formData, "unit") || null,
+        unitRate: rate || null,
+        daysCount: days || null,
+        amount,
+        occurredAt,
+        notes: notes ? `${notes}${paymentMethod !== "CASH" ? ` [Paid via: ${paymentMethod}${targetBank ? ` - ${targetBank.bankName}` : ""}]` : " [Paid via Cash in Hand]"}` : (paymentMethod !== "CASH" ? `[Paid via: ${paymentMethod}${targetBank ? ` - ${targetBank.bankName}` : ""}]` : "[Paid via Cash in Hand]"),
+      },
+    });
+
+    // If paid via bank, create linked bank transaction and deduct balance
+    if (targetBank) {
+      const curBal = Number(targetBank.currentBalance);
+      const newBal = curBal - amount;
+      await tx.bankTransaction.create({
+        data: {
+          organizationId: orgId,
+          bankAccountId: targetBank.id,
+          transactionDate: occurredAt,
+          type: "WITHDRAWAL",
+          amount,
+          balance: newBal,
+          description: `Expense: ${title}`,
+          reference: vendor || null,
+          category: isDirectorAccount ? "Director Drawings" : (requestedCategory ? "Operational Expense" : "Direct Expense"),
+          expenseId: exp.id,
+        },
+      });
+
+      await tx.bankAccount.update({
+        where: { id: targetBank.id },
+        data: { currentBalance: newBal },
+      });
+    }
+  });
+
+  refresh(orgId, "expenses");
+  if (rawBankAccountId) {
+    refresh(orgId, "banking");
+  }
+  revalidatePath(`/${orgId}/reports`);
 }
 
 export async function updateExpenseAction(formData: FormData) {
@@ -188,26 +238,76 @@ export async function createRecurringExpenseAction(formData: FormData) {
 }
 
 export async function generateMonthlyEstimatesAction(formData: FormData) {
-  const orgId = s(formData,"orgId"); await orgAccess(orgId);
-  const monthString = s(formData,"month");
+  const orgId = s(formData, "orgId");
+  await orgAccess(orgId);
+  const monthString = s(formData, "month");
   const month = monthString ? new Date(`${monthString}-01T12:00:00`) : new Date();
-  const monthStart = startOfMonth(month); const monthEnd = endOfMonth(month);
-  const recurring = await db.recurringExpense.findMany({ where: { organizationId: orgId, active: true, startDate: { lte: monthEnd }, OR: [{ endDate: null }, { endDate: { gte: monthStart } }] } });
-  for (const item of recurring) {
-    const exists = await db.expense.findFirst({ where: { recurringExpenseId: item.id, isEstimated: true, occurredAt: { gte: monthStart, lte: monthEnd } } });
-    if (exists) continue;
-    const amount = estimateRecurringExpense(item, month);
-    if (amount <= 0) continue;
-    await db.expense.create({ data: {
-      organizationId: orgId, categoryId: item.categoryId, recurringExpenseId: item.id,
-      title: `${item.title} — monthly estimate`, vendor: item.vendor, type: "RECURRING",
-      quantity: item.quantity, unit: item.unit, unitRate: item.unitRate,
-      daysCount: item.recurrence === "DAILY" ? (item.billingDays ?? new Prisma.Decimal(getDaysInMonth(month))) : item.billingDays,
-      amount, occurredAt: monthStart, isEstimated: true,
-      notes: `Auto-generated estimate for ${monthString || monthStart.toISOString().slice(0,7)}`,
-    }});
+  const monthStart = startOfMonth(month);
+  const monthEnd = endOfMonth(month);
+
+  // Check if specific items were selected by the user
+  const selectedItemIds = formData.getAll("selectedItems").map(String);
+  const overrideAmountsJson = s(formData, "overrideAmounts");
+  let overrideAmounts: Record<string, number> = {};
+  if (overrideAmountsJson) {
+    try {
+      overrideAmounts = JSON.parse(overrideAmountsJson);
+    } catch {
+      // fallback
+    }
   }
-  refresh(orgId,"expenses"); revalidatePath(`/${orgId}/reports`);
+
+  const recurring = await db.recurringExpense.findMany({
+    where: {
+      organizationId: orgId,
+      active: true,
+      startDate: { lte: monthEnd },
+      OR: [{ endDate: null }, { endDate: { gte: monthStart } }],
+      ...(selectedItemIds.length > 0 ? { id: { in: selectedItemIds } } : {}),
+    },
+  });
+
+  for (const item of recurring) {
+    // If specific item IDs were passed, check selection
+    if (selectedItemIds.length > 0 && !selectedItemIds.includes(item.id)) {
+      continue;
+    }
+
+    const exists = await db.expense.findFirst({
+      where: {
+        recurringExpenseId: item.id,
+        isEstimated: true,
+        occurredAt: { gte: monthStart, lte: monthEnd },
+      },
+    });
+    if (exists) continue;
+
+    const customAmt = overrideAmounts[item.id];
+    const amount = typeof customAmt === "number" && customAmt > 0 ? customAmt : estimateRecurringExpense(item, month);
+    if (amount <= 0) continue;
+
+    await db.expense.create({
+      data: {
+        organizationId: orgId,
+        categoryId: item.categoryId,
+        recurringExpenseId: item.id,
+        title: `${item.title} — monthly estimate`,
+        vendor: item.vendor,
+        type: "RECURRING",
+        quantity: item.quantity,
+        unit: item.unit,
+        unitRate: item.unitRate,
+        daysCount: item.recurrence === "DAILY" ? (item.billingDays ?? new Prisma.Decimal(getDaysInMonth(month))) : item.billingDays,
+        amount,
+        occurredAt: monthStart,
+        isEstimated: true,
+        notes: `Selected monthly commitment for ${monthString || monthStart.toISOString().slice(0, 7)}`,
+      },
+    });
+  }
+
+  refresh(orgId, "expenses");
+  revalidatePath(`/${orgId}/reports`);
 }
 
 export async function createIncomeAction(formData: FormData) {
@@ -796,8 +896,22 @@ export async function recordBankTransactionAction(formData: FormData) {
   const directorName = s(formData, "directorName") || "Director";
   const directorTxType = s(formData, "directorTxType") || (type === "DEPOSIT" ? "CAPITAL" : "DRAWINGS");
 
+  const transferTarget = s(formData, "transferTarget") || ""; // e.g. "CASH_IN_HAND" | "ESEWA" | "KHALTI" | other wallet
+  const isTransfer = type === "WITHDRAWAL" && (
+    transferTarget !== "" ||
+    category?.toLowerCase().includes("transfer") ||
+    category?.toLowerCase().includes("atm") ||
+    description.toLowerCase().includes("atm withdrawal") ||
+    description.toLowerCase().includes("cash withdrawal") ||
+    description.toLowerCase().includes("load esewa") ||
+    description.toLowerCase().includes("load khalti") ||
+    description.toLowerCase().includes("to wallet")
+  );
+
   const effectiveCategory = isDirectorAccount
     ? `Director: ${directorName} (${directorTxType === "CAPITAL" ? "Capital Inflow" : directorTxType === "DRAWINGS" ? "Personal Drawings" : directorTxType})`
+    : isTransfer
+    ? (category || (description.toLowerCase().includes("esewa") ? "Digital Wallet: eSewa Transfer" : description.toLowerCase().includes("khalti") ? "Digital Wallet: Khalti Transfer" : "Internal Transfer: ATM / Cash in Hand"))
     : (category || (contactName ? `CRM: ${contactName}` : null));
 
   const effectiveDescription = isDirectorAccount && !description.toLowerCase().includes("director")
@@ -826,6 +940,29 @@ export async function recordBankTransactionAction(formData: FormData) {
         },
       });
       incomeId = inc.id;
+    } else if (isTransfer) {
+      // INTERNAL TRANSFER / CONTRA ENTRY (Bank -> Cash in Hand / ATM or Wallet)
+      // Do NOT create an Expense record here! Creating an expense here would double count expenses
+      // when the user subsequently records purchases made with this cash or wallet funds.
+      // Instead, record an inflow into Cash in Hand / Digital Wallet so liquidity reflects properly!
+      const targetChannel = transferTarget === "ESEWA" || description.toLowerCase().includes("esewa")
+        ? "ESEWA"
+        : transferTarget === "KHALTI" || description.toLowerCase().includes("khalti")
+        ? "KHALTI"
+        : "CASH";
+
+      const transferInc = await tx.income.create({
+        data: {
+          organizationId: orgId,
+          title: `Internal Transfer: ${effectiveDescription} (from ${bankAccount.bankName})`,
+          source: `Bank Withdrawal: ${bankAccount.bankName}`,
+          amount,
+          receivedAt: txDate,
+          paymentMethod: targetChannel === "CASH" ? "CASH" : "OTHER",
+          notes: `Internal transfer / ATM withdrawal from Bank A/C ${bankAccount.accountNumber}. Available for market expenses without double-counting.`,
+        },
+      });
+      incomeId = transferInc.id;
     } else {
       const exp = await tx.expense.create({
         data: {

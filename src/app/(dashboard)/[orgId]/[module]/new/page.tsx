@@ -47,13 +47,16 @@ export default async function NewEntryPage({params, searchParams}: {
  if (membership.role === "VIEWER" || (organization.kind !== "COMPANY" && officeOnly.has(module))) redirect("/" + orgId);
  const now = new Date();
  const commerce = ["invoices","quotes","sales","purchase"].includes(module);
- const [categories, contacts, rawProducts, staff, bankAccounts] = await Promise.all([
+ const [categories, contacts, rawProducts, staff, bankAccounts, cashIncomeAgg, cashExpenseAgg] = await Promise.all([
   module === "expenses" ? db.expenseCategory.findMany({where:{organizationId:orgId},orderBy:{name:"asc"}}) : Promise.resolve([]),
   commerce || module === "leads" || module === "income" || module === "banking" ? db.contact.findMany({where:{organizationId:orgId, ...(commerce ? {type:{in:module === "purchase" ? ["VENDOR","BOTH"] : ["CUSTOMER","BOTH"]}} : {})},orderBy:{name:"asc"}}) : Promise.resolve([]),
   commerce || module === "stock" ? db.product.findMany({where:{organizationId:orgId, ...(commerce ? {active:true} : {})},orderBy:{name:"asc"}}) : Promise.resolve([]),
   ["payroll","leaves","tasks"].includes(module) ? db.employee.findMany({where:{organizationId:orgId, ...(module === "payroll" ? {status:"ACTIVE"} : {})},orderBy:{name:"asc"}}) : Promise.resolve([]),
-  module === "banking" || module === "income" ? db.bankAccount.findMany({where:{organizationId:orgId},orderBy:{bankName:"asc"}}) : Promise.resolve([]),
+  module === "banking" || module === "income" || module === "expenses" ? db.bankAccount.findMany({where:{organizationId:orgId},orderBy:{bankName:"asc"}}) : Promise.resolve([]),
+  module === "expenses" ? db.income.aggregate({where:{organizationId:orgId, paymentMethod:"CASH"}, _sum:{amount:true}}) : Promise.resolve({_sum:{amount:null}}),
+  module === "expenses" ? db.expense.aggregate({where:{organizationId:orgId, notes:{contains:"Cash in Hand"}, isEstimated:false}, _sum:{amount:true}}) : Promise.resolve({_sum:{amount:null}}),
  ]);
+ const cashInHandBalance = Math.max(0, Number(cashIncomeAgg._sum.amount || 0) - Number(cashExpenseAgg._sum.amount || 0));
  const products = rawProducts.map(p => ({id:p.id,name:p.name,sku:p.sku,salePrice:Number(p.salePrice),purchasePrice:Number(p.purchasePrice)}));
  let form: React.ReactNode;
  switch(entry.type) {
@@ -61,7 +64,19 @@ export default async function NewEntryPage({params, searchParams}: {
             <ExpenseForm action={saveRecurringExpenseAction} orgId={orgId} categories={categories.map((c) => ({ id: c.id, name: c.name }))} recurring />
           </>); break;
  case "new-expense": form = (<>
-            <ExpenseForm action={saveExpenseAction} orgId={orgId} categories={categories.map((c) => ({ id: c.id, name: c.name }))} />
+            <ExpenseForm
+              action={saveExpenseAction}
+              orgId={orgId}
+              categories={categories.map((c) => ({ id: c.id, name: c.name }))}
+              bankAccounts={bankAccounts.map((b) => ({
+                id: b.id,
+                bankName: b.bankName,
+                accountNumber: b.accountNumber,
+                accountType: b.accountType,
+                currentBalance: Number(b.currentBalance),
+              }))}
+              cashInHandBalance={cashInHandBalance}
+            />
           </>); break;
   case "record-income": form = (
     <IncomeForm
@@ -99,6 +114,7 @@ export default async function NewEntryPage({params, searchParams}: {
                   <select name="accountType">
                     <option value="CURRENT">Current Account (CANR)</option>
                     <option value="SAVINGS">Savings Account</option>
+                    <option value="DIGITAL_WALLET">Digital Wallet (eSewa / Khalti / IME Pay)</option>
                     <option value="OVERDRAFT">Overdraft Facility (OD)</option>
                     <option value="FIXED">Fixed Deposit</option>
                   </select>
@@ -201,6 +217,26 @@ export default async function NewEntryPage({params, searchParams}: {
                     </label>
                   </div>
                 </div>
+
+                {entry.type === "record-withdrawal" && (
+                  <div className="field full" style={{ background: "rgba(99, 102, 241, 0.05)", padding: "12px 14px", borderRadius: 8, border: "1px solid var(--brand-border)" }}>
+                    <label className="field" style={{ margin: 0 }}>
+                      <span className="field-label" style={{ fontWeight: 700, color: "var(--brand)" }}>
+                        Withdrawal Purpose / Transfer Destination
+                      </span>
+                      <select name="transferTarget" defaultValue="ATM_CASH">
+                        <option value="ATM_CASH">ATM Withdrawal → Cash in Hand (No double expense; enables cash market spending)</option>
+                        <option value="ESEWA">Bank Transfer → eSewa Digital Wallet (Inflow to eSewa)</option>
+                        <option value="KHALTI">Bank Transfer → Khalti Wallet (Inflow to Khalti)</option>
+                        <option value="OTHER_WALLET">Bank Transfer → Other Digital Wallet</option>
+                        <option value="">Direct Expense / Vendor Disbursement (Records as direct expense)</option>
+                      </select>
+                      <small style={{ color: "var(--text-muted)", fontSize: 11, marginTop: 4, display: "block" }}>
+                        Tip: Selecting ATM Withdrawal or Wallet Transfer moves funds to Cash in Hand or Digital Wallet. It prevents double-counting when you subsequently record grocery, market, or office cash expenses!
+                      </small>
+                    </label>
+                  </div>
+                )}
 
                 <label className="field full">
                   Description / Particulars
