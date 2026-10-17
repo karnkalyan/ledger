@@ -20,6 +20,8 @@ const CANDIDATE_KEYS = new Set([
   "simulcast_master_mcp_api_key_2026_sec",
   "leader_master_mcp_api_key_2026_sec",
   "2b533bcb16c0ea4d2439039ed9d81a3e33ac0964207b34fb2bea14a8f096561f",
+  // Dedicated Kashtrix ERP & Ledger Suite Master JWT Token (3 Years)
+  "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJtYXN0ZXItYWRtaW4iLCJzdWIiOiJtYXN0ZXItYWRtaW4iLCJuYW1lIjoiS2FzaHRyaXggTWFzdGVyIEFkbWluIiwiZW1haWwiOiJhZG1pbkBrYXNodHJpeC5jb20iLCJyb2xlIjoiU1VQRVJfQURNSU4iLCJzY29wZXMiOlsibWNwOmFsbCIsIm1jcDpyZWFkIiwibWNwOndyaXRlIiwiYWRtaW4iXSwiaWF0IjoxNzkyMjY4OTUzLCJleHAiOjE4ODY5NDE3NTN9.-nm2iKPmACO6TM5ajG8Km0D6kY-DvI4kCDwlYi3Upkg",
   "eyJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiTUNQIiwicm9sZSI6Ik1DUF9DTElFTlQiLCJzdWIiOiJNQ1AiLCJpYXQiOjE3OTIwMDIxMTUsImV4cCI6MTgyMzUzODExNX0.EVSjZQv-e02Zpo_aqhpK-EuSz7UqvmVD9hFOEg2_wxE",
 ].filter(Boolean));
 
