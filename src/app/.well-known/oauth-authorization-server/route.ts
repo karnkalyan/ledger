@@ -12,7 +12,7 @@ function resolveBaseUrl(request: Request): string {
     return `${proto}://${host}`;
   }
   const envUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL;
-  return (envUrl || "https://leader.simulcast.com.np").replace(/\/$/, "");
+  return (envUrl || "https://ledger.simulcast.com.np").replace(/\/$/, "");
 }
 
 export async function GET(request: Request) {

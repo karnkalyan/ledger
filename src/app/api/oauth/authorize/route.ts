@@ -42,7 +42,7 @@ export async function GET(request: Request) {
   }
 
   // Redirect user's browser to the branded interactive login & consent dialog
-  const envUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://leader.simulcast.com.np").replace(/\/$/, "");
+  const envUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://ledger.simulcast.com.np").replace(/\/$/, "");
   const forwardedHost = request.headers.get("x-forwarded-host");
   const host = forwardedHost || request.headers.get("host") || "";
   const forwardedProto = request.headers.get("x-forwarded-proto");
