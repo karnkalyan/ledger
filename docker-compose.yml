@@ -16,6 +16,9 @@ services:
       PORT: ${PORT:-3080}
       APP_URL: ${APP_URL:-https://leader.simulcast.com.np}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://leader.simulcast.com.np}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      MCP_API_KEY: ${MCP_API_KEY:-leader_master_mcp_api_key_2026_sec}
+      MCP_JWT_SECRET: ${MCP_JWT_SECRET:-leader_mcp_jwt_secret_secure_key_2026_x92817491823}
     extra_hosts:
       # Allows the container to resolve host.docker.internal to the VPS host where MySQL is running
       - "host.docker.internal:host-gateway"

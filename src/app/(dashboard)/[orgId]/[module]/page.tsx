@@ -49,6 +49,7 @@ import { WorkLogManagementView } from "@/components/worklog-management-view";
 import { WorkLogModal } from "@/components/worklog-modal";
 import { ElectricityReadingForm } from "@/components/electricity-reading-form";
 import { MobileMenuPageContent } from "@/components/mobile-menu-page";
+import { BankingClientSection } from "@/components/banking-client-section";
 import { cookies } from "next/headers";
 import { resolveActiveFiscalYear, buildFiscalYearFromStart } from "@/lib/fiscal-year";
 import {
@@ -1429,98 +1430,26 @@ export default async function ModulePage({
           ]}
         />
 
-        {/* Bank Account Interactive Cards Grid */}
-        <div className="no-print" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16, marginBottom: 20 }}>
-          {accounts.map((acc) => {
-            const isSelected = selectedAccountId === acc.id;
-            return (
-              <Link
-                key={acc.id}
-                href={filterHref({ accountId: isSelected ? null : acc.id })}
-                className="table-card"
-                style={{
-                  padding: "18px 20px",
-                  textDecoration: "none",
-                  color: "inherit",
-                  display: "block",
-                  cursor: "pointer",
-                  border: isSelected ? "2px solid var(--brand)" : "1px solid var(--line)",
-                  boxShadow: isSelected ? "0 4px 14px rgba(37, 99, 235, 0.15)" : undefined,
-                  transition: "all 0.15s ease",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
-                  <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "nowrap" }}>
-                    <span
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        letterSpacing: 0.5,
-                        textTransform: "uppercase",
-                        padding: "3px 8px",
-                        borderRadius: 20,
-                        background: "var(--brand-soft)",
-                        color: "var(--brand)",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {acc.accountType ? acc.accountType.replaceAll("_", " ") : "Current Account"}
-                    </span>
-                    {isSelected && (
-                      <span
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 700,
-                          padding: "3px 8px",
-                          borderRadius: 20,
-                          background: "var(--success-soft)",
-                          color: "var(--success)",
-                          whiteSpace: "nowrap",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 4,
-                        }}
-                      >
-                        <CheckCircle2 size={11} /> Active Filter
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ textAlign: "right", whiteSpace: "nowrap", flexShrink: 0 }}>
-                    <div style={{ fontSize: 9.5, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 650 }}>
-                      Ending Balance
-                    </div>
-                    <div style={{ fontSize: 17, fontWeight: 800, color: Number(acc.currentBalance) >= 0 ? "var(--text)" : "var(--danger)", fontFamily: "var(--font-poppins), sans-serif", letterSpacing: -0.5 }}>
-                      {money(acc.currentBalance, acc.currency || currency)}
-                    </div>
-                  </div>
-                </div>
+        {/* Bank Account Interactive Cards & AI Statement Extraction */}
+        <BankingClientSection
+          accounts={accounts.map((a) => ({
+            id: a.id,
+            bankName: a.bankName,
+            accountName: a.accountName,
+            accountNumber: a.accountNumber,
+            accountType: a.accountType,
+            branch: a.branch,
+            currency: a.currency,
+            currentBalance: Number(a.currentBalance),
+            _count: a._count,
+          }))}
+          selectedAccountId={selectedAccountId}
+          orgId={orgId}
+          currency={currency}
+          totalCount={totalCount}
+          filterHrefBuilder={filterHref}
+        />
 
-                <div style={{ marginBottom: 14 }}>
-                  <h3 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 700, color: "var(--text)" }}>{acc.bankName}</h3>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)", fontFamily: "Consolas, monospace", display: "inline-block", background: "var(--soft)", padding: "2px 6px", borderRadius: 4 }}>
-                    A/C: {acc.accountNumber}
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11.5, borderTop: "1px solid var(--line)", paddingTop: 10, marginTop: 4 }}>
-                  <span style={{ color: "var(--text-muted)" }}>{acc.branch || "Kathmandu Branch"}</span>
-                  <span style={{ color: "var(--text)", display: "inline-flex", alignItems: "center", gap: 6 }}>
-                    <strong>{acc._count.transactions}</strong> transactions
-                    <span style={{ color: "var(--text-muted)" }}>•</span>
-                    <span style={{ color: "var(--brand)", fontWeight: 600 }}>
-                      {isSelected ? "Reset Filter" : "Filter Ledger →"}
-                    </span>
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
-          {!accounts.length && (
-            <div style={{ gridColumn: "1 / -1" }}>
-              <Empty>No bank accounts registered yet. Click &quot;+ Add Bank Account&quot; to configure your account.</Empty>
-            </div>
-          )}
-        </div>
 
         {/* BANK-WISE & CONDITIONAL FILTRATION CONTROLS */}
         <div className="table-card no-print" style={{ padding: "18px 20px", marginBottom: 20 }}>

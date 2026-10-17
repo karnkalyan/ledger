@@ -11,6 +11,7 @@ import { FiscalYearInfo } from "@/lib/fiscal-year";
 import { TodayTasksNav, PendingItem } from "@/components/today-tasks-nav";
 import { NepaliCalendarNav } from "@/components/nepali-calendar-nav";
 import { MobileAppBottomNav } from "@/components/mobile-nav";
+import { AiChatAssistant } from "@/components/ai-chat-assistant";
 
 export function AppShell({
   children,
@@ -132,6 +133,9 @@ export function AppShell({
         kind={org.kind}
         onOpenSidebar={() => setSidebarOpen(true)}
       />
+
+      {/* FLOATING AI FINANCIAL COPILOT & DOCUMENT ATTACHMENT ASSISTANT */}
+      <AiChatAssistant orgId={org.id} orgName={org.name} />
     </div>
   );
 }

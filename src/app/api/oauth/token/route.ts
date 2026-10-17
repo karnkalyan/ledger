@@ -1,0 +1,95 @@
+import { NextResponse } from "next/server";
+import { createMcpToken } from "@/lib/mcp-auth";
+
+export const dynamic = "force-dynamic";
+
+export async function POST(request: Request) {
+  let grantType = "authorization_code";
+  let code = "";
+
+  const contentType = request.headers.get("content-type") || "";
+
+  if (contentType.includes("application/x-www-form-urlencoded")) {
+    const formData = await request.formData();
+    grantType = String(formData.get("grant_type") || "authorization_code");
+    code = String(formData.get("code") || "");
+  } else if (contentType.includes("application/json")) {
+    const json = await request.json().catch(() => ({}));
+    grantType = json.grant_type || "authorization_code";
+    code = json.code || "";
+  }
+
+  let userId = "chatgpt-client";
+  let name = "ChatGPT Assistant";
+  let email = "chatgpt@openai.com";
+  let role = "OWNER";
+  let orgId = "";
+  let orgSlug = "";
+
+  if (code) {
+    try {
+      const decoded = JSON.parse(Buffer.from(code, "base64url").toString("utf-8"));
+      if (decoded.userId) userId = String(decoded.userId);
+      if (decoded.name) name = String(decoded.name);
+      if (decoded.email) email = String(decoded.email);
+      if (decoded.role) role = String(decoded.role);
+      if (decoded.orgId) orgId = String(decoded.orgId);
+      if (decoded.orgSlug) orgSlug = String(decoded.orgSlug);
+    } catch {}
+  }
+
+  // Generate 30-day access token
+  const accessToken = await createMcpToken({
+    userId,
+    name,
+    email,
+    role,
+    orgId,
+    orgSlug,
+    expiresIn: "30d",
+  });
+
+  return NextResponse.json(
+    {
+      access_token: accessToken,
+      token_type: "Bearer",
+      expires_in: 2592000, // 30 days
+      scope: "mcp:all",
+      token: accessToken,
+      orgId,
+      orgSlug,
+    },
+    {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      },
+    }
+  );
+}
+
+export async function GET() {
+  return NextResponse.json(
+    {
+      token_endpoint: "/api/oauth/token",
+      supported_grant_types: ["authorization_code", "client_credentials"],
+    },
+    {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      },
+    }
+  );
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  });
+}
