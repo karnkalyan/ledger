@@ -21,19 +21,19 @@ export async function GET(request: Request) {
   const openapiSpec = {
     openapi: "3.1.0",
     info: {
-      title: "Flowledger Suite MCP & Ledger API",
+      title: "Kashtrix ERP MCP & Ledger API",
       version: "1.0.0",
       description:
-        "Official OpenAI Actions & MCP API for Flowledger Suite. Execute full CRUD operations on Bank Accounts, Transactions, Expenses, Invoices, Purchases, Contacts, and AI Document Extractions.",
+        "Official OpenAI Actions & MCP API for Kashtrix ERP. Execute full CRUD operations on Bank Accounts, Transactions, Expenses, Invoices, Purchases, Contacts, and AI Document Extractions.",
       contact: {
-        name: "Flowledger Support",
+        name: "Kashtrix Support",
         email: "support@simulcast.com.np",
       },
     },
     servers: [
       {
         url: serverUrl,
-        description: "Flowledger Production Server",
+        description: "Kashtrix Production Server",
       },
     ],
     paths: {
@@ -71,7 +71,7 @@ export async function GET(request: Request) {
       securitySchemes: {
         OAuth2: {
           type: "oauth2",
-          description: "Flowledger OAuth 2.0 Authentication",
+          description: "Kashtrix ERP OAuth 2.0 Authentication",
           flows: {
             authorizationCode: {
               authorizationUrl: `${serverUrl}/api/oauth/authorize`,
@@ -85,13 +85,13 @@ export async function GET(request: Request) {
         BearerAuth: {
           type: "http",
           scheme: "bearer",
-          description: "Enter your Flowledger JWT Access Token or Master Key",
+          description: "Enter your Kashtrix JWT Access Token or Master Key",
         },
         ApiKeyAuth: {
           type: "apiKey",
           in: "header",
           name: "x-mcp-key",
-          description: "Flowledger MCP Key header",
+          description: "Kashtrix MCP Key header",
         },
       },
     },

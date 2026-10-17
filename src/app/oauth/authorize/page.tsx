@@ -112,7 +112,7 @@ function OAuthAuthorizeContent() {
             <Sparkles size={28} />
           </div>
           <h2 style={{ margin: "0 0 6px", fontSize: 21, fontWeight: 800, letterSpacing: -0.4 }}>
-            Connect to Flowledger
+            Connect to Kashtrix ERP
           </h2>
           <p style={{ margin: 0, fontSize: 13, opacity: 0.9 }}>
             Authorize <strong>{clientId}</strong> to access your organization ledger and banking tools.

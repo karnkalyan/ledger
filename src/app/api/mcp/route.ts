@@ -455,7 +455,7 @@ const TOOLS = [
   // 9. AI DOCUMENT EXTRACTION TOOL
   {
     name: "analyze_financial_document_ai",
-    description: "Extract accounting transactions, bank statements, or invoices from plain text or base64 file using Gemini 2.5 Flash.",
+    description: "Extract accounting transactions, bank statements, or invoices from plain text or base64 file using Kashtrix AI Engine.",
     inputSchema: {
       type: "object",
       properties: {
@@ -502,9 +502,9 @@ export async function POST(request: Request) {
             resources: { subscribe: false, listChanged: false },
           },
           serverInfo: {
-            name: "flowledger-mcp-server",
+            name: "kashtrix-mcp-server",
             version: "1.0.0",
-            description: "Flowledger Suite Model Context Protocol Server with OAuth",
+            description: "Kashtrix ERP Model Context Protocol Server with OAuth",
           },
         },
       });
@@ -1208,7 +1208,7 @@ export async function GET(request: Request) {
   const auth = await verifyMcpAuth(request);
   return NextResponse.json({
     status: "ok",
-    service: "Flowledger MCP Server",
+    service: "Kashtrix ERP MCP Server",
     version: "1.0.0",
     protocolVersion: MCP_PROTOCOL_VERSION,
     authenticated: auth.authenticated,

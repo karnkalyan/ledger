@@ -151,7 +151,7 @@ export async function POST(request: Request) {
       userMessage: assistantPrompt,
       history,
       organizationContext: {
-        organizationName: org?.name || "Flowledger Suite",
+        organizationName: org?.name || "Kashtrix ERP",
         kind: org?.kind || "COMPANY",
         currency: org?.currency || "NPR",
         liquidCash,

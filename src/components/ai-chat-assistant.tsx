@@ -56,7 +56,7 @@ export function AiChatAssistant({
     {
       id: "initial-welcome",
       role: "assistant",
-      text: `Hello! I'm your **Flowledger AI Financial Copilot** for **${orgName}**.\n\nYou can ask me questions about your ledger, bank balances, or **attach any invoice, bank statement, or bill** (paperclip icon) to auto-extract and insert it directly into the database!`,
+      text: `Hello! I'm your **Kashtrix ERP Copilot** for **${orgName}**.\n\nYou can ask me questions about your ledger, bank balances, or **attach any invoice, bank statement, or bill** (paperclip icon) to auto-extract and insert it directly into the database!`,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
@@ -297,8 +297,8 @@ export function AiChatAssistant({
                 <Bot size={16} />
               </div>
               <div>
-                <div style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.2 }}>Flowledger AI Copilot</div>
-                <div style={{ fontSize: 10.5, opacity: 0.85 }}>Gemini 2.5 Flash · Financial Assistant</div>
+                <div style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.2 }}>Kashtrix ERP Copilot</div>
+                <div style={{ fontSize: 10.5, opacity: 0.85 }}>Intelligent Financial Assistant</div>
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -569,7 +569,7 @@ export function AiChatAssistant({
                   }}
                 >
                   <Loader2 size={14} className="spin" />
-                  <span>Gemini AI is analyzing ledger & documents...</span>
+                  <span>Kashtrix AI is analyzing ledger & documents...</span>
                 </div>
               </div>
             )}

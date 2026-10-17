@@ -126,7 +126,7 @@ export function DocumentUploadModal({
       setUpdateBalances(balMap);
       setSelectedTxMap(txMap);
 
-      toast.success(`Gemini AI successfully parsed ${data.results.length} document(s)!`);
+      toast.success(`Kashtrix AI successfully parsed ${data.results.length} document(s)!`);
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Document analysis failed");
@@ -410,7 +410,7 @@ export function DocumentUploadModal({
                     color: "var(--brand)",
                   }}
                 >
-                  Powered by Google Gemini 2.5 Flash
+                  Powered by Kashtrix Smart AI
                 </span>
               </div>
 
@@ -794,7 +794,7 @@ export function DocumentUploadModal({
                 {analyzing ? (
                   <>
                     <Loader2 size={16} className="spin" />
-                    Analyzing with Gemini AI...
+                    Analyzing with Kashtrix AI...
                   </>
                 ) : (
                   <>

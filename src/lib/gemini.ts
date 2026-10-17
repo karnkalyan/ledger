@@ -398,7 +398,7 @@ export async function chatWithFinancialAI({
   mediaParts?: MediaPart[];
 }): Promise<string> {
   const contextPrompt = `
-You are "Flowledger AI Assistant", the intelligent financial copilot for "${organizationContext.organizationName}".
+You are "Kashtrix ERP Copilot", the intelligent financial copilot for "${organizationContext.organizationName}".
 The organization currency is ${organizationContext.currency}. Workspace type: ${organizationContext.kind}.
 
 LIVE FINANCIAL SNAPSHOT:
