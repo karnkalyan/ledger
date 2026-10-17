@@ -1,12 +1,25 @@
 import { NextResponse } from "next/server";
 import { verifyMcpAuth } from "@/lib/mcp-auth";
+import { POST as handleMcpPost } from "../route";
 
 export const dynamic = "force-dynamic";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-mcp-key, x-api-key",
+};
+
+/**
+ * SSE Transport for Model Context Protocol (MCP 2024-11-05 standard)
+ */
 export async function GET(request: Request) {
   const auth = await verifyMcpAuth(request);
   if (!auth.authenticated) {
-    return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: auth.error || "Unauthorized" },
+      { status: 401, headers: CORS_HEADERS }
+    );
   }
 
   const encoder = new TextEncoder();
@@ -14,16 +27,10 @@ export async function GET(request: Request) {
 
   const stream = new ReadableStream({
     start(controller) {
-      // Send initial endpoint event
-      const endpointData = JSON.stringify({
-        endpoint: `/api/mcp?sessionId=${sessionId}`,
-        session: sessionId,
-        authenticatedUser: auth.name,
-        orgId: auth.orgId,
-      });
-      controller.enqueue(encoder.encode(`event: endpoint\ndata: ${endpointData}\n\n`));
+      // Send standard MCP endpoint event containing the URI where client posts JSON-RPC messages
+      controller.enqueue(encoder.encode(`event: endpoint\ndata: /api/mcp?sessionId=${sessionId}\n\n`));
 
-      // Heartbeat every 25 seconds
+      // Heartbeat ping every 25 seconds to keep connection alive
       const interval = setInterval(() => {
         try {
           controller.enqueue(encoder.encode(`: heartbeat\n\n`));
@@ -43,19 +50,21 @@ export async function GET(request: Request) {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization, x-mcp-key, x-api-key",
+      ...CORS_HEADERS,
     },
   });
+}
+
+/**
+ * Handle direct POST on SSE endpoint (supported by various MCP client libraries)
+ */
+export async function POST(request: Request) {
+  return handleMcpPost(request);
 }
 
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization, x-mcp-key, x-api-key",
-    },
+    headers: CORS_HEADERS,
   });
 }

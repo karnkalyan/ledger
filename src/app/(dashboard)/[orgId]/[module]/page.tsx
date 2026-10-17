@@ -66,6 +66,7 @@ import {
   updateStatusAction,
   saveRentalHouseAction,
   setActiveRentalHouseAction,
+  deleteRentalHouseAction,
   saveMilkLogAction,
   saveElectricityLogAction,
   saveOrganizationSettingsAction,
@@ -781,39 +782,42 @@ export default async function ModulePage({
           </div>
         </div>
 
-        {organization.kind !== "COMPANY" && (
           <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 24 }}>
-            {/* HOUSE OWNER & TENANCY MANAGEMENT */}
+            {/* HOUSE OWNER & OFFICE TENANCY MANAGEMENT */}
             <div className="table-card" style={{ padding: 20 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>House Owner &amp; Tenancy Management</h3>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
+                    {organization.kind === "COMPANY" ? "Office Lease & Premises Management" : "House Owner & Tenancy Management"}
+                  </h3>
                   <p style={{ margin: "3px 0 0", fontSize: 12, color: "var(--text-muted)" }}>
-                    Configure rented residences, landlord details, monthly rent, electricity unit rate, and water/garbage fee. The currently active house automatically drives household commitments.
+                    {organization.kind === "COMPANY"
+                      ? "Configure office premises, landlord details, monthly office rent, electricity unit rate, and water/CAM maintenance fees. The active lease drives company recurring commitments."
+                      : "Configure rented residences, landlord details, monthly rent, electricity unit rate, and water/garbage fee. The currently active house automatically drives household commitments."}
                   </p>
                 </div>
                 <details className="drawer-details">
                   <summary className="primary-btn" style={{ padding: "6px 12px", fontSize: 12 }}>
-                    + Register Rental House
+                    {organization.kind === "COMPANY" ? "+ Register Office Lease / Premises" : "+ Register Rental House"}
                   </summary>
                   <div className="drawer-backdrop">
                     <div className="drawer-panel">
                       <div className="drawer-head">
                         <div>
-                          <h2>Register Rental House (Tenancy)</h2>
+                          <h2>{organization.kind === "COMPANY" ? "Register Office Lease (Premises)" : "Register Rental House (Tenancy)"}</h2>
                           <p>Define landlord, property address, fixed rent, electricity rate, and utilities.</p>
                         </div>
                       </div>
                       <form action={saveRentalHouseAction} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                         <input type="hidden" name="orgId" value={orgId} />
                         <label className="field">
-                          <span className="field-label">Residence Title / Property Name</span>
-                          <input name="title" required placeholder="e.g. Shantinagar House (Current), Old Baneshwor Flat" />
+                          <span className="field-label">{organization.kind === "COMPANY" ? "Office / Premises Title" : "Residence Title / Property Name"}</span>
+                          <input name="title" required placeholder={organization.kind === "COMPANY" ? "e.g. Simulcast Head Office, Branch Premises" : "e.g. Shantinagar House (Current), Old Baneshwor Flat"} />
                         </label>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                           <label className="field">
-                            <span className="field-label">House Owner (Landlord) Name</span>
-                            <input name="ownerName" required placeholder="Full Name of House Owner" />
+                            <span className="field-label">{organization.kind === "COMPANY" ? "Landlord / Building Management" : "House Owner (Landlord) Name"}</span>
+                            <input name="ownerName" required placeholder="Full Name of Property Owner / Landlord" />
                           </label>
                           <label className="field">
                             <span className="field-label">Owner Contact Phone</span>
@@ -822,32 +826,32 @@ export default async function ModulePage({
                         </div>
                         <label className="field">
                           <span className="field-label">Property Address / Location</span>
-                          <input name="address" placeholder="Tole, Ward, Kathmandu / Lalitpur" />
+                          <input name="address" placeholder="Tole, Ward, City" />
                         </label>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                           <label className="field">
                             <span className="field-label">Monthly Rent ({currency})</span>
-                            <input name="monthlyRent" type="number" step="0.01" defaultValue="16800" required />
+                            <input name="monthlyRent" type="number" step="0.01" defaultValue={organization.kind === "COMPANY" ? "17500" : "16800"} required />
                           </label>
                           <label className="field">
                             <span className="field-label">Electricity Rate / Unit ({currency})</span>
                             <input name="electricityRate" type="number" step="0.01" defaultValue="15" required />
                           </label>
                           <label className="field">
-                            <span className="field-label">Water &amp; Garbage Fee ({currency})</span>
-                            <input name="waterGarbageFee" type="number" step="0.01" defaultValue="300" required />
+                            <span className="field-label">{organization.kind === "COMPANY" ? "Water & CAM Fee" : "Water & Garbage Fee"} ({currency})</span>
+                            <input name="waterGarbageFee" type="number" step="0.01" defaultValue={organization.kind === "COMPANY" ? "500" : "300"} required />
                           </label>
                         </div>
                         <label className="field" style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginTop: 4 }}>
                           <input type="checkbox" name="isActive" value="true" defaultChecked style={{ width: 16, height: 16 }} />
-                          <span style={{ fontSize: 13, fontWeight: 600 }}>Set as Currently Active Residence (Calculates Monthly Overhead)</span>
+                          <span style={{ fontSize: 13, fontWeight: 600 }}>Set as Currently Active Premises (Calculates Monthly Overhead)</span>
                         </label>
                         <label className="field">
                           <span className="field-label">Notes / Lease Agreement Details</span>
                           <textarea name="notes" placeholder="Agreement date, deposit amount, meter location..." rows={2} />
                         </label>
                         <div className="form-actions" style={{ marginTop: 10 }}>
-                          <button className="primary-btn" type="submit">Save Rental House</button>
+                          <button className="primary-btn" type="submit">Save Premises</button>
                         </div>
                       </form>
                     </div>
@@ -860,22 +864,24 @@ export default async function ModulePage({
                   <div key={h.id} className={`tenant-house-card ${h.isActive ? "active" : ""}`}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                       <strong style={{ fontSize: 14 }}>{h.title}</strong>
-                      {h.isActive ? (
-                        <span className="tenant-house-badge">
-                          <CheckCircle2 size={12} /> ACTIVE RESIDENCE
-                        </span>
-                      ) : (
-                        <form action={setActiveRentalHouseAction}>
-                          <input type="hidden" name="orgId" value={orgId} />
-                          <input type="hidden" name="houseId" value={h.id} />
-                          <button className="secondary-btn" style={{ fontSize: 10.5, padding: "2px 8px" }}>
-                            Set as Active
-                          </button>
-                        </form>
-                      )}
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        {h.isActive ? (
+                          <span className="tenant-house-badge">
+                            <CheckCircle2 size={12} /> ACTIVE
+                          </span>
+                        ) : (
+                          <form action={setActiveRentalHouseAction}>
+                            <input type="hidden" name="orgId" value={orgId} />
+                            <input type="hidden" name="houseId" value={h.id} />
+                            <button className="secondary-btn" style={{ fontSize: 10.5, padding: "2px 8px" }}>
+                              Set as Active
+                            </button>
+                          </form>
+                        )}
+                      </div>
                     </div>
                     <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
-                      <div><strong>Owner:</strong> {h.ownerName} {h.ownerPhone ? `(${h.ownerPhone})` : ""}</div>
+                      <div><strong>{organization.kind === "COMPANY" ? "Landlord:" : "Owner:"}</strong> {h.ownerName} {h.ownerPhone ? `(${h.ownerPhone})` : ""}</div>
                       {h.address && <div><strong>Location:</strong> {h.address}</div>}
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, background: "var(--soft)", padding: 8, borderRadius: 4, textAlign: "center", fontSize: 11 }}>
@@ -885,24 +891,99 @@ export default async function ModulePage({
                       </div>
                       <div>
                         <div style={{ color: "var(--text-muted)", fontSize: 10 }}>ELECTRICITY</div>
-                        <strong style={{ fontFamily: "Consolas, monospace" }}>{currency} {Number(h.electricityRate)}/unit</strong>
+                        <strong style={{ fontFamily: "Consolas, monospace" }}>{currency} {Number(h.electricityRate)}/u</strong>
                       </div>
                       <div>
-                        <div style={{ color: "var(--text-muted)", fontSize: 10 }}>WATER &amp; GARBAGE</div>
+                        <div style={{ color: "var(--text-muted)", fontSize: 10 }}>{organization.kind === "COMPANY" ? "WATER & CAM" : "WATER & WASTE"}</div>
                         <strong style={{ fontFamily: "Consolas, monospace" }}>{money(Number(h.waterGarbageFee), currency)}</strong>
                       </div>
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10, gap: 6 }}>
+                      <details className="drawer-details">
+                        <summary className="ghost-btn" style={{ fontSize: 11, padding: "3px 8px" }}>
+                          Modify Charges / Details
+                        </summary>
+                        <div className="drawer-backdrop">
+                          <div className="drawer-panel">
+                            <div className="drawer-head">
+                              <div>
+                                <h2>Modify {organization.kind === "COMPANY" ? "Office Lease" : "Rental House"} Charges</h2>
+                                <p>Update monthly rent, electricity rate, utilities, or owner contact info.</p>
+                              </div>
+                            </div>
+                            <form action={saveRentalHouseAction} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                              <input type="hidden" name="orgId" value={orgId} />
+                              <input type="hidden" name="id" value={h.id} />
+                              <label className="field">
+                                <span className="field-label">{organization.kind === "COMPANY" ? "Office / Premises Title" : "Residence Title"}</span>
+                                <input name="title" defaultValue={h.title} required />
+                              </label>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                                <label className="field">
+                                  <span className="field-label">{organization.kind === "COMPANY" ? "Landlord / Management Name" : "Owner Name"}</span>
+                                  <input name="ownerName" defaultValue={h.ownerName} required />
+                                </label>
+                                <label className="field">
+                                  <span className="field-label">Owner Contact Phone</span>
+                                  <input name="ownerPhone" defaultValue={h.ownerPhone || ""} />
+                                </label>
+                              </div>
+                              <label className="field">
+                                <span className="field-label">Property Address</span>
+                                <input name="address" defaultValue={h.address || ""} />
+                              </label>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                                <label className="field">
+                                  <span className="field-label">Monthly Rent ({currency})</span>
+                                  <input name="monthlyRent" type="number" step="0.01" defaultValue={Number(h.monthlyRent)} required />
+                                </label>
+                                <label className="field">
+                                  <span className="field-label">Electricity / Unit ({currency})</span>
+                                  <input name="electricityRate" type="number" step="0.01" defaultValue={Number(h.electricityRate)} required />
+                                </label>
+                                <label className="field">
+                                  <span className="field-label">{organization.kind === "COMPANY" ? "Water & CAM" : "Water & Waste"} ({currency})</span>
+                                  <input name="waterGarbageFee" type="number" step="0.01" defaultValue={Number(h.waterGarbageFee)} required />
+                                </label>
+                              </div>
+                              <label className="field" style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginTop: 4 }}>
+                                <input type="checkbox" name="isActive" value="true" defaultChecked={h.isActive} style={{ width: 16, height: 16 }} />
+                                <span style={{ fontSize: 13, fontWeight: 600 }}>Active Premises (Calculates Monthly Overhead)</span>
+                              </label>
+                              <label className="field">
+                                <span className="field-label">Notes</span>
+                                <textarea name="notes" defaultValue={h.notes || ""} rows={2} />
+                              </label>
+                              <div className="form-actions" style={{ marginTop: 10 }}>
+                                <button className="primary-btn" type="submit">Update Charges</button>
+                              </div>
+                            </form>
+                            <form action={deleteRentalHouseAction} style={{ marginTop: 16, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
+                              <input type="hidden" name="orgId" value={orgId} />
+                              <input type="hidden" name="houseId" value={h.id} />
+                              <button className="danger-btn" style={{ fontSize: 11, padding: "4px 10px" }} type="submit">
+                                Delete Premises Record
+                              </button>
+                            </form>
+                          </div>
+                        </div>
+                      </details>
                     </div>
                   </div>
                 ))}
                 {!rentalHouses.length && (
                   <div style={{ padding: 16, background: "var(--soft)", borderRadius: 6, color: "var(--text-muted)", fontSize: 12 }}>
-                    No rental residence registered yet. Click &quot;+ Register Rental House&quot; above to configure your landlord details and fixed rates.
+                    {organization.kind === "COMPANY"
+                      ? "No office premises registered yet. Click \"+ Register Office Lease / Premises\" above to configure your office rent and utility rates."
+                      : "No rental residence registered yet. Click \"+ Register Rental House\" above to configure your landlord details and fixed rates."}
                   </div>
                 )}
               </div>
             </div>
 
-            {/* MILK MONTHLY CONSUMPTION LOGGER & ADJUSTMENT */}
+            {/* MILK MONTHLY CONSUMPTION LOGGER & ADJUSTMENT (HOUSEHOLD ONLY) */}
+            {organization.kind !== "COMPANY" && (
             <div className="table-card" style={{ padding: 20 }}>
               <div style={{ marginBottom: 16 }}>
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Daily Milk Quota &amp; Monthly Bill Adjustment</h3>
@@ -996,8 +1077,8 @@ export default async function ModulePage({
                 </div>
               )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* ELECTRICITY METER READING & AUTO BILL ADJUSTMENT */}
         <div id="electricity-meter-logger" className="table-card" style={{ padding: 20, marginTop: 20 }}>

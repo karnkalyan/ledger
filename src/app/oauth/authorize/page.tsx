@@ -86,8 +86,10 @@ function OAuthAuthorizeContent() {
         state,
         codeChallenge,
         scope,
-        orgId: selectedOrgId,
       };
+      if (selectedOrgId) {
+        payload.orgId = selectedOrgId;
+      }
 
       if (!useSession) {
         if (authMode === "login") {
@@ -296,31 +298,56 @@ function OAuthAuthorizeContent() {
                 Role: {activeSession.user.role} · Authorized Organization Access
               </div>
 
-              {activeSession.organizations.length > 1 && (
-                <div style={{ textAlign: "left", marginBottom: 10 }}>
-                  <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#334155", marginBottom: 4 }}>
-                    Select Organization / Workspace:
-                  </label>
-                  <select
-                    value={selectedOrgId}
-                    onChange={(e) => setSelectedOrgId(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "8px 10px",
-                      borderRadius: 6,
-                      border: "1px solid #cbd5e1",
-                      fontSize: 12.5,
-                      background: "#ffffff",
-                    }}
-                  >
-                    {activeSession.organizations.map((org) => (
-                      <option key={org.id} value={org.id}>
-                        {org.name} ({org.kind === "COMPANY" ? "Company" : "Household"})
-                      </option>
-                    ))}
-                  </select>
+              {/* List of all authorized workspaces being granted */}
+              <div style={{ textAlign: "left", marginBottom: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: "#334155" }}>
+                    Authorizing All Connected Workspaces ({activeSession.organizations.length}):
+                  </span>
+                  <span style={{ fontSize: 11, color: "#059669", fontWeight: 700 }}>Full Access</span>
                 </div>
-              )}
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {activeSession.organizations.map((org) => (
+                    <div
+                      key={org.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "7px 11px",
+                        background: "#ffffff",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {org.kind === "HOUSEHOLD" ? (
+                          <Home size={15} color="#059669" />
+                        ) : (
+                          <Building2 size={15} color="#4a086b" />
+                        )}
+                        <span style={{ fontWeight: 650, color: "#0f172a" }}>{org.name}</span>
+                      </div>
+                      <span
+                        style={{
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          padding: "2px 7px",
+                          borderRadius: 6,
+                          background: org.kind === "HOUSEHOLD" ? "#ecfdf5" : "#f5f3ff",
+                          color: org.kind === "HOUSEHOLD" ? "#047857" : "#6d28d9",
+                        }}
+                      >
+                        {org.kind === "COMPANY" ? "Office / Company" : "Household / House"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: 6, fontSize: 11, color: "#64748b" }}>
+                  MCP will have unified access to both House &amp; Office accounts.
+                </div>
+              </div>
 
               <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
                 <button
@@ -328,7 +355,7 @@ function OAuthAuthorizeContent() {
                   onClick={() => handleAuthorize(undefined, true)}
                   disabled={submitting}
                   style={{
-                    padding: "8px 16px",
+                    padding: "9px 18px",
                     borderRadius: 8,
                     border: "none",
                     background: "linear-gradient(135deg, #4a086b 0%, #ef086f 100%)",
@@ -339,10 +366,11 @@ function OAuthAuthorizeContent() {
                     display: "inline-flex",
                     alignItems: "center",
                     gap: 6,
+                    boxShadow: "0 2px 8px rgba(74, 8, 107, 0.2)",
                   }}
                 >
                   {submitting ? <Loader2 size={14} className="spin" /> : <CheckCircle2 size={14} />}
-                  <span>Authorize As {activeSession.user.name.split(" ")[0]}</span>
+                  <span>Authorize All Workspaces As {activeSession.user.name.split(" ")[0]}</span>
                 </button>
                 <button
                   type="button"

@@ -29,4 +29,7 @@ else
 fi
 
 echo "==> Starting Leader Next.js server on port ${PORT:-3080}..."
+if [ "$1" = "next" ] && [ "$2" = "start" ]; then
+  exec node scripts/start-server.js
+fi
 exec "$@"

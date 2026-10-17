@@ -25,6 +25,8 @@ export async function POST(request: Request) {
   let role = "OWNER";
   let orgId = "";
   let orgSlug = "";
+  let orgIds: string[] = [];
+  let organizations: any[] = [];
 
   if (code) {
     try {
@@ -35,16 +37,19 @@ export async function POST(request: Request) {
       if (decoded.role) role = String(decoded.role);
       if (decoded.orgId) orgId = String(decoded.orgId);
       if (decoded.orgSlug) orgSlug = String(decoded.orgSlug);
+      if (Array.isArray(decoded.orgIds)) orgIds = decoded.orgIds;
+      if (Array.isArray(decoded.organizations)) organizations = decoded.organizations;
     } catch {}
   }
 
-  // Generate 30-day access token
+  // Generate 30-day access token authorizing ALL user's organizations
   const accessToken = await createMcpToken({
     userId,
     name,
     email,
     role,
     orgId,
+    orgIds,
     orgSlug,
     expiresIn: "30d",
   });
@@ -57,6 +62,8 @@ export async function POST(request: Request) {
       scope: "mcp:all",
       token: accessToken,
       orgId,
+      orgIds,
+      organizations,
       orgSlug,
     },
     {

@@ -141,27 +141,77 @@ export async function POST(request: Request) {
     );
   }
 
-  // Find user's organizations
-  const memberships = await db.membership.findMany({
-    where: { userId: authenticatedUser.id },
-    include: { organization: true },
-  });
+  // Find all user's organizations (memberships and owned)
+  const isSuperAdmin = authenticatedUser.role === "SUPER_ADMIN" || authenticatedUser.id === "master-admin";
 
-  if (!targetOrgId && memberships.length > 0) {
-    targetOrgId = memberships[0].organizationId;
-    targetOrgSlug = memberships[0].organization.slug;
-  } else if (targetOrgId) {
-    const match = memberships.find((m) => m.organizationId === targetOrgId);
-    if (match) targetOrgSlug = match.organization.slug;
+  let allAuthorizedOrgs: Array<{ id: string; name: string; slug: string; kind: string }> = [];
+
+  if (isSuperAdmin) {
+    const allDbOrgs = await db.organization.findMany({
+      select: { id: true, name: true, slug: true, kind: true },
+      orderBy: { createdAt: "asc" },
+    });
+    allAuthorizedOrgs = allDbOrgs;
+  } else {
+    const [memberships, owned] = await Promise.all([
+      db.membership.findMany({
+        where: { userId: authenticatedUser.id },
+        include: { organization: true },
+      }),
+      db.organization.findMany({
+        where: { ownerId: authenticatedUser.id },
+      }),
+    ]);
+
+    const orgMap = new Map<string, { id: string; name: string; slug: string; kind: string }>();
+
+    for (const m of memberships) {
+      orgMap.set(m.organization.id, {
+        id: m.organization.id,
+        name: m.organization.name,
+        slug: m.organization.slug,
+        kind: m.organization.kind,
+      });
+    }
+
+    for (const o of owned) {
+      if (!orgMap.has(o.id)) {
+        orgMap.set(o.id, {
+          id: o.id,
+          name: o.name,
+          slug: o.slug,
+          kind: o.kind,
+        });
+      }
+    }
+
+    allAuthorizedOrgs = Array.from(orgMap.values());
   }
 
-  if (!targetOrgId) {
-    const firstOrg = await db.organization.findFirst({ select: { id: true, slug: true } });
-    targetOrgId = firstOrg?.id || "";
-    targetOrgSlug = firstOrg?.slug || "";
+  // Fallback if user has no orgs yet
+  if (allAuthorizedOrgs.length === 0) {
+    const firstOrg = await db.organization.findFirst({ select: { id: true, slug: true, name: true, kind: true } });
+    if (firstOrg) {
+      allAuthorizedOrgs.push(firstOrg);
+    }
   }
 
-  // Create signed authorization code
+  const orgIds = allAuthorizedOrgs.map((o) => o.id);
+
+  if (targetOrgId) {
+    const matched = allAuthorizedOrgs.find((o) => o.id === targetOrgId || o.slug === targetOrgId);
+    if (matched) {
+      targetOrgId = matched.id;
+      targetOrgSlug = matched.slug;
+    }
+  }
+
+  if (!targetOrgId && allAuthorizedOrgs.length > 0) {
+    targetOrgId = allAuthorizedOrgs[0].id;
+    targetOrgSlug = allAuthorizedOrgs[0].slug;
+  }
+
+  // Create signed authorization code with full multi-organization authorization
   const codePayload = Buffer.from(
     JSON.stringify({
       issuedAt: Date.now(),
@@ -170,6 +220,8 @@ export async function POST(request: Request) {
       email: authenticatedUser.email,
       role: authenticatedUser.role,
       orgId: targetOrgId,
+      orgIds,
+      organizations: allAuthorizedOrgs,
       orgSlug: targetOrgSlug,
       state: state || "",
       codeChallenge: codeChallenge || "",

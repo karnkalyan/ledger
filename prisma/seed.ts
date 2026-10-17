@@ -382,6 +382,40 @@ async function main() {
     },
   });
 
+  // Import House Bank Statements from extracted_house_data.json
+  const houseDataPath = path.join(process.cwd(), "scripts", "extracted_house_data.json");
+  if (fs.existsSync(houseDataPath)) {
+    console.log("\n--- IMPORTING HOUSE BANK STATEMENT TRANSACTIONS ---");
+    const houseData = JSON.parse(fs.readFileSync(houseDataPath, "utf-8"));
+
+    for (const [accNo, txs] of Object.entries(houseData) as [string, any[]][]) {
+      const acc = await prisma.bankAccount.findFirst({
+        where: { organizationId: household.id, accountNumber: accNo },
+      });
+      if (acc) {
+        await prisma.bankTransaction.deleteMany({ where: { bankAccountId: acc.id } });
+        const BATCH_SIZE = 100;
+        for (let i = 0; i < txs.length; i += BATCH_SIZE) {
+          const chunk = txs.slice(i, i + BATCH_SIZE);
+          await prisma.bankTransaction.createMany({
+            data: chunk.map((t) => ({
+              organizationId: household.id,
+              bankAccountId: acc.id,
+              transactionDate: new Date(`${t.date}T12:00:00Z`),
+              type: t.type,
+              amount: t.amount,
+              balance: t.balance != null ? Number(t.balance) : null,
+              description: t.description || "Bank Transaction",
+              reference: t.reference || null,
+              category: t.type === "DEPOSIT" ? "Household Inflow" : "Household Expenditure",
+            })),
+          });
+        }
+        console.log(`Imported ${txs.length} transactions for ${acc.bankName} (${accNo}).`);
+      }
+    }
+  }
+
   // House Sample Income
   await prisma.income.deleteMany({ where: { organizationId: household.id } });
   await prisma.income.create({

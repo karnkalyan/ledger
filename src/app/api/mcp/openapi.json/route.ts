@@ -66,6 +66,51 @@ export async function GET(request: Request) {
           },
         },
       },
+      "/api/mcp/balance": {
+        get: {
+          operationId: "getFinancialBalance",
+          summary: "Get live financial balance and receivables/payables",
+          description: "Retrieve total bank balance, outstanding receivables, vendor payables, and net position for Simulcast Technologies, My House, or all accounts.",
+          parameters: [
+            {
+              name: "workspace",
+              in: "query",
+              required: false,
+              schema: { type: "string" },
+              description: "Workspace alias (e.g. 'simulcast', 'house', 'office') or organization ID",
+            },
+          ],
+          responses: {
+            "200": {
+              description: "Live financial balance overview",
+            },
+          },
+        },
+        post: {
+          operationId: "postFinancialBalance",
+          summary: "Query live financial balance with JSON parameters",
+          description: "Query bank balances, customer receivables, and vendor payables.",
+          requestBody: {
+            required: false,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    workspace: { type: "string", description: "e.g. 'simulcast', 'house', 'office'" },
+                    orgId: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "200": {
+              description: "Live financial balance overview",
+            },
+          },
+        },
+      },
     },
     components: {
       securitySchemes: {

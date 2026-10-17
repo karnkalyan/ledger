@@ -1271,6 +1271,23 @@ export async function setActiveRentalHouseAction(formData: FormData) {
   revalidatePath(`/${orgId}/reports`);
 }
 
+export async function deleteRentalHouseAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  const houseId = s(formData, "houseId");
+  await orgAccess(orgId);
+
+  if (houseId) {
+    await db.rentalHouse.deleteMany({
+      where: { id: houseId, organizationId: orgId },
+    });
+  }
+
+  refresh(orgId, "expenses");
+  revalidatePath(`/${orgId}`);
+  revalidatePath(`/${orgId}/expenses`);
+  revalidatePath(`/${orgId}/reports`);
+}
+
 async function syncActiveHouseCommitments(orgId: string, house: {
   title: string;
   ownerName: string;
@@ -1278,6 +1295,22 @@ async function syncActiveHouseCommitments(orgId: string, house: {
   electricityRate: number;
   waterGarbageFee: number;
 }) {
+  const org = await db.organization.findUnique({ where: { id: orgId }, select: { kind: true } });
+  const isCompany = org?.kind === "COMPANY";
+  const rentTitle = isCompany ? "Office Rent (Monthly)" : "House Rent (Monthly)";
+
+  let rentCat = await db.expenseCategory.findFirst({
+    where: { organizationId: orgId, name: { contains: "rent" } },
+  });
+  if (!rentCat) {
+    rentCat = await db.expenseCategory.findFirst({ where: { organizationId: orgId } });
+    if (!rentCat) {
+      rentCat = await db.expenseCategory.create({
+        data: { organizationId: orgId, name: "Rent & Premises" },
+      });
+    }
+  }
+
   const rentRec = await db.recurringExpense.findFirst({
     where: { organizationId: orgId, title: { contains: "rent" } },
   });
@@ -1285,9 +1318,22 @@ async function syncActiveHouseCommitments(orgId: string, house: {
     await db.recurringExpense.update({
       where: { id: rentRec.id },
       data: {
+        title: rentTitle,
         fixedAmount: house.monthlyRent,
-        vendor: house.ownerName || "House Landlord",
-        notes: `House rent for ${house.title} (Owner: ${house.ownerName})`,
+        vendor: house.ownerName || (isCompany ? "Office Landlord" : "House Landlord"),
+        notes: `Premises rent for ${house.title} (Owner: ${house.ownerName})`,
+      },
+    });
+  } else if (house.monthlyRent > 0) {
+    await db.recurringExpense.create({
+      data: {
+        organizationId: orgId,
+        categoryId: rentCat.id,
+        title: rentTitle,
+        active: true,
+        fixedAmount: house.monthlyRent,
+        vendor: house.ownerName || (isCompany ? "Office Landlord" : "House Landlord"),
+        notes: `Monthly lease commitment for ${house.title}`,
       },
     });
   }
@@ -1302,6 +1348,17 @@ async function syncActiveHouseCommitments(orgId: string, house: {
         unitRate: house.electricityRate,
       },
     });
+  } else if (house.electricityRate > 0) {
+    await db.recurringExpense.create({
+      data: {
+        organizationId: orgId,
+        categoryId: rentCat.id,
+        title: isCompany ? "Office Electricity" : "House Electricity",
+        active: true,
+        unitRate: house.electricityRate,
+        vendor: "Nepal Electricity Authority (NEA)",
+      },
+    });
   }
 
   const waterRec = await db.recurringExpense.findFirst({
@@ -1311,6 +1368,16 @@ async function syncActiveHouseCommitments(orgId: string, house: {
     await db.recurringExpense.update({
       where: { id: waterRec.id },
       data: {
+        fixedAmount: house.waterGarbageFee,
+      },
+    });
+  } else if (house.waterGarbageFee > 0) {
+    await db.recurringExpense.create({
+      data: {
+        organizationId: orgId,
+        categoryId: rentCat.id,
+        title: isCompany ? "Office Water & Maintenance" : "Water & Waste Management",
+        active: true,
         fixedAmount: house.waterGarbageFee,
       },
     });
