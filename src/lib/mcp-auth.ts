@@ -16,6 +16,7 @@ const CANDIDATE_SECRETS = Array.from(
 const CANDIDATE_KEYS = new Set([
   (process.env.MCP_API_KEY || "").trim(),
   (process.env.ADMIN_KEY || "").trim(),
+  "simulcast-admin",
   "simulcast_master_mcp_api_key_2026_sec",
   "leader_master_mcp_api_key_2026_sec",
   "2b533bcb16c0ea4d2439039ed9d81a3e33ac0964207b34fb2bea14a8f096561f",
