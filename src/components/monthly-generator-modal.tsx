@@ -16,6 +16,18 @@ export interface RecurringCommitmentItem {
   categoryName?: string;
 }
 
+const BS_MONTH_OPTIONS = [
+  { value: "2083-04", label: "2083-04 · Shrawan (श्रावण) 2083 BS" },
+  { value: "2083-05", label: "2083-05 · Bhadra (भाद्र) 2083 BS" },
+  { value: "2083-06", label: "2083-06 · Ashwin (असोज) 2083 BS" },
+  { value: "2083-07", label: "2083-07 · Kartik (कार्तिक) 2083 BS (Current)" },
+  { value: "2083-08", label: "2083-08 · Mangsir (मंसिर) 2083 BS" },
+  { value: "2083-09", label: "2083-09 · Poush (पुष) 2083 BS" },
+  { value: "2083-10", label: "2083-10 · Magh (माघ) 2083 BS" },
+  { value: "2083-11", label: "2083-11 · Falgun (फाल्गुन) 2083 BS" },
+  { value: "2083-12", label: "2083-12 · Chaitra (चैत) 2083 BS" },
+];
+
 export function MonthlyGeneratorModal({
   orgId,
   currentMonth,
@@ -31,6 +43,7 @@ export function MonthlyGeneratorModal({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [month, setMonth] = useState(currentMonth);
+  const [markAsPaid, setMarkAsPaid] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     recurringItems.forEach((r) => {
@@ -80,6 +93,7 @@ export function MonthlyGeneratorModal({
     const formData = new FormData();
     formData.set("orgId", orgId);
     formData.set("month", month);
+    formData.set("markAsPaid", markAsPaid ? "true" : "false");
 
     Object.entries(selectedIds).forEach(([id, checked]) => {
       if (checked) {
@@ -166,46 +180,65 @@ export function MonthlyGeneratorModal({
                   gap: 10,
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   <Calendar size={15} style={{ color: "var(--brand)" }} />
-                  <span style={{ fontSize: 12, fontWeight: 700 }}>Billing Month:</span>
-                  <input
-                    type="text"
-                    placeholder="YYYY-MM"
-                    pattern="[0-9]{4}-(0[1-9]|1[0-2])"
+                  <span style={{ fontSize: 12, fontWeight: 700 }}>Nepali BS Billing Month:</span>
+                  <select
                     value={month}
                     onChange={(e) => setMonth(e.target.value)}
-                    required
                     style={{
-                      width: 120,
                       padding: "4px 8px",
                       fontSize: 13,
                       fontFamily: "Consolas, monospace",
                       fontWeight: 700,
-                      borderRadius: 5,
-                      border: "1px solid var(--line)",
+                      borderRadius: 6,
+                      border: "1px solid var(--line-strong)",
                       background: "var(--surface)",
+                      color: "var(--foreground)",
                     }}
-                  />
+                  >
+                    {BS_MONTH_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                    {!BS_MONTH_OPTIONS.some((o) => o.value === month) && (
+                      <option value={month}>{month} (Selected Month)</option>
+                    )}
+                  </select>
+                  <span className="badge green" style={{ fontSize: 10, fontWeight: 700 }}>
+                    🇳🇵 BIKRAM SAMBAT
+                  </span>
                 </div>
 
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectAll(true)}
-                    className="ghost-btn"
-                    style={{ fontSize: 11, padding: "2px 8px" }}
-                  >
-                    Select All
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectAll(false)}
-                    className="ghost-btn"
-                    style={{ fontSize: 11, padding: "2px 8px" }}
-                  >
-                    Deselect All
-                  </button>
+                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                  <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer", background: "var(--surface)", padding: "3px 8px", borderRadius: 5, border: "1px solid var(--line)" }}>
+                    <input
+                      type="checkbox"
+                      checked={markAsPaid}
+                      onChange={(e) => setMarkAsPaid(e.target.checked)}
+                    />
+                    <span>Generate as <strong style={{ color: "var(--success)" }}>PAID</strong></span>
+                  </label>
+
+                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectAll(true)}
+                      className="ghost-btn"
+                      style={{ fontSize: 11, padding: "2px 8px" }}
+                    >
+                      Select All
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectAll(false)}
+                      className="ghost-btn"
+                      style={{ fontSize: 11, padding: "2px 8px" }}
+                    >
+                      Deselect All
+                    </button>
+                  </div>
                 </div>
               </div>
 

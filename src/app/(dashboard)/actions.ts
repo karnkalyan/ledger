@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { requireOrganizationAccess } from "@/lib/session";
 import { estimateRecurringExpense } from "@/lib/expense-engine";
 import { getDaysInMonth, startOfMonth, endOfMonth } from "date-fns";
+import { getBsMonthRange, bsToAd } from "@/lib/nepali-calendar";
 
 type Line = { description: string; quantity: number; unitPrice: number; taxRate?: number; productId?: string };
 
@@ -269,12 +270,30 @@ export async function generateMonthlyEstimatesAction(formData: FormData) {
   const orgId = s(formData, "orgId");
   await orgAccess(orgId);
   const monthString = s(formData, "month");
-  const month = monthString ? new Date(`${monthString}-01T12:00:00`) : new Date();
-  const monthStart = startOfMonth(month);
-  const monthEnd = endOfMonth(month);
+
+  let monthStart: Date;
+  let monthEnd: Date;
+  let labelMonth = monthString || "";
+  let bsDaysCount: number | null = null;
+
+  const bsMatch = monthString?.match(/^(\d{4})-(\d{2})$/);
+  if (bsMatch && parseInt(bsMatch[1], 10) >= 2070 && parseInt(bsMatch[1], 10) <= 2100) {
+    const bsYear = parseInt(bsMatch[1], 10);
+    const bsMonth = parseInt(bsMatch[2], 10);
+    const range = getBsMonthRange(bsYear, bsMonth);
+    monthStart = range.startDate;
+    monthEnd = range.endDate;
+    labelMonth = `${monthString} (${range.monthName} ${bsYear} BS)`;
+    bsDaysCount = range.daysInMonth;
+  } else {
+    const month = monthString ? new Date(`${monthString}-01T12:00:00`) : new Date();
+    monthStart = startOfMonth(month);
+    monthEnd = endOfMonth(month);
+  }
 
   // Check if specific items were selected by the user
   const selectedItemIds = formData.getAll("selectedItems").map(String);
+  const markAsPaid = formData.get("markAsPaid") === "true";
   const overrideAmountsJson = s(formData, "overrideAmounts");
   let overrideAmounts: Record<string, number> = {};
   if (overrideAmountsJson) {
@@ -304,14 +323,13 @@ export async function generateMonthlyEstimatesAction(formData: FormData) {
     const exists = await db.expense.findFirst({
       where: {
         recurringExpenseId: item.id,
-        isEstimated: true,
         occurredAt: { gte: monthStart, lte: monthEnd },
       },
     });
     if (exists) continue;
 
     const customAmt = overrideAmounts[item.id];
-    const amount = typeof customAmt === "number" && customAmt > 0 ? customAmt : estimateRecurringExpense(item, month);
+    const amount = typeof customAmt === "number" && customAmt > 0 ? customAmt : estimateRecurringExpense(item, monthStart);
     if (amount <= 0) continue;
 
     await db.expense.create({
@@ -319,17 +337,17 @@ export async function generateMonthlyEstimatesAction(formData: FormData) {
         organizationId: orgId,
         categoryId: item.categoryId,
         recurringExpenseId: item.id,
-        title: `${item.title} — monthly estimate`,
+        title: `${item.title} — monthly ${markAsPaid ? "bill" : "estimate"}`,
         vendor: item.vendor,
         type: "RECURRING",
         quantity: item.quantity,
         unit: item.unit,
         unitRate: item.unitRate,
-        daysCount: item.recurrence === "DAILY" ? (item.billingDays ?? new Prisma.Decimal(getDaysInMonth(month))) : item.billingDays,
+        daysCount: item.recurrence === "DAILY" ? (item.billingDays ?? new Prisma.Decimal(bsDaysCount ?? getDaysInMonth(monthStart))) : item.billingDays,
         amount,
         occurredAt: monthStart,
-        isEstimated: true,
-        notes: `Selected monthly commitment for ${monthString || monthStart.toISOString().slice(0, 7)}`,
+        isEstimated: !markAsPaid,
+        notes: `Selected monthly commitment for ${labelMonth || monthStart.toISOString().slice(0, 7)} (${markAsPaid ? "Marked as Paid" : "Unpaid Commitment"})`,
       },
     });
   }
@@ -1690,6 +1708,8 @@ export async function saveMilkLogAction(formData: FormData) {
   const totalLiters = (regularDays * regularQty) + (alternateDays * alternateQty);
   const totalCost = totalLiters * ratePerLiter;
 
+  const paid = formData.get("paid") === "true";
+
   await db.milkMonthlyLog.upsert({
     where: { organizationId_month: { organizationId: orgId, month } },
     update: {
@@ -1700,6 +1720,7 @@ export async function saveMilkLogAction(formData: FormData) {
       alternateQty,
       totalLiters,
       totalCost,
+      paid,
       notes,
     },
     create: {
@@ -1712,6 +1733,7 @@ export async function saveMilkLogAction(formData: FormData) {
       alternateQty,
       totalLiters,
       totalCost,
+      paid,
       notes,
     },
   });
@@ -1726,7 +1748,13 @@ export async function saveMilkLogAction(formData: FormData) {
     where: { organizationId: orgId, title: { contains: `Daily milk bill (${month})` } },
   });
 
-  const occurredAt = new Date(`${month.slice(0, 7)}-28T12:00:00Z`);
+  let occurredAt = new Date();
+  const bsMatch = month.match(/^(\d{4})-(\d{2})$/);
+  if (bsMatch && parseInt(bsMatch[1], 10) >= 2070 && parseInt(bsMatch[1], 10) <= 2100) {
+    occurredAt = bsToAd(parseInt(bsMatch[1], 10), parseInt(bsMatch[2], 10), 28);
+  } else {
+    occurredAt = new Date(`${month.slice(0, 7)}-28T12:00:00Z`);
+  }
 
   if (existingExp) {
     await db.expense.update({
@@ -1735,6 +1763,7 @@ export async function saveMilkLogAction(formData: FormData) {
         title: expenseTitle,
         amount: totalCost,
         occurredAt,
+        isEstimated: !paid,
         notes: `Calculated from milk consumption log: ${totalLiters} liters total at NPR ${ratePerLiter}/liter.`,
       },
     });
@@ -1748,6 +1777,7 @@ export async function saveMilkLogAction(formData: FormData) {
         type: "ONE_TIME",
         amount: totalCost,
         occurredAt,
+        isEstimated: !paid,
         notes: `Calculated from milk consumption log: ${totalLiters} liters total at NPR ${ratePerLiter}/liter.`,
       },
     });
@@ -1801,6 +1831,8 @@ export async function saveElectricityLogAction(formData: FormData) {
   const expenseTitle = `Electricity bill (${month}): ${unitsConsumed.toFixed(1)} units (${previousUnit} -> ${currentUnit}) @ NPR ${ratePerUnit}/unit`;
   const expenseNotes = `Auto-calculated electricity consumption: Previous meter reading = ${previousUnit}, Current meter reading = ${currentUnit}. Net units consumed = ${unitsConsumed} units @ NPR ${ratePerUnit}/unit.${notes ? ` Notes: ${notes}` : ""}`;
 
+  const isPaid = formData.get("paid") !== "false";
+
   await db.$transaction(async (tx) => {
     // 1. Check existing expense for this month
     const existingExp = await tx.expense.findFirst({
@@ -1821,6 +1853,7 @@ export async function saveElectricityLogAction(formData: FormData) {
           quantity: unitsConsumed,
           unit: "units",
           occurredAt: readingDate,
+          isEstimated: !isPaid,
           notes: expenseNotes,
         },
       });
@@ -1838,6 +1871,7 @@ export async function saveElectricityLogAction(formData: FormData) {
           quantity: unitsConsumed,
           unit: "units",
           occurredAt: readingDate,
+          isEstimated: !isPaid,
           notes: expenseNotes,
         },
       });
@@ -1861,6 +1895,7 @@ export async function saveElectricityLogAction(formData: FormData) {
         totalCost,
         readingDate,
         expenseId,
+        paid: formData.get("paid") !== "false",
         notes,
       },
       create: {
@@ -1874,6 +1909,7 @@ export async function saveElectricityLogAction(formData: FormData) {
         totalCost,
         readingDate,
         expenseId,
+        paid: formData.get("paid") !== "false",
         notes,
       },
     });
@@ -1892,6 +1928,85 @@ export async function saveElectricityLogAction(formData: FormData) {
 
   refresh(orgId, "expenses");
   revalidatePath(`/${orgId}`);
+  revalidatePath(`/${orgId}/expenses`);
+  revalidatePath(`/${orgId}/reports`);
+}
+
+export async function toggleElectricityLogStatusAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  await orgAccess(orgId);
+  const logId = s(formData, "logId");
+  if (!logId) return;
+
+  const log = await db.electricityReadingLog.findFirst({
+    where: { id: logId, organizationId: orgId },
+  });
+  if (!log) return;
+
+  const newPaid = !log.paid;
+  await db.electricityReadingLog.update({
+    where: { id: log.id },
+    data: { paid: newPaid },
+  });
+
+  if (log.expenseId) {
+    await db.expense.update({
+      where: { id: log.expenseId },
+      data: { isEstimated: !newPaid },
+    });
+  }
+
+  refresh(orgId, "expenses");
+  revalidatePath(`/${orgId}/expenses`);
+  revalidatePath(`/${orgId}/reports`);
+}
+
+export async function toggleMilkLogStatusAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  await orgAccess(orgId);
+  const logId = s(formData, "logId");
+  if (!logId) return;
+
+  const log = await db.milkMonthlyLog.findFirst({
+    where: { id: logId, organizationId: orgId },
+  });
+  if (!log) return;
+
+  const newPaid = !log.paid;
+  await db.milkMonthlyLog.update({
+    where: { id: log.id },
+    data: { paid: newPaid },
+  });
+
+  refresh(orgId, "expenses");
+  revalidatePath(`/${orgId}/expenses`);
+  revalidatePath(`/${orgId}/reports`);
+}
+
+export async function toggleExpenseStatusAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  await orgAccess(orgId);
+  const expenseId = s(formData, "expenseId");
+  if (!expenseId) return;
+
+  const expense = await db.expense.findFirst({
+    where: { id: expenseId, organizationId: orgId },
+  });
+  if (!expense) return;
+
+  const newIsEstimated = !expense.isEstimated;
+  await db.expense.update({
+    where: { id: expense.id },
+    data: { isEstimated: newIsEstimated },
+  });
+
+  // If this expense is tied to an electricity reading log, keep it in sync
+  await db.electricityReadingLog.updateMany({
+    where: { expenseId: expense.id, organizationId: orgId },
+    data: { paid: !newIsEstimated },
+  });
+
+  refresh(orgId, "expenses");
   revalidatePath(`/${orgId}/expenses`);
   revalidatePath(`/${orgId}/reports`);
 }

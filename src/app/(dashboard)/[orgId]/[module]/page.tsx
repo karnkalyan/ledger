@@ -68,9 +68,27 @@ import {
   updateStatusAction,
   saveMilkLogAction,
   saveElectricityLogAction,
+  toggleElectricityLogStatusAction,
+  toggleMilkLogStatusAction,
+  toggleExpenseStatusAction,
   saveOrganizationSettingsAction,
   deleteQuoteAction,
 } from "@/app/(dashboard)/actions";
+
+function formatBsMonthDisplay(mStr: string | null | undefined) {
+  if (!mStr) return "—";
+  const match = mStr.match(/^(\d{4})-(\d{2})$/);
+  if (match) {
+    const y = parseInt(match[1], 10);
+    const m = parseInt(match[2], 10);
+    if (y >= 2070 && y <= 2100 && m >= 1 && m <= 12) {
+      const en = NEPALI_MONTHS_EN[m - 1] || "";
+      const ne = NEPALI_MONTHS_NE[m - 1] || "";
+      return `${mStr} · ${en} (${ne}) ${y} BS`;
+    }
+  }
+  return mStr;
+}
 
 const officeOnly = new Set(["sales","purchase","stock","crm","leads","staff","payroll","leaves","invoices","quotes","licenses","projects","wallets","worklogs"]);
 const allModules = new Set(["sales","purchase","stock","crm","leads","staff","payroll","leaves","invoices","quotes","licenses","income","expenses","banking","bank","tasks","reminders","reports","loans","settings","projects","wallets","worklogs","menu"]);
@@ -416,6 +434,8 @@ export default async function ModulePage({
       ? Number(latestElectricityReading.currentUnit)
       : (activeHouse?.lastElectricityUnit ? Number(activeHouse.lastElectricityUnit) : 0);
     const electricityRate = activeHouse?.electricityRate ? Number(activeHouse.electricityRate) : 15;
+    const currentBs = adToBs(now);
+    const currentBsMonthKey = `${currentBs.year}-${String(currentBs.month).padStart(2, "0")}`;
 
     return (
       <main className="page-wrap">
@@ -425,7 +445,7 @@ export default async function ModulePage({
         >
           <MonthlyGeneratorModal
             orgId={orgId}
-            currentMonth={monthKey(now)}
+            currentMonth={currentBsMonthKey}
             currency={currency}
             isCompany={organization.kind === "COMPANY"}
             recurringItems={recurring.filter((r) => r.active).map((r) => ({
@@ -677,6 +697,7 @@ export default async function ModulePage({
                     <th>Category</th>
                     <th>Formula</th>
                     <th>Type</th>
+                    <th>Status</th>
                     <th>Amount</th>
                     <th style={{ width: 60, textAlign: "center" }}>Actions</th>
                   </tr>
@@ -708,6 +729,31 @@ export default async function ModulePage({
                           {x.type === "RECURRING" ? "Recurring" : x.type === "DAILY" ? "Daily" : "One-off Expense"}
                         </span>
                       </td>
+                      <td data-label="Status">
+                        <form action={toggleExpenseStatusAction} style={{ display: "inline-block", margin: 0 }}>
+                          <input type="hidden" name="orgId" value={orgId} />
+                          <input type="hidden" name="expenseId" value={x.id} />
+                          {x.isEstimated ? (
+                            <button
+                              type="submit"
+                              className="badge amber"
+                              title="Commitment is UNPAID. Click to mark as PAID"
+                              style={{ cursor: "pointer", border: "none", background: "rgba(245, 158, 11, 0.15)", color: "#d97706", fontWeight: 700 }}
+                            >
+                              ⏳ UNPAID
+                            </button>
+                          ) : (
+                            <button
+                              type="submit"
+                              className="badge green"
+                              title="Expense is PAID. Click to mark as UNPAID"
+                              style={{ cursor: "pointer", border: "none", background: "rgba(16, 185, 129, 0.15)", color: "#059669", fontWeight: 700 }}
+                            >
+                              ✔ PAID
+                            </button>
+                          )}
+                        </form>
+                      </td>
                       <td data-label="Amount">
                         <strong>{money(x.amount, currency)}</strong>
                       </td>
@@ -725,7 +771,7 @@ export default async function ModulePage({
                   ))}
                   {!expenses.length && (
                     <tr>
-                      <td colSpan={7}>
+                      <td colSpan={8}>
                         <Empty>No expenses recorded yet.</Empty>
                       </td>
                     </tr>
@@ -824,10 +870,10 @@ export default async function ModulePage({
 
               <form action={saveMilkLogAction} style={{ background: "var(--soft)", padding: 16, borderRadius: 6, marginBottom: 16 }}>
                 <input type="hidden" name="orgId" value={orgId} />
-                <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1.5fr 1.5fr auto", gap: 12, alignItems: "end" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1.3fr 1.3fr 1fr auto", gap: 12, alignItems: "end" }}>
                   <label className="field" style={{ margin: 0 }}>
-                    <span className="field-label">Billing Month</span>
-                    <input type="text" name="month" defaultValue={now.toISOString().slice(0, 7)} placeholder="YYYY-MM" required style={{ fontFamily: "Consolas, monospace" }} />
+                    <span className="field-label">Billing Month (BS)</span>
+                    <input type="text" name="month" defaultValue={currentBsMonthKey} placeholder="2083-07" required style={{ fontFamily: "Consolas, monospace", fontWeight: 700 }} />
                   </label>
                   <label className="field" style={{ margin: 0 }}>
                     <span className="field-label">Rate / Liter ({currency})</span>
@@ -850,6 +896,13 @@ export default async function ModulePage({
                       <input type="number" name="alternateQty" defaultValue="1.0" step="0.1" placeholder="Liters" style={{ width: 65, textAlign: "center" }} />
                       <span style={{ fontSize: 12 }}>L</span>
                     </div>
+                  </label>
+                  <label className="field" style={{ margin: 0 }}>
+                    <span className="field-label">Bill Status</span>
+                    <select name="paid" defaultValue="false" style={{ fontWeight: 600 }}>
+                      <option value="false">⏳ UNPAID</option>
+                      <option value="true">✔ PAID</option>
+                    </select>
                   </label>
                   <div>
                     <button className="primary-btn" type="submit" style={{ whiteSpace: "nowrap", padding: "8px 16px" }}>
@@ -878,7 +931,7 @@ export default async function ModulePage({
                     <tbody>
                       {milkLogs.map((m) => (
                         <tr key={m.id}>
-                          <td data-label="Month"><strong>{m.month}</strong></td>
+                          <td data-label="Month"><strong>{formatBsMonthDisplay(m.month)}</strong></td>
                           <td data-label="Rate">{currency} {Number(m.ratePerLiter)}/L</td>
                           <td data-label="Regular">{m.regularDays} days × {Number(m.regularQty)} L ({m.regularDays * Number(m.regularQty)} L)</td>
                           <td data-label="Alternate">{m.alternateDays > 0 ? `${m.alternateDays} days × ${Number(m.alternateQty)} L (${m.alternateDays * Number(m.alternateQty)} L)` : "None"}</td>
@@ -889,7 +942,29 @@ export default async function ModulePage({
                             {money(Number(m.totalCost), currency)}
                           </td>
                           <td data-label="Status">
-                            <span className="badge green">LOGGED IN LEDGER</span>
+                            <form action={toggleMilkLogStatusAction} style={{ display: "inline-block", margin: 0 }}>
+                              <input type="hidden" name="orgId" value={orgId} />
+                              <input type="hidden" name="logId" value={m.id} />
+                              {m.paid ? (
+                                <button
+                                  type="submit"
+                                  className="badge green"
+                                  title="Milk bill marked PAID. Click to toggle UNPAID"
+                                  style={{ cursor: "pointer", border: "none", background: "rgba(16, 185, 129, 0.15)", color: "#059669", fontWeight: 700 }}
+                                >
+                                  ✔ PAID
+                                </button>
+                              ) : (
+                                <button
+                                  type="submit"
+                                  className="badge amber"
+                                  title="Milk bill marked UNPAID. Click to toggle PAID"
+                                  style={{ cursor: "pointer", border: "none", background: "rgba(245, 158, 11, 0.15)", color: "#d97706", fontWeight: 700 }}
+                                >
+                                  ⏳ UNPAID
+                                </button>
+                              )}
+                            </form>
                           </td>
                           <td data-label="Actions" style={{ textAlign: "center" }}>
                             <RowActionMenu
@@ -926,7 +1001,7 @@ export default async function ModulePage({
             currency={currency}
             initialLastUnit={autoOldLastUnit}
             defaultRate={electricityRate}
-            defaultMonth={now.toISOString().slice(0, 7)}
+            defaultMonth={currentBsMonthKey}
           />
 
           {/* Past Electricity Records Table */}
@@ -948,7 +1023,7 @@ export default async function ModulePage({
                 <tbody>
                   {electricityLogs.map((log) => (
                     <tr key={log.id}>
-                      <td data-label="Month"><strong>{log.month}</strong></td>
+                      <td data-label="Month"><strong>{formatBsMonthDisplay(log.month)}</strong></td>
                       <td data-label="Meter #">{log.meterNumber || "MAIN"}</td>
                       <td data-label="Previous Unit" style={{ textAlign: "right", fontFamily: "Consolas, monospace" }}>
                         {Number(log.previousUnit).toFixed(1)}
@@ -966,7 +1041,29 @@ export default async function ModulePage({
                         {money(Number(log.totalCost), currency)}
                       </td>
                       <td data-label="Status">
-                        <span className="badge green">LOGGED IN EXPENSES</span>
+                        <form action={toggleElectricityLogStatusAction} style={{ display: "inline-block", margin: 0 }}>
+                          <input type="hidden" name="orgId" value={orgId} />
+                          <input type="hidden" name="logId" value={log.id} />
+                          {log.paid ? (
+                            <button
+                              type="submit"
+                              className="badge green"
+                              title="Electricity bill marked PAID. Click to toggle UNPAID"
+                              style={{ cursor: "pointer", border: "none", background: "rgba(16, 185, 129, 0.15)", color: "#059669", fontWeight: 700 }}
+                            >
+                              ✔ PAID
+                            </button>
+                          ) : (
+                            <button
+                              type="submit"
+                              className="badge amber"
+                              title="Electricity bill marked UNPAID. Click to toggle PAID"
+                              style={{ cursor: "pointer", border: "none", background: "rgba(245, 158, 11, 0.15)", color: "#d97706", fontWeight: 700 }}
+                            >
+                              ⏳ UNPAID
+                            </button>
+                          )}
+                        </form>
                       </td>
                     </tr>
                   ))}

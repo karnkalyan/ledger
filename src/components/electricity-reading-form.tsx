@@ -2,13 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { saveElectricityLogAction } from "@/app/(dashboard)/actions";
-import { Zap, Calculator, RotateCcw, CheckCircle2 } from "lucide-react";
+import { Zap, RotateCcw, CheckCircle2 } from "lucide-react";
+import { adToBs, NEPALI_MONTHS_EN, NEPALI_MONTHS_NE } from "@/lib/nepali-calendar";
 
 export function ElectricityReadingForm({
   orgId,
   currency,
   initialLastUnit = 0,
-  defaultRate = 15,
+  defaultRate = 12,
   defaultMonth,
 }: {
   orgId: string;
@@ -17,18 +18,55 @@ export function ElectricityReadingForm({
   defaultRate?: number;
   defaultMonth?: string;
 }) {
+  const currentBs = useMemo(() => {
+    try {
+      return adToBs(new Date());
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const defaultBsMonth = currentBs ? `${currentBs.year}-${String(currentBs.month).padStart(2, "0")}` : "2083-07";
+
   const [previousUnit, setPreviousUnit] = useState<number>(initialLastUnit);
   const [currentUnit, setCurrentUnit] = useState<number | string>("");
   const [ratePerUnit, setRatePerUnit] = useState<number>(defaultRate);
   const [isEditingPrevious, setIsEditingPrevious] = useState<boolean>(initialLastUnit === 0);
-  const [month, setMonth] = useState<string>(
-    defaultMonth || new Date().toISOString().slice(0, 7)
-  );
+  const [month, setMonth] = useState<string>(defaultMonth || defaultBsMonth);
+  const [paidStatus, setPaidStatus] = useState<boolean>(true);
 
   const curNum = typeof currentUnit === "number" ? currentUnit : parseFloat(currentUnit) || 0;
   const unitsConsumed = Math.max(0, curNum - previousUnit);
   const totalBill = unitsConsumed * ratePerUnit;
   const isValid = curNum >= previousUnit && curNum > 0;
+
+  // Generate Nepali BS month options (current year and surrounding)
+  const nepaliMonthOptions = useMemo(() => {
+    const y = currentBs?.year || 2083;
+    const list = [];
+    for (let yr = y; yr >= y - 1; yr--) {
+      for (let m = 12; m >= 1; m--) {
+        const mm = String(m).padStart(2, "0");
+        const key = `${yr}-${mm}`;
+        const nameEn = NEPALI_MONTHS_EN[m - 1];
+        const nameNe = NEPALI_MONTHS_NE[m - 1];
+        list.push({ key, label: `${key} · ${nameEn} (${nameNe}) ${yr} BS` });
+      }
+    }
+    return list;
+  }, [currentBs]);
+
+  const activeMonthLabel = useMemo(() => {
+    const parts = month.split("-");
+    if (parts.length === 2) {
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10);
+      if (y > 2000 && y < 2200 && m >= 1 && m <= 12) {
+        return `${NEPALI_MONTHS_EN[m - 1]} ${y} BS (${NEPALI_MONTHS_NE[m - 1]})`;
+      }
+    }
+    return "";
+  }, [month]);
 
   return (
     <form
@@ -43,6 +81,7 @@ export function ElectricityReadingForm({
     >
       <input type="hidden" name="orgId" value={orgId} />
       <input type="hidden" name="previousUnit" value={previousUnit} />
+      <input type="hidden" name="paid" value={paidStatus ? "true" : "false"} />
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -65,7 +104,7 @@ export function ElectricityReadingForm({
               Monthly Electricity Meter Reading &amp; Auto Bill
             </h4>
             <span style={{ fontSize: 11.5, color: "var(--text-muted)" }}>
-              Just enter <strong>Current Unit</strong>. The last recorded reading is automatically remembered for next month!
+              Nepali Bikram Sambat (BS) calendar system. Just enter <strong>Current Unit</strong> — the last recorded reading is automatically remembered!
             </span>
           </div>
         </div>
@@ -85,23 +124,38 @@ export function ElectricityReadingForm({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
           gap: 12,
           alignItems: "end",
         }}
       >
-        {/* BILLING MONTH */}
+        {/* BILLING MONTH (NEPALI BS DROPDOWN WITH CUSTOM TYPING) */}
         <label className="field" style={{ margin: 0 }}>
-          <span className="field-label">Billing Month</span>
-          <input
-            type="text"
+          <span className="field-label" style={{ display: "flex", justifyContent: "space-between" }}>
+            <span>Billing Month (BS)</span>
+            <span style={{ color: "var(--brand)", fontSize: 10, fontWeight: 700 }}>🇳🇵 Nepali BS</span>
+          </span>
+          <select
             name="month"
             value={month}
             onChange={(e) => setMonth(e.target.value)}
-            placeholder="YYYY-MM (e.g. 2083-06)"
             required
-            style={{ fontFamily: "Consolas, monospace" }}
-          />
+            style={{ fontFamily: "Consolas, monospace", fontWeight: 700, fontSize: 12 }}
+          >
+            {nepaliMonthOptions.map((opt) => (
+              <option key={opt.key} value={opt.key}>
+                {opt.label}
+              </option>
+            ))}
+            {!nepaliMonthOptions.some((o) => o.key === month) && (
+              <option value={month}>Custom: {month}</option>
+            )}
+          </select>
+          {activeMonthLabel && (
+            <span style={{ fontSize: 10.5, color: "var(--brand)", marginTop: 2, display: "block" }}>
+              {activeMonthLabel}
+            </span>
+          )}
         </label>
 
         {/* PREVIOUS UNIT (OLD LAST UNIT) */}
@@ -156,10 +210,27 @@ export function ElectricityReadingForm({
             name="ratePerUnit"
             step="0.01"
             value={ratePerUnit}
-            onChange={(e) => setRatePerUnit(parseFloat(e.target.value) || 15)}
+            onChange={(e) => setRatePerUnit(parseFloat(e.target.value) || 12)}
             required
-            style={{ fontFamily: "Consolas, monospace" }}
+            style={{ fontFamily: "Consolas, monospace", fontWeight: 700 }}
           />
+        </label>
+
+        {/* BILL STATUS (PAID vs UNPAID) */}
+        <label className="field" style={{ margin: 0 }}>
+          <span className="field-label">Bill Status</span>
+          <select
+            value={paidStatus ? "PAID" : "UNPAID"}
+            onChange={(e) => setPaidStatus(e.target.value === "PAID")}
+            style={{
+              fontWeight: 700,
+              fontSize: 12,
+              color: paidStatus ? "var(--green)" : "var(--amber)",
+            }}
+          >
+            <option value="PAID">✔ PAID (Finalized)</option>
+            <option value="UNPAID">⏳ UNPAID (Pending)</option>
+          </select>
         </label>
 
         {/* SUBMIT BUTTON */}
@@ -213,6 +284,12 @@ export function ElectricityReadingForm({
               {currency} {ratePerUnit}/unit
             </strong>
           </div>
+          <div>
+            <span style={{ color: "var(--text-muted)" }}>Status: </span>
+            <strong style={{ color: paidStatus ? "var(--green)" : "var(--amber)" }}>
+              {paidStatus ? "✔ PAID" : "⏳ UNPAID (PENDING)"}
+            </strong>
+          </div>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -233,7 +310,7 @@ export function ElectricityReadingForm({
         ) : (
           <div style={{ color: "var(--success)", fontSize: 11, marginTop: 6, display: "flex", alignItems: "center", gap: 4 }}>
             <CheckCircle2 size={13} />
-            Ready: Submitting will record NPR {totalBill.toFixed(2)} into Expenses and set {curNum} as the last unit for next month.
+            Ready: Submitting will record NPR {totalBill.toFixed(2)} for {month} ({activeMonthLabel}) as {paidStatus ? "PAID" : "UNPAID"} and set {curNum} as the last unit for next month.
           </div>
         )
       ) : null}

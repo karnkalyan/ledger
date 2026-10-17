@@ -826,6 +826,7 @@ model ElectricityReadingLog {
   totalCost       Decimal      @db.Decimal(12,2) // unitsConsumed * ratePerUnit
   readingDate     DateTime     @default(now())
   expenseId       String?      @db.VarChar(30)
+  paid            Boolean      @default(true)
   notes           String?      @db.Text
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
