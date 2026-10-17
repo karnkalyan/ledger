@@ -49,10 +49,10 @@ export default async function NewEntryPage({params, searchParams}: {
  const commerce = ["invoices","quotes","sales","purchase"].includes(module);
  const [categories, contacts, rawProducts, staff, bankAccounts] = await Promise.all([
   module === "expenses" ? db.expenseCategory.findMany({where:{organizationId:orgId},orderBy:{name:"asc"}}) : Promise.resolve([]),
-  commerce || module === "leads" || module === "income" ? db.contact.findMany({where:{organizationId:orgId, ...(commerce ? {type:{in:module === "purchase" ? ["VENDOR","BOTH"] : ["CUSTOMER","BOTH"]}} : {})},orderBy:{name:"asc"}}) : Promise.resolve([]),
+  commerce || module === "leads" || module === "income" || module === "banking" ? db.contact.findMany({where:{organizationId:orgId, ...(commerce ? {type:{in:module === "purchase" ? ["VENDOR","BOTH"] : ["CUSTOMER","BOTH"]}} : {})},orderBy:{name:"asc"}}) : Promise.resolve([]),
   commerce || module === "stock" ? db.product.findMany({where:{organizationId:orgId, ...(commerce ? {active:true} : {})},orderBy:{name:"asc"}}) : Promise.resolve([]),
   ["payroll","leaves","tasks"].includes(module) ? db.employee.findMany({where:{organizationId:orgId, ...(module === "payroll" ? {status:"ACTIVE"} : {})},orderBy:{name:"asc"}}) : Promise.resolve([]),
-  module === "banking" ? db.bankAccount.findMany({where:{organizationId:orgId},orderBy:{bankName:"asc"}}) : Promise.resolve([]),
+  module === "banking" || module === "income" ? db.bankAccount.findMany({where:{organizationId:orgId},orderBy:{bankName:"asc"}}) : Promise.resolve([]),
  ]);
  const products = rawProducts.map(p => ({id:p.id,name:p.name,sku:p.sku,salePrice:Number(p.salePrice),purchasePrice:Number(p.purchasePrice)}));
  let form: React.ReactNode;
@@ -68,6 +68,13 @@ export default async function NewEntryPage({params, searchParams}: {
       orgId={orgId}
       currency={organization.currency}
       contacts={contacts}
+      bankAccounts={bankAccounts.map((b) => ({
+        id: b.id,
+        bankName: b.bankName,
+        accountNumber: b.accountNumber,
+        accountType: b.accountType,
+        currentBalance: Number(b.currentBalance),
+      }))}
       action={saveIncomeAction}
     />
   ); break;
@@ -136,9 +143,27 @@ export default async function NewEntryPage({params, searchParams}: {
                     ))}
                   </select>
                 </label>
+
+                <label className="field">
+                  {entry.type === "record-deposit" ? "Customer / Client / Vendor (CRM)" : "Vendor / Supplier / Payee (CRM)"}
+                  <select name="contactId">
+                    <option value="">-- Optional: Link to CRM Profile --</option>
+                    {contacts.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.companyName || c.name} {c.taxNumber ? `(PAN: ${c.taxNumber})` : ""} · {c.type}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="field">
+                  {entry.type === "record-deposit" ? "Payer / Source Name (Custom)" : "Beneficiary / Payee Name (Custom)"}
+                  <input name="partyName" placeholder="Client, Vendor, or Custom entity name" />
+                </label>
+
                 <label className="field full">
                   Description / Particulars
-                  <input name="description" required placeholder={entry.type === "record-deposit" ? "Client receipt / Cash deposit / Transfer" : "Vendor payment / Office rent / Transfer"} />
+                  <input name="description" required placeholder={entry.type === "record-deposit" ? "Client payment / Cash deposit / Account remittance" : "Vendor payment / Office rent / Transfer"} />
                 </label>
                 <label className="field">
                   Amount ({organization.currency})
@@ -148,7 +173,7 @@ export default async function NewEntryPage({params, searchParams}: {
                   <NepaliDatePicker name="transactionDate" label="Transaction Date (BS / AD)" required />
                 </div>
                 <label className="field">
-                  Reference / Transfer ID
+                  Reference / Transfer ID / Remittance Code
                   <input name="reference" placeholder="Ref code / IBFT / Transfer ID" />
                 </label>
                 <label className="field">
@@ -158,7 +183,7 @@ export default async function NewEntryPage({params, searchParams}: {
               </div>
               <div className="form-actions">
                 <button className={entry.type === "record-deposit" ? "success-btn" : "primary-btn"} type="submit">
-                  {entry.type === "record-deposit" ? "Save Bank Deposit (+ Income)" : "Save Bank Withdrawal (+ Expense)"}
+                  {entry.type === "record-deposit" ? "Save Bank Deposit (+ Income & Customer/Vendor Reflection)" : "Save Bank Withdrawal (+ Expense)"}
                 </button>
               </div>
             </form>

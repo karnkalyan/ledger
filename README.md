@@ -62,8 +62,8 @@ This deployment uses the native MySQL already running on your VPS host (without 
 
 ```bash
 # 1. Clone repository on VPS
-git clone https://github.com/karnkalyan/ledger.git
-cd ledger
+git clone https://github.com/karnkalyan/mediko.git
+cd mediko
 
 # 2. Configure environment variables (or rely on defaults in docker-compose.yml)
 cp .env.example .env

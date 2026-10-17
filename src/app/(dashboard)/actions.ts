@@ -102,10 +102,90 @@ export async function generateMonthlyEstimatesAction(formData: FormData) {
 }
 
 export async function createIncomeAction(formData: FormData) {
-  const orgId = s(formData,"orgId"); await orgAccess(orgId);
-  const amount = n(formData,"amount"); if (!s(formData,"title") || amount <= 0) return;
-  await db.income.create({ data: { organizationId: orgId, title: s(formData,"title"), source: s(formData,"source") || null, amount, receivedAt: d(formData,"receivedAt") ?? new Date(), notes: s(formData,"notes") || null } });
-  refresh(orgId,"income");
+  const orgId = s(formData, "orgId");
+  await orgAccess(orgId);
+  const amount = n(formData, "amount");
+  const title = s(formData, "title");
+  if (!title || amount <= 0) return;
+
+  const rawContactId = s(formData, "contactId");
+  const validContact = rawContactId
+    ? await db.contact.findFirst({ where: { id: rawContactId, organizationId: orgId } })
+    : null;
+  const contactId = validContact ? validContact.id : null;
+
+  const paymentMethod = (s(formData, "paymentMethod") || "CASH").toUpperCase();
+  const rawBankAccountId = s(formData, "bankAccountId");
+  let bankAccountId: string | null = null;
+  let bankAccount = null;
+
+  if (paymentMethod === "BANK" && rawBankAccountId) {
+    bankAccount = await db.bankAccount.findFirst({
+      where: { id: rawBankAccountId, organizationId: orgId },
+    });
+    if (bankAccount) {
+      bankAccountId = bankAccount.id;
+    }
+  }
+
+  let source = s(formData, "source") || null;
+  if (!source && validContact) {
+    source = validContact.companyName || validContact.name;
+  }
+  const receivedAt = d(formData, "receivedAt") ?? new Date();
+  const notes = s(formData, "notes") || null;
+
+  await db.$transaction(async (tx) => {
+    const inc = await tx.income.create({
+      data: {
+        organizationId: orgId,
+        title,
+        source,
+        amount,
+        receivedAt,
+        paymentMethod: paymentMethod === "BANK" ? "BANK" : paymentMethod === "OTHER" ? "OTHER" : "CASH",
+        contactId,
+        bankAccountId,
+        notes,
+      },
+    });
+
+    // If deposited into a Bank Account, automatically reflect in bank account balance and ledger!
+    if (bankAccount && bankAccountId) {
+      const curBal = Number(bankAccount.currentBalance);
+      const newBal = curBal + amount;
+
+      await tx.bankTransaction.create({
+        data: {
+          organizationId: orgId,
+          bankAccountId,
+          transactionDate: receivedAt,
+          type: "DEPOSIT",
+          amount,
+          balance: newBal,
+          description: `Income Receipt: ${title}`,
+          reference: source || (validContact ? (validContact.companyName || validContact.name) : null),
+          category: "Payment Received",
+          incomeId: inc.id,
+          contactId,
+        },
+      });
+
+      await tx.bankAccount.update({
+        where: { id: bankAccountId },
+        data: { currentBalance: newBal },
+      });
+    }
+  });
+
+  refresh(orgId, "income");
+  if (bankAccountId) {
+    refresh(orgId, "banking");
+  }
+  if (contactId) {
+    refresh(orgId, "crm");
+  }
+  revalidatePath(`/${orgId}/reports`);
 }
 
 function toTitleCase(str?: string | null): string {
@@ -439,6 +519,14 @@ export async function recordBankTransactionAction(formData: FormData) {
   });
   if (!bankAccount) return;
 
+  const rawContactId = s(formData, "contactId");
+  const validContact = rawContactId
+    ? await db.contact.findFirst({ where: { id: rawContactId, organizationId: orgId } })
+    : null;
+  const contactId = validContact ? validContact.id : null;
+  const contactName = validContact ? (validContact.companyName || validContact.name) : null;
+  const customParty = s(formData, "partyName") || null;
+
   const txDate = d(formData, "transactionDate") ?? new Date();
   const reference = s(formData, "reference") || null;
   const chequeNumber = s(formData, "chequeNumber") || null;
@@ -456,9 +544,12 @@ export async function recordBankTransactionAction(formData: FormData) {
         data: {
           organizationId: orgId,
           title: description,
-          source: `${bankAccount.bankName} (${bankAccount.accountNumber})`,
+          source: contactName || customParty || `${bankAccount.bankName} (${bankAccount.accountNumber})`,
           amount,
           receivedAt: txDate,
+          paymentMethod: "BANK",
+          bankAccountId,
+          contactId,
           notes: reference ? `Ref: ${reference}` : null,
         },
       });
@@ -468,7 +559,7 @@ export async function recordBankTransactionAction(formData: FormData) {
         data: {
           organizationId: orgId,
           title: description,
-          vendor: reference || bankAccount.bankName,
+          vendor: contactName || customParty || reference || bankAccount.bankName,
           type: "ONE_TIME",
           amount,
           occurredAt: txDate,
@@ -489,7 +580,8 @@ export async function recordBankTransactionAction(formData: FormData) {
         description,
         reference,
         chequeNumber,
-        category,
+        category: category || (contactName ? `CRM: ${contactName}` : null),
+        contactId,
         incomeId,
         expenseId,
       },
@@ -504,6 +596,9 @@ export async function recordBankTransactionAction(formData: FormData) {
   refresh(orgId, "banking");
   refresh(orgId, "expenses");
   refresh(orgId, "income");
+  if (contactId) {
+    refresh(orgId, "crm");
+  }
   revalidatePath(`/${orgId}/reports`);
 }
 
@@ -916,6 +1011,143 @@ export async function saveMilkLogAction(formData: FormData) {
       },
     });
   }
+
+  refresh(orgId, "expenses");
+  revalidatePath(`/${orgId}`);
+  revalidatePath(`/${orgId}/expenses`);
+  revalidatePath(`/${orgId}/reports`);
+}
+
+export async function saveElectricityLogAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  await orgAccess(orgId);
+
+  const month = s(formData, "month") || new Date().toISOString().slice(0, 7);
+  const meterNumber = s(formData, "meterNumber") || "MAIN";
+  const previousUnit = n(formData, "previousUnit", 0);
+  const currentUnit = n(formData, "currentUnit", 0);
+  const ratePerUnit = n(formData, "ratePerUnit", 15);
+  const readingDate = d(formData, "readingDate") ?? new Date();
+  const notes = s(formData, "notes") || null;
+
+  if (currentUnit < previousUnit) {
+    throw new Error("Current meter unit cannot be less than previous unit.");
+  }
+
+  const unitsConsumed = Math.max(0, currentUnit - previousUnit);
+  const totalCost = unitsConsumed * ratePerUnit;
+
+  // Find or create Electricity expense category
+  let elecCat = await db.expenseCategory.findFirst({
+    where: {
+      organizationId: orgId,
+      OR: [
+        { name: { contains: "Electricity" } },
+        { name: { contains: "Utilities" } },
+      ],
+    },
+  });
+  if (!elecCat) {
+    elecCat = await db.expenseCategory.create({
+      data: {
+        organizationId: orgId,
+        name: "Electricity & Utilities",
+        icon: "zap",
+      },
+    });
+  }
+
+  const expenseTitle = `Electricity bill (${month}): ${unitsConsumed.toFixed(1)} units (${previousUnit} -> ${currentUnit}) @ NPR ${ratePerUnit}/unit`;
+  const expenseNotes = `Auto-calculated electricity consumption: Previous meter reading = ${previousUnit}, Current meter reading = ${currentUnit}. Net units consumed = ${unitsConsumed} units @ NPR ${ratePerUnit}/unit.${notes ? ` Notes: ${notes}` : ""}`;
+
+  await db.$transaction(async (tx) => {
+    // 1. Check existing expense for this month
+    const existingExp = await tx.expense.findFirst({
+      where: {
+        organizationId: orgId,
+        title: { contains: `Electricity bill (${month})` },
+      },
+    });
+
+    let expenseId: string;
+    if (existingExp) {
+      const updated = await tx.expense.update({
+        where: { id: existingExp.id },
+        data: {
+          title: expenseTitle,
+          amount: totalCost,
+          unitRate: ratePerUnit,
+          quantity: unitsConsumed,
+          unit: "units",
+          occurredAt: readingDate,
+          notes: expenseNotes,
+        },
+      });
+      expenseId = updated.id;
+    } else {
+      const created = await tx.expense.create({
+        data: {
+          organizationId: orgId,
+          categoryId: elecCat.id,
+          title: expenseTitle,
+          vendor: "Nepal Electricity Authority / Landlord",
+          type: "ONE_TIME",
+          amount: totalCost,
+          unitRate: ratePerUnit,
+          quantity: unitsConsumed,
+          unit: "units",
+          occurredAt: readingDate,
+          notes: expenseNotes,
+        },
+      });
+      expenseId = created.id;
+    }
+
+    // 2. Upsert ElectricityReadingLog
+    await tx.electricityReadingLog.upsert({
+      where: {
+        organizationId_month: {
+          organizationId: orgId,
+          month,
+        },
+      },
+      update: {
+        meterNumber,
+        previousUnit,
+        currentUnit,
+        unitsConsumed,
+        ratePerUnit,
+        totalCost,
+        readingDate,
+        expenseId,
+        notes,
+      },
+      create: {
+        organizationId: orgId,
+        month,
+        meterNumber,
+        previousUnit,
+        currentUnit,
+        unitsConsumed,
+        ratePerUnit,
+        totalCost,
+        readingDate,
+        expenseId,
+        notes,
+      },
+    });
+
+    // 3. Update active RentalHouse lastElectricityUnit if present
+    const activeHouse = await tx.rentalHouse.findFirst({
+      where: { organizationId: orgId, isActive: true },
+    });
+    if (activeHouse) {
+      await tx.rentalHouse.update({
+        where: { id: activeHouse.id },
+        data: { lastElectricityUnit: currentUnit },
+      });
+    }
+  });
 
   refresh(orgId, "expenses");
   revalidatePath(`/${orgId}`);

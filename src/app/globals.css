@@ -3709,3 +3709,157 @@ button.filter-preset-chip.active * {
   color: var(--text);
 }
 
+/* =========================================================================
+   NATIVE-FEELING MOBILE APP BOTTOM NAVIGATION BAR & RESPONSIVE FIXES
+   ========================================================================= */
+.mobile-app-bottom-bar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  .app-shell {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  .main-column {
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .topbar {
+    padding: 0 12px;
+    height: 52px;
+  }
+
+  .topbar-extra-desktop {
+    display: none !important;
+  }
+
+  .topbar-actions {
+    gap: 6px;
+  }
+
+  /* Page wrap padding leaves room for mobile footer bar */
+  .page-wrap {
+    padding: 12px 12px calc(76px + env(safe-area-inset-bottom, 12px)) 12px !important;
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  /* Forms adapt to single column on mobile */
+  .form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+
+  .form-grid .full {
+    grid-column: 1 !important;
+  }
+
+  /* Mobile App Bottom Navigation Bar */
+  .mobile-app-bottom-bar {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+    z-index: 1250;
+    align-items: center;
+    justify-content: space-around;
+  }
+
+  .mobile-tab-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    flex: 1;
+    height: 100%;
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    text-decoration: none !important;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: color 0.15s ease;
+  }
+
+  .mobile-tab-btn:hover,
+  .mobile-tab-btn.active {
+    color: var(--brand) !important;
+  }
+
+  .mobile-center-add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand), var(--brand-pink, #ef086f));
+    color: #ffffff !important;
+    border: 3px solid var(--surface);
+    box-shadow: 0 4px 14px rgba(239, 8, 111, 0.4);
+    margin-top: -18px;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+
+  .mobile-center-add-btn:active {
+    transform: scale(0.92);
+  }
+
+  .mobile-center-add-btn svg {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+  }
+
+  /* Tables container touch scrolling */
+  .table-scroll,
+  .data-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  /* Header wraps gracefully */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .page-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .kpi-card {
+    padding: 12px 14px;
+  }
+
+  .kpi-value {
+    font-size: 18px;
+  }
+
+  .balance-sheet-wrap {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+

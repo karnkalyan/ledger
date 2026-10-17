@@ -10,6 +10,7 @@ import { FiscalYearSelector } from "@/components/fiscal-year-selector";
 import { FiscalYearInfo } from "@/lib/fiscal-year";
 import { TodayTasksNav, PendingItem } from "@/components/today-tasks-nav";
 import { NepaliCalendarNav } from "@/components/nepali-calendar-nav";
+import { MobileAppBottomNav } from "@/components/mobile-nav";
 
 export function AppShell({
   children,
@@ -82,7 +83,7 @@ export function AppShell({
             >
               {sidebarCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
             </button>
-            <div>
+            <div className="topbar-title-wrap">
               <div className="topbar-kicker">
                 {org.kind === "COMPANY" ? "Kashtrix Office ERP" : "Kashtrix Personal Ledger"}
               </div>
@@ -90,25 +91,29 @@ export function AppShell({
             </div>
           </div>
           <div className="topbar-actions">
-            <NepaliCalendarNav />
+            <div className="topbar-extra-desktop">
+              <NepaliCalendarNav />
+            </div>
             {fiscalInfo && (
-              <FiscalYearSelector
-                availableYears={fiscalInfo.availableYears}
-                currentFiscalYear={fiscalInfo.currentFiscalYear}
-                activeCode={fiscalInfo.activeCode}
-              />
+              <div className="topbar-extra-desktop">
+                <FiscalYearSelector
+                  availableYears={fiscalInfo.availableYears}
+                  currentFiscalYear={fiscalInfo.currentFiscalYear}
+                  activeCode={fiscalInfo.activeCode}
+                />
+              </div>
             )}
             <TodayTasksNav orgId={org.id} tasks={pendingTasks} reminders={pendingReminders} />
             <ThemeToggle />
-            <Link href="/workspaces" className="ghost-btn" title="Switch workspace">
+            <Link href="/workspaces" className="ghost-btn hide-mobile" title="Switch workspace">
               <ArrowLeftRight size={13} style={{ verticalAlign: "middle", marginRight: 4 }} />
-              <span className="hide-mobile">Switch</span>
+              <span>Switch</span>
             </Link>
             <div className="user-pill">
               <div className="avatar">{user.name.slice(0, 1).toUpperCase()}</div>
-              <div>
+              <div className="hide-mobile">
                 <strong>{user.name}</strong>
-                <small className="hide-mobile">{user.email}</small>
+                <small>{user.email}</small>
               </div>
             </div>
             <form action={logoutAction}>
@@ -120,6 +125,13 @@ export function AppShell({
         </header>
         {children}
       </div>
+
+      {/* MOBILE APPLICATION APP-LIKE BOTTOM NAVIGATION BAR */}
+      <MobileAppBottomNav
+        orgId={org.id}
+        kind={org.kind}
+        onOpenSidebar={() => setSidebarOpen(true)}
+      />
     </div>
   );
 }

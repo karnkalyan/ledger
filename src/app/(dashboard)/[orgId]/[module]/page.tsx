@@ -30,6 +30,8 @@ import {
   Zap,
   UsersRound,
   UserRoundSearch,
+  Banknote,
+  Wallet2,
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireOrganizationAccess } from "@/lib/session";
@@ -45,6 +47,7 @@ import { ProjectManagementView } from "@/components/project-management-view";
 import { WalletManagementView } from "@/components/wallet-management-view";
 import { WorkLogManagementView } from "@/components/worklog-management-view";
 import { WorkLogModal } from "@/components/worklog-modal";
+import { ElectricityReadingForm } from "@/components/electricity-reading-form";
 import { cookies } from "next/headers";
 import { resolveActiveFiscalYear, buildFiscalYearFromStart } from "@/lib/fiscal-year";
 import {
@@ -62,6 +65,7 @@ import {
   saveRentalHouseAction,
   setActiveRentalHouseAction,
   saveMilkLogAction,
+  saveElectricityLogAction,
   saveOrganizationSettingsAction,
   deleteQuoteAction,
 } from "@/app/(dashboard)/actions";
@@ -299,7 +303,7 @@ export default async function ModulePage({
       return `/${orgId}/expenses${p.size ? `?${p.toString()}` : ""}`;
     };
 
-    const [categories, expenses, recurring, actualAgg, estimatedAgg, rentalHouses, milkLogs, totalExpenseCount] = await Promise.all([
+    const [categories, expenses, recurring, actualAgg, estimatedAgg, rentalHouses, milkLogs, electricityLogs, latestElectricityReading, totalExpenseCount] = await Promise.all([
       db.expenseCategory.findMany({ where: { organizationId: orgId }, orderBy: { name: "asc" } }),
       db.expense.findMany({
         where: expenseWhere,
@@ -325,12 +329,19 @@ export default async function ModulePage({
       }),
       db.rentalHouse.findMany({ where: { organizationId: orgId }, orderBy: [{ isActive: "desc" }, { createdAt: "desc" }] }),
       db.milkMonthlyLog.findMany({ where: { organizationId: orgId }, orderBy: { month: "desc" } }),
+      db.electricityReadingLog.findMany({ where: { organizationId: orgId }, orderBy: [{ readingDate: "desc" }, { createdAt: "desc" }], take: 12 }),
+      db.electricityReadingLog.findFirst({ where: { organizationId: orgId }, orderBy: [{ readingDate: "desc" }, { createdAt: "desc" }] }),
       db.expense.count({ where: { organizationId: orgId } }),
     ]);
     const recurringEstimate = recurring.filter((r) => r.active).reduce((sum, r) => sum + estimateRecurringExpense(r, now), 0);
     const actual = Number(actualAgg._sum.amount || 0), generated = Number(estimatedAgg._sum.amount || 0);
     const filteredExpenseSum = expenses.reduce((s, e) => s + Number(e.amount), 0);
     const activeCategory = categories.find((c) => c.id === selectedCategoryId);
+    const activeHouse = rentalHouses.find((h) => h.isActive);
+    const autoOldLastUnit = latestElectricityReading
+      ? Number(latestElectricityReading.currentUnit)
+      : (activeHouse?.lastElectricityUnit ? Number(activeHouse.lastElectricityUnit) : 0);
+    const electricityRate = activeHouse?.electricityRate ? Number(activeHouse.electricityRate) : 15;
 
     return (
       <main className="page-wrap">
@@ -610,7 +621,9 @@ export default async function ModulePage({
                         )}
                       </td>
                       <td data-label="Type">
-                        <Badge value={x.type} />
+                        <span className={`badge ${x.type === "RECURRING" ? "cyan" : x.type === "DAILY" ? "amber" : "gray"}`}>
+                          {x.type === "RECURRING" ? "Recurring" : x.type === "DAILY" ? "Daily" : "One-off Expense"}
+                        </span>
                       </td>
                       <td data-label="Amount">
                         <strong>{money(x.amount, currency)}</strong>
@@ -910,6 +923,72 @@ export default async function ModulePage({
             </div>
           </div>
         )}
+
+        {/* ELECTRICITY METER READING & AUTO BILL ADJUSTMENT */}
+        <div id="electricity-meter-logger" className="table-card" style={{ padding: 20, marginTop: 20 }}>
+          <div style={{ marginBottom: 16 }}>
+            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
+              Electricity Meter Unit Reading &amp; Auto Bill
+            </h3>
+            <p style={{ margin: "3px 0 0", fontSize: 12, color: "var(--text-muted)" }}>
+              Enter only current meter unit. Last reading ({autoOldLastUnit} units) is automatically retrieved from your previous entry and saved for next month.
+            </p>
+          </div>
+
+          <ElectricityReadingForm
+            orgId={orgId}
+            currency={currency}
+            initialLastUnit={autoOldLastUnit}
+            defaultRate={electricityRate}
+            defaultMonth={now.toISOString().slice(0, 7)}
+          />
+
+          {/* Past Electricity Records Table */}
+          {electricityLogs.length > 0 && (
+            <div className="table-scroll" style={{ marginTop: 16 }}>
+              <DataTable className="responsive-table">
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th>Meter #</th>
+                    <th style={{ textAlign: "right" }}>Previous Unit</th>
+                    <th style={{ textAlign: "right" }}>Current Unit</th>
+                    <th style={{ textAlign: "right" }}>Units Consumed</th>
+                    <th style={{ textAlign: "right" }}>Rate / Unit</th>
+                    <th style={{ textAlign: "right" }}>Total Bill</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {electricityLogs.map((log) => (
+                    <tr key={log.id}>
+                      <td data-label="Month"><strong>{log.month}</strong></td>
+                      <td data-label="Meter #">{log.meterNumber || "MAIN"}</td>
+                      <td data-label="Previous Unit" style={{ textAlign: "right", fontFamily: "Consolas, monospace" }}>
+                        {Number(log.previousUnit).toFixed(1)}
+                      </td>
+                      <td data-label="Current Unit" style={{ textAlign: "right", fontFamily: "Consolas, monospace", fontWeight: 700 }}>
+                        {Number(log.currentUnit).toFixed(1)}
+                      </td>
+                      <td data-label="Units Consumed" style={{ textAlign: "right", fontFamily: "Consolas, monospace", fontWeight: 700, color: "var(--brand)" }}>
+                        {Number(log.unitsConsumed).toFixed(1)} units
+                      </td>
+                      <td data-label="Rate" style={{ textAlign: "right", fontFamily: "Consolas, monospace" }}>
+                        {currency} {Number(log.ratePerUnit)}
+                      </td>
+                      <td data-label="Total Bill" style={{ textAlign: "right", fontFamily: "Consolas, monospace", fontWeight: 800, color: "var(--danger)" }}>
+                        {money(Number(log.totalCost), currency)}
+                      </td>
+                      <td data-label="Status">
+                        <span className="badge green">LOGGED IN EXPENSES</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </DataTable>
+            </div>
+          )}
+        </div>
       </main>
     );
   }

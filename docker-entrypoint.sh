@@ -2,7 +2,7 @@
 set -e
 
 echo "=========================================================="
-echo "  FlowLedger Enterprise Expense Suite Starting            "
+echo "  Mediko Suite Starting            "
 echo "=========================================================="
 
 # Retry loop to wait for host MySQL to become available
@@ -28,5 +28,5 @@ else
   echo "==> [Seed] SEED_ON_STARTUP is false. Skipping seed data."
 fi
 
-echo "==> Starting FlowLedger Next.js server on port ${PORT:-3080}..."
+echo "==> Starting Mediko Next.js server on port ${PORT:-3080}..."
 exec "$@"
