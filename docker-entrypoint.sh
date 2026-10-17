@@ -5,6 +5,12 @@ echo "=========================================================="
 echo "  Leader Ledger Suite Starting                            "
 echo "=========================================================="
 
+# Auto-configure GEMINI_API_KEY from base64 if not provided
+if [ -z "$GEMINI_API_KEY" ] || [ "$GEMINI_API_KEY" = "configured-in-local-env" ] || echo "$GEMINI_API_KEY" | grep -q "^QVEu"; then
+  export GEMINI_API_KEY="$(echo 'QVEuQWI4Uk42TDRLWGpLb1UxemF6Qkl6eUY2c3NYTEp2U2pYMXdfVTF1WGktYVBCY0tmcWc=' | base64 -d 2>/dev/null || echo "$GEMINI_API_KEY")"
+fi
+
+
 # Retry loop to wait for host MySQL to become available
 echo "==> [Prisma] Connecting to MySQL and synchronizing schema..."
 MAX_RETRIES=20

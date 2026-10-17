@@ -8,7 +8,14 @@ const FALLBACK_GEMINI_KEY = Buffer.from("QVEuQWI4Uk42TDRLWGpLb1UxemF6Qkl6eUY2c3N
 
 export function getGeminiApiKey(): string {
   const envKey = process.env.GEMINI_API_KEY?.trim();
-  if (envKey && envKey.length > 5) return envKey;
+  if (envKey && envKey.length > 10 && !envKey.includes("configured-in-local-env")) {
+    if (envKey.startsWith("QVEu")) {
+      try {
+        return Buffer.from(envKey, "base64").toString("utf-8");
+      } catch {}
+    }
+    return envKey;
+  }
   return FALLBACK_GEMINI_KEY;
 }
 
