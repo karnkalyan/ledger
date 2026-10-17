@@ -1824,6 +1824,7 @@ export default async function ModulePage({
                         resource="bank_tx"
                         id={t.id}
                         recordTitle={`${t.type} ${money(t.amount, currency)}`}
+                        editHref={`/${orgId}/banking/${t.id}/edit`}
                         viewHref={`/${orgId}/banking`}
                       />
                     </td>
