@@ -21,9 +21,198 @@ function Badge({ value }: { value: string }) {
 export default async function DocumentDetailPage({ params }: { params: Promise<{ orgId: string; module: string; recordId: string }> }) {
   const { orgId, module, recordId } = await params;
   const { organization } = await requireOrganizationAccess(orgId);
-  const allowedModules = ["invoices", "quotes", "purchase", "crm", "contacts", "loans", "sales"];
+  const allowedModules = ["invoices", "quotes", "purchase", "crm", "contacts", "loans", "sales", "banking"];
   if (!allowedModules.includes(module)) notFound();
   if (organization.kind !== "COMPANY" && ["invoices", "quotes", "purchase", "sales"].includes(module)) notFound();
+
+  if (module === "banking") {
+    const bankTx = await db.bankTransaction.findFirst({
+      where: { id: recordId, organizationId: orgId },
+      include: {
+        bankAccount: true,
+        contact: true,
+        income: true,
+        expense: { include: { category: true } },
+      },
+    });
+    if (!bankTx) notFound();
+
+    return (
+      <main className="page-wrap">
+        <div className="page-header no-print">
+          <div>
+            <Link href={`/${orgId}/banking`} className="topbar-kicker">
+              <ArrowLeft size={12} style={{ verticalAlign: "middle", marginRight: 4 }} />
+              Back to Banking Statement
+            </Link>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6, flexWrap: "wrap" }}>
+              <h1 style={{ margin: 0 }}>
+                {bankTx.type === "DEPOSIT" ? "Bank Deposit Receipt" : "Bank Withdrawal Outflow"}
+              </h1>
+              <span className={`badge ${bankTx.type === "DEPOSIT" ? "green" : "red"}`} style={{ fontSize: 12 }}>
+                {bankTx.type === "DEPOSIT" ? "CREDIT (+)" : "DEBIT (-)"}
+              </span>
+            </div>
+            <p style={{ margin: "4px 0 0 0" }}>
+              Bank transaction passbook voucher record and ledger sync details.
+            </p>
+          </div>
+          <div className="page-actions">
+            <Link className="secondary-btn" href={`/${orgId}/banking/${bankTx.id}/edit`}>
+              <Edit3 size={13} /> Edit Transaction
+            </Link>
+            <PrintButton label="Print Voucher / PDF" />
+          </div>
+        </div>
+
+        {/* SUMMARY STAT CARDS */}
+        <section className="grid-kpis" style={{ marginBottom: 20 }}>
+          <div className="kpi-card">
+            <div className="kpi-top">
+              <span>Transaction Amount</span>
+            </div>
+            <div className={`kpi-value ${bankTx.type === "DEPOSIT" ? "income-val" : "expense-val"}`}>
+              {bankTx.type === "DEPOSIT" ? "+" : "-"} {money(bankTx.amount, organization.currency)}
+            </div>
+            <div className="kpi-meta">
+              {bankTx.type === "DEPOSIT" ? "Credit Inflow to Bank" : "Debit Outflow from Bank"}
+            </div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-top">
+              <span>Bank Account</span>
+            </div>
+            <div className="kpi-value" style={{ fontSize: 18 }}>
+              {bankTx.bankAccount.bankName}
+            </div>
+            <div className="kpi-meta" style={{ fontFamily: "monospace" }}>
+              A/C: {bankTx.bankAccount.accountNumber} ({bankTx.bankAccount.accountType || "Current"})
+            </div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-top">
+              <span>Ledger Balance</span>
+            </div>
+            <div className="kpi-value" style={{ fontSize: 18 }}>
+              {bankTx.balance != null ? money(bankTx.balance, organization.currency) : "—"}
+            </div>
+            <div className="kpi-meta">Running Balance after transaction</div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-top">
+              <span>Sync Status</span>
+            </div>
+            <div className="kpi-value" style={{ fontSize: 16 }}>
+              {bankTx.incomeId ? "Income Inflow" : bankTx.expenseId ? "Expense Outlay" : "Direct Passbook"}
+            </div>
+            <div className="kpi-meta">
+              {bankTx.incomeId ? "Reflected in Income Ledger" : bankTx.expenseId ? "Reflected in Expenses" : "Bank-only Entry"}
+            </div>
+          </div>
+        </section>
+
+        {/* DETAILED TRANSACTION VOUCHER CARD */}
+        <div
+          style={{
+            background: "var(--surface)",
+            borderRadius: 14,
+            border: "1px solid var(--line)",
+            padding: "24px",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--line)", paddingBottom: 14, marginBottom: 18 }}>
+            <div>
+              <span className="badge purple" style={{ fontSize: 10 }}>BANK VOUCHER #{bankTx.id.slice(-8).toUpperCase()}</span>
+              <h2 style={{ fontSize: 18, margin: "4px 0 0 0", fontWeight: 700 }}>
+                {bankTx.description}
+              </h2>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontWeight: 700, fontSize: 13 }}>
+                {formatDualDate(bankTx.transactionDate)}
+              </div>
+              <small style={{ color: "var(--text-muted)", fontSize: 11 }}>
+                Recorded {shortDate(bankTx.createdAt)}
+              </small>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 20 }}>
+            <div style={{ padding: 12, background: "var(--soft)", borderRadius: 10, border: "1px solid var(--line)" }}>
+              <span style={{ fontSize: 11, color: "var(--text-muted)", display: "block" }}>Particulars / Description</span>
+              <strong style={{ fontSize: 14, display: "block", marginTop: 2 }}>{bankTx.description}</strong>
+            </div>
+
+            <div style={{ padding: 12, background: "var(--soft)", borderRadius: 10, border: "1px solid var(--line)" }}>
+              <span style={{ fontSize: 11, color: "var(--text-muted)", display: "block" }}>Transaction Category</span>
+              <strong style={{ fontSize: 14, display: "block", marginTop: 2 }}>{bankTx.category || "General Transaction"}</strong>
+            </div>
+
+            <div style={{ padding: 12, background: "var(--soft)", borderRadius: 10, border: "1px solid var(--line)" }}>
+              <span style={{ fontSize: 11, color: "var(--text-muted)", display: "block" }}>Reference / Remittance Code</span>
+              <strong style={{ fontSize: 14, display: "block", marginTop: 2, fontFamily: "monospace" }}>
+                {bankTx.reference || "None"}
+              </strong>
+            </div>
+
+            <div style={{ padding: 12, background: "var(--soft)", borderRadius: 10, border: "1px solid var(--line)" }}>
+              <span style={{ fontSize: 11, color: "var(--text-muted)", display: "block" }}>Cheque Number</span>
+              <strong style={{ fontSize: 14, display: "block", marginTop: 2, fontFamily: "monospace" }}>
+                {bankTx.chequeNumber || "N/A (Electronic / Cash)"}
+              </strong>
+            </div>
+          </div>
+
+          {/* CRM PARTY OR SYNCED LEDGER SECTION */}
+          {(bankTx.contact || bankTx.income || bankTx.expense) && (
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px dashed var(--line)", display: "flex", gap: 16, flexWrap: "wrap" }}>
+              {bankTx.contact && (
+                <div style={{ flex: 1, minWidth: 220, padding: 14, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 10 }}>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)", display: "block", marginBottom: 4 }}>
+                    👤 Linked CRM Entity
+                  </span>
+                  <Link href={`/${orgId}/crm/${bankTx.contact.id}`} className="table-clickable-title" style={{ fontSize: 14, fontWeight: 700 }}>
+                    {bankTx.contact.companyName || bankTx.contact.name}
+                  </Link>
+                  <div style={{ fontSize: 11.5, color: "var(--text-secondary)", marginTop: 4 }}>
+                    {bankTx.contact.taxNumber ? `PAN/VAT: ${bankTx.contact.taxNumber}` : `Type: ${bankTx.contact.type}`}
+                  </div>
+                </div>
+              )}
+
+              {bankTx.income && (
+                <div style={{ flex: 1, minWidth: 220, padding: 14, background: "var(--success-soft)", border: "1px solid rgba(22, 163, 74, 0.2)", borderRadius: 10 }}>
+                  <span style={{ fontSize: 11, color: "var(--success)", display: "block", marginBottom: 4, fontWeight: 700 }}>
+                    ✓ Linked Income Inflow Record
+                  </span>
+                  <div style={{ fontSize: 13.5, fontWeight: 700 }}>{bankTx.income.title}</div>
+                  <div style={{ fontSize: 11.5, color: "var(--text-secondary)", marginTop: 4 }}>
+                    Source: {bankTx.income.source || "Direct Bank Deposit"} · Amount: + {money(bankTx.income.amount, organization.currency)}
+                  </div>
+                </div>
+              )}
+
+              {bankTx.expense && (
+                <div style={{ flex: 1, minWidth: 220, padding: 14, background: "var(--danger-soft)", border: "1px solid rgba(239, 68, 68, 0.2)", borderRadius: 10 }}>
+                  <span style={{ fontSize: 11, color: "var(--danger)", display: "block", marginBottom: 4, fontWeight: 700 }}>
+                    ✓ Linked Expense Outlay Record
+                  </span>
+                  <div style={{ fontSize: 13.5, fontWeight: 700 }}>{bankTx.expense.title}</div>
+                  <div style={{ fontSize: 11.5, color: "var(--text-secondary)", marginTop: 4 }}>
+                    Payee: {bankTx.expense.vendor || "Bank Outlay"} · Amount: - {money(bankTx.expense.amount, organization.currency)}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </main>
+    );
+  }
 
   if (module === "invoices") {
     const [invoice, bankAccounts] = await Promise.all([

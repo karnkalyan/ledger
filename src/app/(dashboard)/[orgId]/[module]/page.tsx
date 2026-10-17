@@ -97,13 +97,16 @@ function highlightMatch(text: string | null | undefined, queryStr: string) {
   );
 }
 
-export function resolveIncomeChannel(x: {
-  paymentMethod?: string | null;
-  bankAccountId?: string | null;
-  bankAccount?: any;
-  title?: string | null;
-  source?: string | null;
-}): "BANK" | "OTHER" | "CASH" {
+export function resolveIncomeChannel(
+  x: {
+    paymentMethod?: string | null;
+    bankAccountId?: string | null;
+    bankAccount?: any;
+    title?: string | null;
+    source?: string | null;
+  },
+  knownBankNames: string[] = []
+): "BANK" | "OTHER" | "CASH" {
   if (x.paymentMethod === "BANK" || Boolean(x.bankAccountId) || Boolean(x.bankAccount)) {
     return "BANK";
   }
@@ -111,30 +114,25 @@ export function resolveIncomeChannel(x: {
     return "OTHER";
   }
   const text = `${x.title || ""} ${x.source || ""}`.toLowerCase();
+  
+  // Generic banking transaction terms
   if (
     text.includes("bank") ||
-    text.includes("nabil") ||
-    text.includes("siddhartha") ||
-    text.includes("fund trf") ||
+    text.includes("deposit") ||
     text.includes("transfer") ||
+    text.includes("fund trf") ||
     text.includes("cheque") ||
     text.includes("ips") ||
-    text.includes("connectips") ||
-    text.includes("fonepay") ||
-    text.includes("nic asia") ||
-    text.includes("global ime") ||
-    text.includes("prabhu") ||
-    text.includes("sanima") ||
-    text.includes("everest") ||
-    text.includes("machhapuchhre") ||
-    text.includes("rastriya") ||
-    text.includes("kumari") ||
-    text.includes("laxmi") ||
-    text.includes("deposit") ||
     text.includes("wd:")
   ) {
     return "BANK";
   }
+
+  // Dynamic match against organization's registered bank accounts
+  if (knownBankNames.some((b) => b && text.includes(b.toLowerCase()))) {
+    return "BANK";
+  }
+
   if (text.includes("esewa") || text.includes("khalti") || text.includes("wallet")) {
     return "OTHER";
   }
@@ -1059,28 +1057,7 @@ export default async function ModulePage({
   if (module === "income") {
     const channelFilter = (query.channel as string) || "ALL";
 
-    // Auto-heal any existing bank-related incomes in DB that defaulted to CASH
-    try {
-      await (db.income as any).updateMany({
-        where: {
-          organizationId: orgId,
-          paymentMethod: { not: "BANK" },
-          OR: [
-            { bankAccountId: { not: null } },
-            { bankTransactions: { some: {} } },
-            { source: { contains: "Bank" } },
-            { source: { contains: "Siddhartha" } },
-            { source: { contains: "Nabil" } },
-            { title: { contains: "Fund Trf" } },
-            { title: { contains: "Bank" } },
-            { title: { contains: "WD:" } },
-          ],
-        },
-        data: { paymentMethod: "BANK" },
-      });
-    } catch (_) {}
-
-    const [rawItems, allItemsForKpi, agg] = await Promise.all([
+    const [rawItems, allItemsForKpi, agg, registeredBankAccounts] = await Promise.all([
       db.income.findMany({
         where: {
           organizationId: orgId,
@@ -1103,22 +1080,29 @@ export default async function ModulePage({
         },
         _sum: { amount: true },
       }),
+      db.bankAccount.findMany({
+        where: { organizationId: orgId },
+        select: { bankName: true },
+      }),
     ]);
+
+    const knownBankNames = registeredBankAccounts.map((b) => b.bankName);
 
     const items = channelFilter === "ALL"
       ? rawItems
-      : rawItems.filter((x) => resolveIncomeChannel(x) === channelFilter);
+      : rawItems.filter((x) => resolveIncomeChannel(x, knownBankNames) === channelFilter);
 
     const cashInHandTotal = allItemsForKpi
-      .filter((x) => resolveIncomeChannel(x) === "CASH")
+      .filter((x) => resolveIncomeChannel(x, knownBankNames) === "CASH")
       .reduce((s, x) => s + Number(x.amount), 0);
     const bankAccountTotal = allItemsForKpi
-      .filter((x) => resolveIncomeChannel(x) === "BANK")
+      .filter((x) => resolveIncomeChannel(x, knownBankNames) === "BANK")
       .reduce((s, x) => s + Number(x.amount), 0);
     const othersTotal = allItemsForKpi
-      .filter((x) => resolveIncomeChannel(x) === "OTHER")
+      .filter((x) => resolveIncomeChannel(x, knownBankNames) === "OTHER")
       .reduce((s, x) => s + Number(x.amount), 0);
     const totalReceipts = allItemsForKpi.reduce((s, x) => s + Number(x.amount), 0);
+
 
     return (
       <main className="page-wrap">
@@ -1179,21 +1163,21 @@ export default async function ModulePage({
                   className={`filter-preset-chip ${channelFilter === "CASH" ? "active" : ""}`}
                   style={{ fontSize: 11, padding: "3px 8px" }}
                 >
-                  💵 Cash in Hand ({allItemsForKpi.filter((x) => resolveIncomeChannel(x) === "CASH").length})
+                  💵 Cash in Hand ({allItemsForKpi.filter((x) => resolveIncomeChannel(x, knownBankNames) === "CASH").length})
                 </Link>
                 <Link
                   href={`/${orgId}/income?channel=BANK`}
                   className={`filter-preset-chip ${channelFilter === "BANK" ? "active" : ""}`}
                   style={{ fontSize: 11, padding: "3px 8px" }}
                 >
-                  🏦 Bank Account ({allItemsForKpi.filter((x) => resolveIncomeChannel(x) === "BANK").length})
+                  🏦 Bank Account ({allItemsForKpi.filter((x) => resolveIncomeChannel(x, knownBankNames) === "BANK").length})
                 </Link>
                 <Link
                   href={`/${orgId}/income?channel=OTHER`}
                   className={`filter-preset-chip ${channelFilter === "OTHER" ? "active" : ""}`}
                   style={{ fontSize: 11, padding: "3px 8px" }}
                 >
-                  🔄 Others ({allItemsForKpi.filter((x) => resolveIncomeChannel(x) === "OTHER").length})
+                  🔄 Others ({allItemsForKpi.filter((x) => resolveIncomeChannel(x, knownBankNames) === "OTHER").length})
                 </Link>
               </div>
             </div>
@@ -1216,7 +1200,7 @@ export default async function ModulePage({
               </thead>
               <tbody>
                 {items.map((x) => {
-                  const ch = resolveIncomeChannel(x);
+                  const ch = resolveIncomeChannel(x, knownBankNames);
                   return (
                     <tr key={x.id}>
                       <td data-label="Date">
@@ -1847,7 +1831,9 @@ export default async function ModulePage({
                       <div className="table-sub" style={{ fontFamily: "monospace", fontSize: 10 }}>{t.bankAccount.accountNumber}</div>
                     </td>
                     <td data-label="Description" className="table-title">
-                      <div>{highlightMatch(t.description, searchQ)}</div>
+                      <Link href={`/${orgId}/banking/${t.id}`} className="table-clickable-title">
+                        <strong>{highlightMatch(t.description, searchQ)}</strong>
+                      </Link>
                       {t.category && (
                         <div style={{ marginTop: 3 }}>
                           <span
@@ -1905,7 +1891,7 @@ export default async function ModulePage({
                         id={t.id}
                         recordTitle={`${t.type} ${money(t.amount, currency)}`}
                         editHref={`/${orgId}/banking/${t.id}/edit`}
-                        viewHref={`/${orgId}/banking`}
+                        viewHref={`/${orgId}/banking/${t.id}`}
                       />
                     </td>
                   </tr>

@@ -1,9 +1,9 @@
 services:
-  flowledger:
+  leader:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: flowledger_app
+    container_name: leader_app
     restart: unless-stopped
     ports:
       - "${PORT:-3080}:${PORT:-3080}"
@@ -14,8 +14,8 @@ services:
       CRON_SECRET: ${CRON_SECRET:-63EWQf3Ttdf-UW9OoID6fGHC2J4JZ32-lSkHqY-sA0QZvFtw_dYsJHybCgDMC2DL}
       SEED_ON_STARTUP: ${SEED_ON_STARTUP:-false}
       PORT: ${PORT:-3080}
-      APP_URL: ${APP_URL:-https://ledger.simulcast.com.np}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://ledger.simulcast.com.np}
+      APP_URL: ${APP_URL:-https://leader.simulcast.com.np}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://leader.simulcast.com.np}
     extra_hosts:
       # Allows the container to resolve host.docker.internal to the VPS host where MySQL is running
       - "host.docker.internal:host-gateway"
