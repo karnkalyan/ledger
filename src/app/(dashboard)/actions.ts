@@ -1503,7 +1503,9 @@ export async function saveRentalHouseAction(formData: FormData) {
     createdHouseId = h.id;
   }
 
-  if (makeActive || (!houseId && createdHouseId)) {
+  const isAlreadyActive = houseId ? await db.rentalHouse.findFirst({ where: { id: houseId, isActive: true } }) : null;
+
+  if (makeActive || isAlreadyActive || (!houseId && createdHouseId)) {
     await syncActiveHouseCommitments(orgId, {
       title,
       ownerName,

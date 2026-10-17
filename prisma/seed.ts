@@ -263,6 +263,41 @@ async function main() {
   await prisma.recurringExpense.deleteMany({ where: { organizationId: household.id } });
   await prisma.loanPayment.deleteMany({ where: { loan: { organizationId: household.id } } });
   await prisma.loan.deleteMany({ where: { organizationId: household.id } });
+  await prisma.rentalHouse.deleteMany({ where: { organizationId: household.id } });
+  await prisma.electricityReadingLog.deleteMany({ where: { organizationId: household.id } });
+
+  // Active Rental House / Tenancy (User specified: Unit Rate: 12, Garbage: 500, Last Unit: 6632)
+  await prisma.rentalHouse.create({
+    data: {
+      organizationId: household.id,
+      title: "Current Rental Residence",
+      ownerName: "House Owner (Landlord)",
+      ownerPhone: "+977-9800000000",
+      address: "Kathmandu, Nepal",
+      monthlyRent: 16800,
+      electricityRate: 12,
+      waterGarbageFee: 500,
+      lastElectricityUnit: 6632,
+      notes: "Active household tenancy. Electricity at NPR 12/unit, Garbage fee NPR 500, Last meter reading: 6632.",
+      isActive: true,
+    },
+  });
+
+  // Electricity meter initial reading benchmark
+  await prisma.electricityReadingLog.create({
+    data: {
+      organizationId: household.id,
+      month: "2083-06",
+      meterNumber: "MAIN",
+      previousUnit: 6632,
+      currentUnit: 6632,
+      unitsConsumed: 0,
+      ratePerUnit: 12,
+      totalCost: 0,
+      readingDate: new Date(),
+      notes: "Initial meter benchmark reading (6632 units) at NPR 12/unit",
+    },
+  });
 
   const homeRentCat = await prisma.expenseCategory.findUnique({
     where: { organizationId_name: { organizationId: household.id, name: "House Rent" } },
@@ -298,10 +333,10 @@ async function main() {
       title: "Water & Garbage",
       vendor: "Local Committee / Water Board",
       recurrence: Recurrence.MONTHLY,
-      fixedAmount: 300,
+      fixedAmount: 500,
       dayOfMonth: 1,
       reminderDaysBefore: 2,
-      notes: "Fixed monthly water and garbage collection fee",
+      notes: "Fixed monthly water and garbage collection fee (NPR 500)",
     },
   });
 
@@ -313,11 +348,11 @@ async function main() {
       vendor: "Nepal Electricity Authority (NEA)",
       recurrence: Recurrence.MONTHLY,
       unit: "unit",
-      unitRate: 15,
+      unitRate: 12,
       quantity: 100,
       dayOfMonth: 5,
       reminderDaysBefore: 3,
-      notes: "House electricity at NPR 15/unit (~100 units/mo)",
+      notes: "House electricity at NPR 12/unit (~100 units/mo)",
     },
   });
 
@@ -369,7 +404,7 @@ async function main() {
 
   await prisma.bankAccount.upsert({
     where: { organizationId_accountNumber: { organizationId: household.id, accountNumber: "02905120254304" } },
-    update: { bankName: "Nepal Investment Mega Bank (NIMB)", accountName: "Kalyan Kumar Karn", currentBalance: 3800.58 },
+    update: { bankName: "Nepal Investment Mega Bank (NIMB)", accountName: "Kalyan Kumar Karn", currentBalance: 103006.90 },
     create: {
       organizationId: household.id,
       bankName: "Nepal Investment Mega Bank (NIMB)",
@@ -378,7 +413,70 @@ async function main() {
       accountType: "Personal Account",
       branch: "Kathmandu Branch",
       currency: "NPR",
-      currentBalance: 3800.58,
+      currentBalance: 103006.90,
+    },
+  });
+
+  // eSewa Digital Wallet (9814823222)
+  const esewaWallet = await prisma.bankAccount.upsert({
+    where: { organizationId_accountNumber: { organizationId: household.id, accountNumber: "9814823222" } },
+    update: { bankName: "eSewa Wallet", accountName: "Kalyan Karn (9814823222)", currentBalance: 0 },
+    create: {
+      organizationId: household.id,
+      bankName: "eSewa Wallet",
+      accountName: "Kalyan Karn (9814823222)",
+      accountNumber: "9814823222",
+      accountType: "DIGITAL_WALLET",
+      branch: "eSewa Digital Wallet",
+      currency: "NPR",
+      openingBalance: 0,
+      currentBalance: 0,
+      isActive: true,
+    },
+  });
+
+  const gameExpDate = new Date("2026-10-17T14:00:00Z");
+  // 1. Inbound Contra Transfer to eSewa from NIMB
+  await prisma.bankTransaction.create({
+    data: {
+      organizationId: household.id,
+      bankAccountId: esewaWallet.id,
+      transactionDate: gameExpDate,
+      type: "DEPOSIT",
+      amount: 1000,
+      balance: 1000,
+      description: "Internal Transfer from Nepal Investment Mega Bank (02905120254304)",
+      reference: "168290389",
+      category: "Internal Transfer",
+    },
+  });
+
+  // 2. Game Bad Debt Expense
+  const gameExp = await prisma.expense.create({
+    data: {
+      organizationId: household.id,
+      title: "Game Bad Debt",
+      vendor: "Game Platform / eSewa",
+      type: ExpenseType.ONE_TIME,
+      amount: 1000,
+      occurredAt: gameExpDate,
+      notes: "Game bad debt payment paid from eSewa (9814823222) after transfer from Investment Bank [Paid via Wallet: eSewa - 9814823222]",
+    },
+  });
+
+  // 3. Outbound Withdrawal from eSewa Wallet
+  await prisma.bankTransaction.create({
+    data: {
+      organizationId: household.id,
+      bankAccountId: esewaWallet.id,
+      transactionDate: gameExpDate,
+      type: "WITHDRAWAL",
+      amount: 1000,
+      balance: 0,
+      description: "Expense: Game Bad Debt",
+      reference: "168290389",
+      category: "Household Expenditure",
+      expenseId: gameExp.id,
     },
   });
 
@@ -644,9 +742,10 @@ async function main() {
       ownerPhone: "+977-9841234567",
       address: "Kathmandu, Nepal",
       monthlyRent: 16800,
-      electricityRate: 15,
-      waterGarbageFee: 300,
-      notes: "Active household tenancy agreement. Monthly rent NPR 16,800, water/garbage NPR 300, electricity NPR 15/unit.",
+      electricityRate: 12,
+      waterGarbageFee: 500,
+      lastElectricityUnit: 6632,
+      notes: "Active household tenancy agreement. Monthly rent NPR 16,800, water/garbage NPR 500, electricity NPR 12/unit, last meter reading: 6632.",
       isActive: true,
     },
   });

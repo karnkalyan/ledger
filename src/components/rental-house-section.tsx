@@ -235,9 +235,10 @@ export function RentalHouseSection({
             <form
               action={async (formData) => {
                 handleClose();
-                startTransition(async () => {
-                  await saveRentalHouseAction(formData);
-                });
+                await saveRentalHouseAction(formData);
+              }}
+              onSubmit={() => {
+                handleClose();
               }}
               style={{ display: "flex", flexDirection: "column", gap: 12 }}
             >
@@ -395,9 +396,10 @@ export function RentalHouseSection({
               <form
                 action={async (formData) => {
                   handleClose();
-                  startTransition(async () => {
-                    await deleteRentalHouseAction(formData);
-                  });
+                  await deleteRentalHouseAction(formData);
+                }}
+                onSubmit={() => {
+                  handleClose();
                 }}
                 style={{
                   marginTop: 16,
