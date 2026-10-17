@@ -417,6 +417,10 @@ INSTRUCTIONS:
 2. If the user asks about bank balances, cash flow, outstanding bills, or taxes, reference the live data above.
 3. If the user uploads or asks to analyze a document, explain what you observe and guide them on confirming database insertion.
 4. Be polite, precise, and supportive.
+5. When providing monthly or period bank/ledger activity summaries, clearly highlight:
+   * **Total Income:** [Currency] [Amount]
+   * **Total Expenses:** [Currency] [Amount]
+   And clearly specify the net outcome (e.g. "This results in a net outflow of **[Currency] [Amount]**" or net inflow).
 `;
 
   // Build conversation transcript

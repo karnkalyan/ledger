@@ -20,8 +20,382 @@ import {
   Bot,
   User,
   ArrowRight,
+  Calendar,
 } from "lucide-react";
 import toast from "react-hot-toast";
+
+interface FinancialSummaryData {
+  income?: string;
+  expense?: string;
+  net?: string;
+  isOutflow?: boolean;
+  period?: string;
+}
+
+function parseInlineMarkdown(text: string) {
+  const parts: (string | React.ReactNode)[] = [];
+  const regex = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.substring(lastIndex, match.index));
+    }
+    const token = match[0];
+    if (token.startsWith("**") && token.endsWith("**")) {
+      parts.push(
+        <strong key={match.index} style={{ fontWeight: 700, color: "var(--text-strong, inherit)" }}>
+          {token.slice(2, -2)}
+        </strong>
+      );
+    } else if (token.startsWith("`") && token.endsWith("`")) {
+      parts.push(
+        <code
+          key={match.index}
+          style={{
+            fontFamily: "monospace",
+            fontSize: "0.88em",
+            padding: "1px 5px",
+            borderRadius: 4,
+            background: "var(--soft)",
+            border: "1px solid var(--line)",
+          }}
+        >
+          {token.slice(1, -1)}
+        </code>
+      );
+    }
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : text;
+}
+
+function extractFinancialSummary(fullText: string): FinancialSummaryData | null {
+  const currencyValPattern = `(?:[A-Za-z]{2,4}\\s*[\\d,]+(?:\\.\\d+)?|[\\$€£₹]\\s*[\\d,]+(?:\\.\\d+)?|[\\d,]+(?:\\.\\d+)?\\s*[A-Za-z]{2,4})`;
+  const incomeRegex = new RegExp(`(?:Total\\s+Income|Total\\s+Inflow|Total\\s+Credits?)[^\\w\\n]*(${currencyValPattern})`, "i");
+  const expenseRegex = new RegExp(`(?:Total\\s+Expenses?|Total\\s+Outflow|Total\\s+Debits?)[^\\w\\n]*(${currencyValPattern})`, "i");
+  const netRegex = new RegExp(`(?:net\\s+(outflow|inflow|deficit|surplus|cash\\s*flow|balance))(?:\\s+(?:of|is|equals?))?[^\\w\\n]*(${currencyValPattern})`, "i");
+  const periodRegex = /(?:for|in|month of|period:?)\s+([A-Z][a-z]+(?:\s+\d{4})?|\d{4}-\d{2})/i;
+
+  const incomeMatch = fullText.match(incomeRegex);
+  const expenseMatch = fullText.match(expenseRegex);
+
+  if (!incomeMatch && !expenseMatch) {
+    return null;
+  }
+
+  const netMatch = fullText.match(netRegex);
+  const periodMatch = fullText.match(periodRegex);
+  const isOutflow = netMatch ? /outflow|deficit|loss/i.test(netMatch[1]) : true;
+
+  return {
+    income: incomeMatch ? incomeMatch[1] : undefined,
+    expense: expenseMatch ? expenseMatch[1] : undefined,
+    net: netMatch ? netMatch[2] : undefined,
+    isOutflow,
+    period: periodMatch ? periodMatch[1] : undefined,
+  };
+}
+
+function FinancialSummaryCard({ data }: { data: FinancialSummaryData }) {
+  return (
+    <div
+      style={{
+        margin: "8px 0 10px 0",
+        padding: "12px",
+        borderRadius: 12,
+        background: "var(--soft)",
+        border: "1px solid var(--line)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        width: "100%",
+        boxSizing: "border-box",
+      }}
+    >
+      {data.period && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderBottom: "1px solid var(--line)",
+            paddingBottom: 6,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 800, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.06em" }}>
+            <Calendar size={12} />
+            <span>Bank & Activity Summary</span>
+          </div>
+          <span
+            style={{
+              fontSize: 10.5,
+              fontWeight: 700,
+              color: "var(--brand)",
+              background: "var(--brand-soft)",
+              padding: "1px 7px",
+              borderRadius: 4,
+              border: "1px solid var(--brand-border)",
+            }}
+          >
+            {data.period}
+          </span>
+        </div>
+      )}
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        {data.income && (
+          <div
+            style={{
+              padding: "8px 10px",
+              borderRadius: 8,
+              background: "rgba(16, 185, 129, 0.08)",
+              border: "1px solid rgba(16, 185, 129, 0.25)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 3,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+                fontSize: 10,
+                fontWeight: 700,
+                color: "#10b981",
+                textTransform: "uppercase",
+              }}
+            >
+              <TrendingUp size={12} />
+              <span>Total Income</span>
+            </div>
+            <div
+              style={{
+                fontSize: 13.5,
+                fontWeight: 800,
+                color: "#059669",
+                fontFeatureSettings: "'tnum'",
+              }}
+            >
+              {data.income}
+            </div>
+          </div>
+        )}
+
+        {data.expense && (
+          <div
+            style={{
+              padding: "8px 10px",
+              borderRadius: 8,
+              background: "rgba(239, 68, 68, 0.08)",
+              border: "1px solid rgba(239, 68, 68, 0.25)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 3,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+                fontSize: 10,
+                fontWeight: 700,
+                color: "#ef4444",
+                textTransform: "uppercase",
+              }}
+            >
+              <TrendingDown size={12} />
+              <span>Total Expenses</span>
+            </div>
+            <div
+              style={{
+                fontSize: 13.5,
+                fontWeight: 800,
+                color: "#dc2626",
+                fontFeatureSettings: "'tnum'",
+              }}
+            >
+              {data.expense}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {data.net && (
+        <div
+          style={{
+            padding: "7px 10px",
+            borderRadius: 8,
+            background: data.isOutflow ? "rgba(239, 68, 68, 0.1)" : "rgba(16, 185, 129, 0.1)",
+            border: `1px solid ${data.isOutflow ? "rgba(239, 68, 68, 0.25)" : "rgba(16, 185, 129, 0.25)"}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 11,
+              fontWeight: 700,
+              color: data.isOutflow ? "#ef4444" : "#10b981",
+            }}
+          >
+            {data.isOutflow ? <TrendingDown size={13} /> : <TrendingUp size={13} />}
+            <span>{data.isOutflow ? "Net Outflow" : "Net Inflow"}</span>
+          </div>
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 800,
+              color: data.isOutflow ? "#dc2626" : "#059669",
+              fontFeatureSettings: "'tnum'",
+            }}
+          >
+            {data.net}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FormattedAssistantMessage({ text }: { text: string }) {
+  const financialData = extractFinancialSummary(text);
+
+  if (financialData) {
+    const lines = text.split("\n");
+    const isSummaryLine = (l: string) =>
+      /(?:Total\s+Income|Total\s+Inflow|Total\s+Credits?)/i.test(l) ||
+      /(?:Total\s+Expenses?|Total\s+Outflow|Total\s+Debits?)/i.test(l);
+
+    const introLines: string[] = [];
+    const outroLines: string[] = [];
+    let passedSummary = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (isSummaryLine(line)) {
+        passedSummary = true;
+        continue;
+      }
+      if (!passedSummary) {
+        introLines.push(line);
+      } else {
+        if (outroLines.length === 0 && !line.trim()) continue;
+        outroLines.push(line);
+      }
+    }
+
+    return (
+      <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+        {introLines.map((l, idx) => {
+          if (!l.trim()) return <div key={idx} style={{ height: 6 }} />;
+          return (
+            <div key={idx} style={{ margin: "2px 0", fontSize: 12.5, lineHeight: 1.5 }}>
+              {parseInlineMarkdown(l)}
+            </div>
+          );
+        })}
+
+        <FinancialSummaryCard data={financialData} />
+
+        {outroLines.map((l, idx) => {
+          if (!l.trim()) return <div key={idx} style={{ height: 6 }} />;
+          return (
+            <div key={idx} style={{ margin: "2px 0", fontSize: 12.5, lineHeight: 1.5 }}>
+              {parseInlineMarkdown(l)}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Standard formatted markdown response
+  const lines = text.split("\n");
+  return (
+    <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+      {lines.map((l, idx) => {
+        const trimmed = l.trim();
+        if (!trimmed) {
+          return <div key={idx} style={{ height: 6 }} />;
+        }
+
+        // Bullet point
+        if (trimmed.startsWith("* ") || trimmed.startsWith("- ") || trimmed.startsWith("• ")) {
+          const content = trimmed.replace(/^[\*\-•]\s+/, "");
+          return (
+            <div
+              key={idx}
+              style={{
+                display: "flex",
+                gap: 7,
+                alignItems: "flex-start",
+                margin: "2px 0",
+                paddingLeft: 4,
+              }}
+            >
+              <span style={{ color: "var(--brand)", fontSize: 13, lineHeight: 1.2 }}>•</span>
+              <div style={{ flex: 1, fontSize: 12.5, lineHeight: 1.45 }}>
+                {parseInlineMarkdown(content)}
+              </div>
+            </div>
+          );
+        }
+
+        // Numbered list
+        const numMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
+        if (numMatch) {
+          return (
+            <div
+              key={idx}
+              style={{
+                display: "flex",
+                gap: 7,
+                alignItems: "flex-start",
+                margin: "2px 0",
+                paddingLeft: 4,
+              }}
+            >
+              <span
+                style={{
+                  color: "var(--brand)",
+                  fontWeight: 700,
+                  fontSize: 11,
+                  lineHeight: 1.4,
+                  minWidth: 14,
+                }}
+              >
+                {numMatch[1]}.
+              </span>
+              <div style={{ flex: 1, fontSize: 12.5, lineHeight: 1.45 }}>
+                {parseInlineMarkdown(numMatch[2])}
+              </div>
+            </div>
+          );
+        }
+
+        // Plain text paragraph
+        return (
+          <div key={idx} style={{ margin: "2px 0", fontSize: 12.5, lineHeight: 1.5 }}>
+            {parseInlineMarkdown(l)}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 interface ChatMessage {
   id: string;
@@ -44,6 +418,7 @@ export function AiChatAssistant({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showQuickTools, setShowQuickTools] = useState(true);
   const [inputMessage, setInputMessage] = useState("");
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -381,7 +756,7 @@ export function AiChatAssistant({
                     </div>
                   )}
 
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: isAssistant ? "flex-start" : "flex-end" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: isAssistant ? "flex-start" : "flex-end", maxWidth: isAssistant ? "94%" : "85%" }}>
                     <div
                       style={{
                         padding: "10px 14px",
@@ -393,11 +768,16 @@ export function AiChatAssistant({
                         border: isAssistant ? "1px solid var(--line)" : "none",
                         fontSize: 12.5,
                         lineHeight: 1.5,
-                        whiteSpace: "pre-wrap",
                         boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                        width: isAssistant ? "100%" : "auto",
+                        boxSizing: "border-box",
                       }}
                     >
-                      {m.text}
+                      {isAssistant ? (
+                        <FormattedAssistantMessage text={m.text} />
+                      ) : (
+                        <div style={{ whiteSpace: "pre-wrap" }}>{m.text}</div>
+                      )}
 
                       {/* Display Document Attachment pill if uploaded */}
                       {m.attachmentName && (
@@ -576,43 +956,86 @@ export function AiChatAssistant({
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Financial Action Prompt Chips */}
-          <div
-            style={{
-              padding: "6px 12px",
-              background: "var(--surface)",
-              borderTop: "1px solid var(--line)",
-              display: "flex",
-              gap: 6,
-              overflowX: "auto",
-            }}
-          >
-            {[
-              "💰 Liquid Cash & Balances",
-              "📊 Recent Expenses",
-              "🧾 Unpaid Invoices",
-              "📎 How to attach statement?",
-            ].map((chip) => (
-              <button
-                key={chip}
-                type="button"
-                onClick={() => handleSendMessage(chip)}
+          {/* Quick Financial Action Prompt Chips (Scroll-Free & Dismissable) */}
+          {showQuickTools && (
+            <div
+              style={{
+                padding: "6px 10px",
+                background: "var(--surface)",
+                borderTop: "1px solid var(--line)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 6,
+                overflow: "hidden",
+              }}
+            >
+              <div
                 style={{
-                  padding: "3px 8px",
-                  borderRadius: 12,
-                  border: "1px solid var(--line)",
-                  background: "var(--soft)",
-                  color: "var(--text-secondary)",
-                  fontSize: 10.5,
-                  fontWeight: 600,
-                  whiteSpace: "nowrap",
-                  cursor: "pointer",
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 5,
+                  alignItems: "center",
+                  flex: 1,
+                  overflow: "hidden",
                 }}
               >
-                {chip}
+                {[
+                  { label: "💰 Balances", prompt: "Show my liquid cash and bank balances" },
+                  { label: "📊 Expenses", prompt: "Show summary of recent expenses" },
+                  { label: "🧾 Invoices", prompt: "List unpaid invoices and dues" },
+                  { label: "📎 Statement Help", prompt: "How do I attach and auto-extract bank statements or bills?" },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => handleSendMessage(item.prompt)}
+                    style={{
+                      padding: "3px 8px",
+                      borderRadius: 12,
+                      border: "1px solid var(--line)",
+                      background: "var(--soft)",
+                      color: "var(--text-secondary)",
+                      fontSize: 10.5,
+                      fontWeight: 600,
+                      whiteSpace: "nowrap",
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = "var(--brand)";
+                      e.currentTarget.style.color = "var(--brand)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "var(--line)";
+                      e.currentTarget.style.color = "var(--text-secondary)";
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowQuickTools(false)}
+                title="Hide quick tools"
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--text-muted)",
+                  cursor: "pointer",
+                  padding: 3,
+                  borderRadius: 4,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <X size={12} />
               </button>
-            ))}
-          </div>
+            </div>
+          )}
 
           {/* Attachment Preview (if selected) */}
           {attachedFile && (
