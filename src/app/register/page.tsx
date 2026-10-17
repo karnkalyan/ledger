@@ -21,12 +21,12 @@ export default async function RegisterPage({
         <div className="brand-mark" style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <img 
             src="/logo-mark.png" 
-            alt="Simulcast Technologies Logo" 
+            alt="Kashtrix ERP Logo" 
             style={{ width: 42, height: 42, objectFit: "contain", filter: "drop-shadow(0 4px 10px rgba(239, 8, 111, 0.45))" }} 
           />
           <div>
-            <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "0.06em", color: "#ffffff", lineHeight: 1.1 }}>SIMULCAST</div>
-            <div className="brand-sub" style={{ color: "#f472b6", fontWeight: 700, letterSpacing: "0.14em", marginTop: 2 }}>TECHNOLOGIES · LEDGER</div>
+            <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "0.06em", color: "#ffffff", lineHeight: 1.1 }}>KASHTRIX</div>
+            <div className="brand-sub" style={{ color: "#f472b6", fontWeight: 700, letterSpacing: "0.14em", marginTop: 2 }}>ERP · FINANCIAL SUITE</div>
           </div>
         </div>
         <div className="login-copy">
@@ -48,7 +48,7 @@ export default async function RegisterPage({
           </div>
         </div>
         <div className="login-brand-footer">
-          <span>KASHTRIX MULTI-VENDOR ENTERPRISE</span>
+          <span>KASHTRIX ERP SUITE</span>
         </div>
       </section>
 

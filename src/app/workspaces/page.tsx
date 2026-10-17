@@ -22,12 +22,12 @@ export default async function WorkspacesPage() {
             <div className="brand-mark" style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <img 
                 src="/logo-mark.png" 
-                alt="Simulcast Logo" 
+                alt="Kashtrix Logo" 
                 style={{ width: 32, height: 32, objectFit: "contain" }} 
               />
               <div>
-                <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "0.04em" }}>SIMULCAST</span>
-                <div className="brand-sub" style={{ color: "var(--brand-pink)", fontWeight: 700 }}>LEDGER</div>
+                <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "0.04em" }}>KASHTRIX</span>
+                <div className="brand-sub" style={{ color: "var(--brand-pink)", fontWeight: 700 }}>ERP</div>
               </div>
             </div>
             <h1>Choose your workspace</h1>

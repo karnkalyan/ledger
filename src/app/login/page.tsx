@@ -25,12 +25,12 @@ export default async function LoginPage({
         <div className="brand-mark" style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <img 
             src="/logo-mark.png" 
-            alt="Simulcast Technologies Logo" 
+            alt="Kashtrix ERP Logo" 
             style={{ width: 42, height: 42, objectFit: "contain", filter: "drop-shadow(0 4px 10px rgba(239, 8, 111, 0.45))" }} 
           />
           <div>
-            <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "0.06em", color: "#ffffff", lineHeight: 1.1 }}>SIMULCAST</div>
-            <div className="brand-sub" style={{ color: "#f472b6", fontWeight: 700, letterSpacing: "0.14em", marginTop: 2 }}>TECHNOLOGIES · LEDGER</div>
+            <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "0.06em", color: "#ffffff", lineHeight: 1.1 }}>KASHTRIX</div>
+            <div className="brand-sub" style={{ color: "#f472b6", fontWeight: 700, letterSpacing: "0.14em", marginTop: 2 }}>ERP · FINANCIAL SUITE</div>
           </div>
         </div>
         <div className="login-copy">
@@ -52,7 +52,7 @@ export default async function LoginPage({
           </div>
         </div>
         <div className="login-brand-footer">
-          <span>SIMULCAST TECHNOLOGIES PVT. LTD.</span>
+          <span>KASHTRIX ERP SUITE</span>
           <ArrowUpRight size={18} />
         </div>
       </section>
@@ -62,12 +62,12 @@ export default async function LoginPage({
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 6 }}>
             <img 
               src="/logo-mark.png" 
-              alt="Simulcast Logo" 
+              alt="Kashtrix Logo" 
               style={{ width: 46, height: 46, objectFit: "contain", flexShrink: 0 }} 
             />
             <div>
               <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "var(--text)" }}>Welcome back</h2>
-              <p style={{ margin: "2px 0 0 0", fontSize: 12, color: "var(--text-muted)" }}>Sign in to your Simulcast Enterprise account</p>
+              <p style={{ margin: "2px 0 0 0", fontSize: 12, color: "var(--text-muted)" }}>Sign in to your Kashtrix ERP account</p>
             </div>
           </div>
 

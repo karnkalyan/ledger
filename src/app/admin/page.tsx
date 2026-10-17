@@ -242,12 +242,12 @@ export default async function AdminVendorsPage({
           <div className="brand-mark" style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <img
               src="/logo-mark.png"
-              alt="Simulcast Logo"
+              alt="Kashtrix Logo"
               style={{ width: 30, height: 30, objectFit: "contain" }}
             />
             <div>
-              <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: "0.04em" }}>SIMULCAST</span>
-              <div className="brand-sub" style={{ color: "var(--brand-pink)", fontWeight: 700 }}>SUPER ADMIN</div>
+              <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: "0.04em" }}>KASHTRIX</span>
+              <div className="brand-sub" style={{ color: "var(--brand-pink)", fontWeight: 700 }}>ERP SUPER ADMIN</div>
             </div>
           </div>
           <span className="badge purple" style={{ marginLeft: 12 }}>

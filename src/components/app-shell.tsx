@@ -86,7 +86,7 @@ export function AppShell({
             </button>
             <div className="topbar-title-wrap">
               <div className="topbar-kicker">
-                {org.kind === "COMPANY" ? "Kashtrix Office ERP" : "Kashtrix Personal Ledger"}
+                {org.kind === "COMPANY" ? "Kashtrix ERP" : "Kashtrix Personal ERP"}
               </div>
               <h2 className="topbar-title">{org.name}</h2>
             </div>

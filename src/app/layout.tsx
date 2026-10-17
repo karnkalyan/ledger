@@ -16,8 +16,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Kashtrix Ledger | Office & Financial Suite",
-  description: "Enterprise ERP, commercial invoice suite and personal expense manager",
+  title: "Kashtrix ERP | Office & Financial Suite",
+  description: "Enterprise ERP, commercial invoice suite, and financial ledger",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

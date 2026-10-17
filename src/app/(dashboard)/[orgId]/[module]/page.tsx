@@ -175,7 +175,7 @@ function Header({
       {!hidePrintBanner && (
         <div className="table-print-header-banner">
           <div>
-            <h2 style={{ margin: 0, fontSize: "15pt", fontWeight: 800 }}>{orgName || "Kashtrix Ledger"}</h2>
+            <h2 style={{ margin: 0, fontSize: "15pt", fontWeight: 800 }}>{orgName || "Kashtrix ERP"}</h2>
             <div style={{ fontSize: "8.5pt", color: "#475569", marginTop: 2 }}>
               {orgTax ? `PAN / VAT: ${orgTax} · ` : ""}
               {orgAddress || "Nepal"} · Financial & Audit Ledger

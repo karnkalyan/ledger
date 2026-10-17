@@ -16,7 +16,7 @@ export default async function PendingApprovalPage({
         </div>
         <h1>{registered ? "Registration Submitted!" : "Account Pending Verification"}</h1>
         <p className="pending-desc">
-          Thank you for registering with Kashtrix Multi-Vendor Enterprise Suite. Your account is currently queued for administrative review.
+          Thank you for registering with Kashtrix ERP Suite. Your account is currently queued for administrative review.
         </p>
 
         <div className="pending-status-box">
