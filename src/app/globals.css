@@ -3763,21 +3763,23 @@ button.filter-preset-chip.active * {
     grid-column: 1 !important;
   }
 
-  /* Mobile App Bottom Navigation Bar */
+  /* Mobile App Bottom Navigation Bar: Strict 5-Column Symmetrical Layout (2 left, center +, 2 right) */
   .mobile-app-bottom-bar {
-    display: flex !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    height: 60px;
+    height: 58px;
+    padding: 0 4px;
     padding-bottom: env(safe-area-inset-bottom, 0px);
     background: var(--surface);
     border-top: 1px solid var(--line);
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
     z-index: 1250;
     align-items: center;
-    justify-content: space-around;
+    justify-items: center;
   }
 
   .mobile-tab-btn {
@@ -3786,7 +3788,7 @@ button.filter-preset-chip.active * {
     align-items: center;
     justify-content: center;
     gap: 3px;
-    flex: 1;
+    width: 100%;
     height: 100%;
     color: var(--text-muted);
     font-size: 10px;
@@ -3807,14 +3809,14 @@ button.filter-preset-chip.active * {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--brand), var(--brand-pink, #ef086f));
     color: #ffffff !important;
     border: 3px solid var(--surface);
-    box-shadow: 0 4px 14px rgba(239, 8, 111, 0.4);
-    margin-top: -18px;
+    box-shadow: 0 4px 14px rgba(239, 8, 111, 0.45);
+    margin-top: -14px;
     flex-shrink: 0;
     cursor: pointer;
     transition: transform 0.15s ease;
@@ -3827,6 +3829,14 @@ button.filter-preset-chip.active * {
   .mobile-center-add-btn svg {
     color: #ffffff !important;
     stroke: #ffffff !important;
+  }
+
+  /* SIDEBAR IS COMPLETELY DISABLED ON MOBILE RESPONSIVE (NATIVE MOBILE APP NAVIGATION VIA MENU PAGE) */
+  .sidebar,
+  .sidebar-backdrop {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
   }
 
   /* Tables container touch scrolling */

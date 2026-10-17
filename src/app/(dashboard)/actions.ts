@@ -98,6 +98,24 @@ export async function updateExpenseAction(formData: FormData) {
   const vendor = s(formData, "vendor") || null;
   const notes = s(formData, "notes") || null;
   const type = (s(formData, "type") || "ONE_TIME") as never;
+  const isDirectorAccount = s(formData, "isDirectorAccount") === "on" || s(formData, "isDirectorAccount") === "true";
+  const directorName = s(formData, "directorName") || "Director";
+  const directorTxType = s(formData, "directorTxType") || "DRAWINGS";
+
+  let effectiveTitle = title;
+  let effectiveVendor = vendor;
+  let effectiveNotes = notes;
+
+  if (isDirectorAccount) {
+    if (!effectiveVendor) {
+      effectiveVendor = `Director: ${directorName}`;
+    }
+    const dirNote = `[Director Account: ${directorTxType} - ${directorName}]`;
+    effectiveNotes = effectiveNotes ? `${dirNote} ${effectiveNotes}` : dirNote;
+    if (!effectiveTitle.toLowerCase().includes("director")) {
+      effectiveTitle = `${effectiveTitle} [Director: ${directorName}]`;
+    }
+  }
 
   await db.$transaction(async (tx) => {
     const oldExpense = await tx.expense.findFirst({ where: { id, organizationId: orgId } });
@@ -106,17 +124,17 @@ export async function updateExpenseAction(formData: FormData) {
     await tx.expense.update({
       where: { id },
       data: {
-        title,
+        title: effectiveTitle,
         amount,
         categoryId,
-        vendor,
+        vendor: effectiveVendor,
         type,
         quantity: quantity || null,
         unit: s(formData, "unit") || null,
         unitRate: rate || null,
         daysCount: days || null,
         occurredAt,
-        notes,
+        notes: effectiveNotes,
       },
     });
 
@@ -129,7 +147,7 @@ export async function updateExpenseAction(formData: FormData) {
         where: { id: linkedTx.id },
         data: {
           amount,
-          description: title,
+          description: effectiveTitle,
           transactionDate: occurredAt,
         },
       });
@@ -331,12 +349,29 @@ export async function updateIncomeAction(formData: FormData) {
     }
   }
 
+  const isDirectorAccount = s(formData, "isDirectorAccount") === "on" || s(formData, "isDirectorAccount") === "true";
+  const directorName = s(formData, "directorName") || "Director";
+  const directorTxType = s(formData, "directorTxType") || "CAPITAL";
+
   let source = s(formData, "source") || null;
   if (!source && validContact) {
     source = validContact.companyName || validContact.name;
   }
+  if (isDirectorAccount && !source) {
+    source = `Director: ${directorName}`;
+  }
+
+  let effectiveTitle = title;
+  if (isDirectorAccount && !effectiveTitle.toLowerCase().includes("director")) {
+    effectiveTitle = `${effectiveTitle} [Director: ${directorName}]`;
+  }
+
   const receivedAt = d(formData, "receivedAt") ?? new Date();
-  const notes = s(formData, "notes") || null;
+  let notes = s(formData, "notes") || null;
+  if (isDirectorAccount) {
+    const dirNote = `[Director Account: ${directorTxType} - ${directorName}]`;
+    notes = notes ? `${dirNote} ${notes}` : dirNote;
+  }
 
   await db.$transaction(async (tx) => {
     const existing = await tx.income.findFirst({
@@ -378,9 +413,11 @@ export async function updateIncomeAction(formData: FormData) {
           type: "DEPOSIT",
           amount,
           balance: newBal,
-          description: `Income Receipt: ${title}`,
+          description: isDirectorAccount && !title.toLowerCase().includes("director")
+            ? `Income: ${title} [Director: ${directorName} - ${directorTxType}]`
+            : `Income Receipt: ${title}`,
           reference: source || (validContact ? (validContact.companyName || validContact.name) : null),
-          category: "Payment Received",
+          category: isDirectorAccount ? "Director Current Account (Inflow)" : "Payment Received",
           incomeId: id,
           contactId,
         },
@@ -391,7 +428,7 @@ export async function updateIncomeAction(formData: FormData) {
     await tx.income.update({
       where: { id },
       data: {
-        title,
+        title: effectiveTitle,
         amount,
         receivedAt,
         source,
@@ -851,8 +888,21 @@ export async function updateBankTransactionAction(formData: FormData) {
   const category = s(formData, "category") || null;
   const reference = s(formData, "reference") || null;
   const chequeNumber = s(formData, "chequeNumber") || null;
-  const rawContactId = s(formData, "contactId");
+  const isDirectorAccount = s(formData, "isDirectorAccount") === "on" || s(formData, "isDirectorAccount") === "true";
+  const directorName = s(formData, "directorName") || "Director";
+  const directorTxType = s(formData, "directorTxType") || (newType === "DEPOSIT" ? "CAPITAL" : "DRAWINGS");
 
+  let effectiveCategory = category;
+  let effectiveDescription = description || `${newType === "DEPOSIT" ? "Deposit" : "Withdrawal"} record`;
+
+  if (isDirectorAccount) {
+    effectiveCategory = `Director: ${directorName} (${directorTxType === "CAPITAL" ? "Capital Inflow" : directorTxType === "DRAWINGS" ? "Personal Drawings" : directorTxType})`;
+    if (!effectiveDescription.toLowerCase().includes("director")) {
+      effectiveDescription = `${effectiveDescription} [Director: ${directorName} - ${directorTxType}]`;
+    }
+  }
+
+  const rawContactId = s(formData, "contactId");
   if (!targetBankAccountId || newAmount <= 0) return;
 
   await db.$transaction(async (tx) => {
@@ -890,8 +940,8 @@ export async function updateBankTransactionAction(formData: FormData) {
         type: newType,
         amount: newAmount,
         transactionDate,
-        description: description || `${newType === "DEPOSIT" ? "Deposit" : "Withdrawal"} record`,
-        category,
+        description: effectiveDescription,
+        category: effectiveCategory,
         reference,
         chequeNumber,
         balance: updatedTargetAccount.currentBalance,
@@ -906,8 +956,9 @@ export async function updateBankTransactionAction(formData: FormData) {
         data: {
           amount: newAmount,
           receivedAt: transactionDate,
-          title: description || undefined,
+          title: effectiveDescription,
           bankAccountId: targetBankAccountId,
+          paymentMethod: "BANK",
           contactId: validContact ? validContact.id : undefined,
         },
       });
@@ -920,7 +971,7 @@ export async function updateBankTransactionAction(formData: FormData) {
         data: {
           amount: newAmount,
           occurredAt: transactionDate,
-          title: description || undefined,
+          title: effectiveDescription,
         },
       });
     }

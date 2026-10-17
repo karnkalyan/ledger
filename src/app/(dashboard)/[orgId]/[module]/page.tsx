@@ -104,18 +104,25 @@ export function resolveIncomeChannel(
     bankAccount?: any;
     title?: string | null;
     source?: string | null;
+    notes?: string | null;
+    bankTransactions?: any[];
   },
   knownBankNames: string[] = []
 ): "BANK" | "OTHER" | "CASH" {
-  if (x.paymentMethod === "BANK" || Boolean(x.bankAccountId) || Boolean(x.bankAccount)) {
+  if (
+    x.paymentMethod === "BANK" ||
+    Boolean(x.bankAccountId) ||
+    Boolean(x.bankAccount) ||
+    (Array.isArray(x.bankTransactions) && x.bankTransactions.length > 0)
+  ) {
     return "BANK";
   }
   if (x.paymentMethod === "OTHER") {
     return "OTHER";
   }
-  const text = `${x.title || ""} ${x.source || ""}`.toLowerCase();
+  const text = `${x.title || ""} ${x.source || ""} ${x.notes || ""}`.toLowerCase();
   
-  // Generic banking transaction terms
+  // Generic banking transaction & deposit terms
   if (
     text.includes("bank") ||
     text.includes("deposit") ||
@@ -123,7 +130,13 @@ export function resolveIncomeChannel(
     text.includes("fund trf") ||
     text.includes("cheque") ||
     text.includes("ips") ||
-    text.includes("wd:")
+    text.includes("connectips") ||
+    text.includes("wd:") ||
+    text.includes("banking") ||
+    text.includes("cash to bank") ||
+    text.includes("cash deposit") ||
+    text.includes("direct deposit") ||
+    text.includes("account credit")
   ) {
     return "BANK";
   }
@@ -1063,7 +1076,11 @@ export default async function ModulePage({
           organizationId: orgId,
           ...(activeFy ? { receivedAt: { gte: activeFy.startDate, lte: activeFy.endDate } } : {}),
         },
-        include: { contact: true, bankAccount: true },
+        include: {
+          contact: true,
+          bankAccount: true,
+          bankTransactions: { select: { id: true, bankAccountId: true } },
+        },
         orderBy: { receivedAt: "desc" },
       }),
       db.income.findMany({
@@ -1071,7 +1088,16 @@ export default async function ModulePage({
           organizationId: orgId,
           ...(activeFy ? { receivedAt: { gte: activeFy.startDate, lte: activeFy.endDate } } : {}),
         },
-        select: { id: true, amount: true, paymentMethod: true, bankAccountId: true, title: true, source: true },
+        select: {
+          id: true,
+          amount: true,
+          paymentMethod: true,
+          bankAccountId: true,
+          title: true,
+          source: true,
+          notes: true,
+          bankTransactions: { select: { id: true } },
+        },
       }),
       db.income.aggregate({
         where: {

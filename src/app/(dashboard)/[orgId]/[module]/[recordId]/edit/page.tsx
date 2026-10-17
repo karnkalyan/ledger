@@ -168,6 +168,37 @@ export default async function EditDocumentPage({
                 />
               </label>
 
+              {/* DIRECTOR CURRENT ACCOUNT OUTLAY OPTION */}
+              <div className="field full" style={{ background: "var(--soft)", padding: "12px 14px", borderRadius: 8, border: "1px solid var(--line)" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600 }}>
+                  <input
+                    type="checkbox"
+                    name="isDirectorAccount"
+                    defaultChecked={Boolean(expense.vendor?.toLowerCase().includes("director") || expense.notes?.toLowerCase().includes("director") || expense.title.toLowerCase().includes("director"))}
+                    style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
+                  />
+                  <span>💼 Director Current Account (Personal Drawings / Loan Outlay)</span>
+                </label>
+                <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <label className="field" style={{ margin: 0 }}>
+                    <span className="field-label" style={{ fontSize: 11 }}>Director Name</span>
+                    <input
+                      name="directorName"
+                      defaultValue={expense.vendor?.replace(/^Director:\s*/i, "") || "Director"}
+                      placeholder="e.g. Director Name"
+                    />
+                  </label>
+                  <label className="field" style={{ margin: 0 }}>
+                    <span className="field-label" style={{ fontSize: 11 }}>Director Outlay Type</span>
+                    <select name="directorTxType" defaultValue="DRAWINGS">
+                      <option value="DRAWINGS">Director Personal Drawings (Money Out)</option>
+                      <option value="REIMBURSEMENT">Loan / Expense Reimbursement to Director</option>
+                      <option value="SALARY_ADVANCE">Director Advance</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+
               <label className="field full">
                 <span className="field-label">Notes &amp; Internal Audit Remarks</span>
                 <textarea
@@ -307,6 +338,37 @@ export default async function EditDocumentPage({
                   placeholder="Payer name if not in CRM"
                 />
               </label>
+
+              {/* DIRECTOR CURRENT ACCOUNT INFLOW OPTION */}
+              <div className="field full" style={{ background: "var(--soft)", padding: "12px 14px", borderRadius: 8, border: "1px solid var(--line)" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600 }}>
+                  <input
+                    type="checkbox"
+                    name="isDirectorAccount"
+                    defaultChecked={Boolean(income.source?.toLowerCase().includes("director") || income.notes?.toLowerCase().includes("director") || income.title.toLowerCase().includes("director"))}
+                    style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
+                  />
+                  <span>💼 Director Current Account (Capital Injection / Loan Inflow)</span>
+                </label>
+                <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <label className="field" style={{ margin: 0 }}>
+                    <span className="field-label" style={{ fontSize: 11 }}>Director Name</span>
+                    <input
+                      name="directorName"
+                      defaultValue={income.source?.replace(/^Director:\s*/i, "") || "Director"}
+                      placeholder="e.g. Director Name"
+                    />
+                  </label>
+                  <label className="field" style={{ margin: 0 }}>
+                    <span className="field-label" style={{ fontSize: 11 }}>Director Inflow Type</span>
+                    <select name="directorTxType" defaultValue="CAPITAL">
+                      <option value="CAPITAL">Director Capital Injection / Inflow</option>
+                      <option value="LOAN">Loan from Director to Company</option>
+                      <option value="DRAWINGS_REPAYMENT">Repayment of Personal Drawings</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
 
               <label className="field full">
                 <span className="field-label">Receipt Notes / Voucher Remarks</span>
@@ -463,6 +525,38 @@ export default async function EditDocumentPage({
                   ))}
                 </select>
               </label>
+
+              {/* DIRECTOR ACCOUNT CATEGORIZATION */}
+              <div className="field full" style={{ background: "var(--soft)", padding: "12px 14px", borderRadius: 8, border: "1px solid var(--line)" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600 }}>
+                  <input
+                    type="checkbox"
+                    name="isDirectorAccount"
+                    defaultChecked={Boolean(txRecord.category?.toLowerCase().includes("director") || txRecord.description.toLowerCase().includes("director"))}
+                    style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
+                  />
+                  <span>💼 Categorize under Director Current Account (Capital / Personal Drawings)</span>
+                </label>
+                <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <label className="field" style={{ margin: 0 }}>
+                    <span className="field-label" style={{ fontSize: 11 }}>Director Name</span>
+                    <input
+                      name="directorName"
+                      defaultValue="Director"
+                      placeholder="Director Name"
+                    />
+                  </label>
+                  <label className="field" style={{ margin: 0 }}>
+                    <span className="field-label" style={{ fontSize: 11 }}>Director Transaction Type</span>
+                    <select name="directorTxType" defaultValue={txRecord.type === "DEPOSIT" ? "CAPITAL" : "DRAWINGS"}>
+                      <option value="CAPITAL">Director Capital Inflow</option>
+                      <option value="DRAWINGS">Director Personal Drawings</option>
+                      <option value="LOAN">Director Loan to Company</option>
+                      <option value="REIMBURSEMENT">Loan Repayment / Reimbursement to Director</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
             </div>
 
             <div className="form-actions" style={{ marginTop: 20 }}>
