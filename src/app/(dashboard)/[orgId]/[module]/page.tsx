@@ -223,6 +223,8 @@ export default async function ModulePage({
     saved?: string;
     fy?: string;
     directorName?: string;
+    channel?: string;
+    [key: string]: string | undefined;
   }>;
 }) {
   const { orgId, module } = await params;
@@ -994,12 +996,32 @@ export default async function ModulePage({
   }
 
   if (module === "income") {
+    const channelFilter = (query.channel as string) || "ALL";
     const incomeWhere: any = {
       organizationId: orgId,
       ...(activeFy ? { receivedAt: { gte: activeFy.startDate, lte: activeFy.endDate } } : {}),
+      ...(channelFilter === "CASH"
+        ? { paymentMethod: "CASH" }
+        : channelFilter === "BANK"
+        ? { paymentMethod: "BANK" }
+        : channelFilter === "OTHER"
+        ? { paymentMethod: "OTHER" }
+        : {}),
     };
-    const [items, agg] = await Promise.all([
-      db.income.findMany({ where: incomeWhere, orderBy: { receivedAt: "desc" } }),
+
+    const [items, allItemsForKpi, agg] = await Promise.all([
+      db.income.findMany({
+        where: incomeWhere,
+        include: { contact: true, bankAccount: true },
+        orderBy: { receivedAt: "desc" },
+      }),
+      db.income.findMany({
+        where: {
+          organizationId: orgId,
+          ...(activeFy ? { receivedAt: { gte: activeFy.startDate, lte: activeFy.endDate } } : {}),
+        },
+        select: { amount: true, paymentMethod: true },
+      }),
       db.income.aggregate({
         where: {
           organizationId: orgId,
@@ -1008,27 +1030,94 @@ export default async function ModulePage({
         _sum: { amount: true },
       }),
     ]);
+
+    const cashInHandTotal = allItemsForKpi
+      .filter((x) => (x.paymentMethod || "CASH") === "CASH")
+      .reduce((s, x) => s + Number(x.amount), 0);
+    const bankAccountTotal = allItemsForKpi
+      .filter((x) => x.paymentMethod === "BANK")
+      .reduce((s, x) => s + Number(x.amount), 0);
+    const othersTotal = allItemsForKpi
+      .filter((x) => x.paymentMethod === "OTHER")
+      .reduce((s, x) => s + Number(x.amount), 0);
+    const totalReceipts = allItemsForKpi.reduce((s, x) => s + Number(x.amount), 0);
+
     return (
       <main className="page-wrap">
         <Header
           title={organization.kind === "COMPANY" ? "Income & Receipts" : "Personal Income"}
           description="Record client receipts, invoices, salaries, and cash inflows cleanly."
         >
-          <Link href={"/" + orgId + "/income/new?type=record-income"} className="success-btn"><Plus size={14} /> Record Income</Link>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <Link href={"/" + orgId + "/banking/new?type=record-deposit"} className="secondary-btn">
+              🏦 Bank Deposit
+            </Link>
+            <Link href={"/" + orgId + "/income/new?type=record-income"} className="success-btn">
+              <Plus size={14} /> Record Income
+            </Link>
+          </div>
         </Header>
+
         <Kpis
           items={[
-            { label: activeFy ? `FY ${activeFy.code} Received` : "This Month Received", value: money(agg._sum.amount || 0, currency) },
-            { label: "Total Entries", value: String(items.length), meta: "All recorded entries" },
-            { label: "Average Entry", value: money(items.length ? items.reduce((s, x) => s + Number(x.amount), 0) / items.length : 0, currency) },
-            { label: "Workspace Mode", value: organization.kind === "COMPANY" ? "Office" : "Personal", meta: "Dedicated ledger" },
+            {
+              label: activeFy ? `Total FY ${activeFy.code}` : "Total Receipts",
+              value: money(agg._sum.amount || totalReceipts, currency),
+              meta: `${allItemsForKpi.length} total entries`,
+            },
+            {
+              label: "💵 Cash in Hand Receipts",
+              value: money(cashInHandTotal, currency),
+              meta: "Direct liquid cash inflows",
+            },
+            {
+              label: "🏦 Bank Account Inflows",
+              value: money(bankAccountTotal, currency),
+              meta: "Direct deposits to bank accounts",
+            },
+            {
+              label: "🔄 Other Channels",
+              value: money(othersTotal, currency),
+              meta: "Wallets / other instruments",
+            },
           ]}
         />
+
         <div className="table-card">
-          <div className="table-toolbar">
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <h3>Income Inflows</h3>
+          <div className="table-toolbar" style={{ flexWrap: "wrap", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <h3 style={{ margin: 0 }}>Income Inflows</h3>
               {activeFy && <span className="badge cyan">FY {activeFy.code}</span>}
+              <div style={{ display: "inline-flex", gap: 4, marginLeft: 10 }}>
+                <Link
+                  href={`/${orgId}/income`}
+                  className={`filter-preset-chip ${channelFilter === "ALL" ? "active" : ""}`}
+                  style={{ fontSize: 11, padding: "3px 8px" }}
+                >
+                  All ({allItemsForKpi.length})
+                </Link>
+                <Link
+                  href={`/${orgId}/income?channel=CASH`}
+                  className={`filter-preset-chip ${channelFilter === "CASH" ? "active" : ""}`}
+                  style={{ fontSize: 11, padding: "3px 8px" }}
+                >
+                  💵 Cash in Hand ({allItemsForKpi.filter((x) => (x.paymentMethod || "CASH") === "CASH").length})
+                </Link>
+                <Link
+                  href={`/${orgId}/income?channel=BANK`}
+                  className={`filter-preset-chip ${channelFilter === "BANK" ? "active" : ""}`}
+                  style={{ fontSize: 11, padding: "3px 8px" }}
+                >
+                  🏦 Bank Account ({allItemsForKpi.filter((x) => x.paymentMethod === "BANK").length})
+                </Link>
+                <Link
+                  href={`/${orgId}/income?channel=OTHER`}
+                  className={`filter-preset-chip ${channelFilter === "OTHER" ? "active" : ""}`}
+                  style={{ fontSize: 11, padding: "3px 8px" }}
+                >
+                  🔄 Others ({allItemsForKpi.filter((x) => x.paymentMethod === "OTHER").length})
+                </Link>
+              </div>
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <span className="badge purple">{items.length} records</span>
@@ -1040,9 +1129,10 @@ export default async function ModulePage({
               <thead>
                 <tr>
                   <th>Date (BS / AD)</th>
-                  <th>Title</th>
-                  <th>Source</th>
-                  <th>Amount</th>
+                  <th>Title &amp; Notes</th>
+                  <th>Payer / Contact</th>
+                  <th>Channel / Destination</th>
+                  <th style={{ textAlign: "right" }}>Amount</th>
                   <th style={{ width: 60, textAlign: "center" }}>Actions</th>
                 </tr>
               </thead>
@@ -1053,9 +1143,37 @@ export default async function ModulePage({
                       <div>{formatBsDate(x.receivedAt)}</div>
                       <div className="table-sub">{x.receivedAt.toISOString().slice(0, 10)} AD</div>
                     </td>
-                    <td data-label="Title" className="table-title">{x.title}</td>
-                    <td data-label="Source">{x.source || "—"}</td>
-                    <td data-label="Amount" className="amount-pos">+ {money(x.amount, currency)}</td>
+                    <td data-label="Title" className="table-title">
+                      <strong>{x.title}</strong>
+                      {x.notes && <div className="table-sub">{x.notes}</div>}
+                    </td>
+                    <td data-label="Payer">
+                      {x.contact ? (
+                        <Link href={`/${orgId}/crm/${x.contact.id}`} className="table-clickable-title">
+                          {x.contact.companyName || x.contact.name}
+                        </Link>
+                      ) : (
+                        x.source || "—"
+                      )}
+                    </td>
+                    <td data-label="Channel">
+                      {x.paymentMethod === "BANK" ? (
+                        <span className="badge purple" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          🏦 {x.bankAccount ? `${x.bankAccount.bankName} (${x.bankAccount.accountNumber})` : "Bank Account"}
+                        </span>
+                      ) : x.paymentMethod === "OTHER" ? (
+                        <span className="badge cyan" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          🔄 Other Channel
+                        </span>
+                      ) : (
+                        <span className="badge green" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          💵 Cash in Hand
+                        </span>
+                      )}
+                    </td>
+                    <td data-label="Amount" className="amount-pos" style={{ textAlign: "right", fontWeight: 700 }}>
+                      + {money(x.amount, currency)}
+                    </td>
                     <td data-label="Actions" style={{ textAlign: "center" }}>
                       <RowActionMenu
                         orgId={orgId}
@@ -1069,8 +1187,8 @@ export default async function ModulePage({
                 ))}
                 {!items.length && (
                   <tr>
-                    <td colSpan={5}>
-                      <Empty>No income entries recorded yet.</Empty>
+                    <td colSpan={6}>
+                      <Empty>No income entries matching the selected filter.</Empty>
                     </td>
                   </tr>
                 )}
@@ -4260,6 +4378,7 @@ export default async function ModulePage({
     const [incomes, expenses, recurring, categories, purchasePayments, loanPayments] = await Promise.all([
       db.income.findMany({
         where: { organizationId: orgId, receivedAt: { gte: startDate, lte: endDate } },
+        include: { bankAccount: true, contact: true },
         orderBy: { receivedAt: "asc" },
       }),
       db.expense.findMany({
@@ -4297,6 +4416,15 @@ export default async function ModulePage({
     ]);
 
     const incomeTotal = incomes.reduce((s, x) => s + Number(x.amount), 0);
+    const cashInHandIncome = incomes
+      .filter((i) => (i.paymentMethod || "CASH") === "CASH")
+      .reduce((s, x) => s + Number(x.amount), 0);
+    const bankIncome = incomes
+      .filter((i) => i.paymentMethod === "BANK")
+      .reduce((s, x) => s + Number(x.amount), 0);
+    const otherIncome = incomes
+      .filter((i) => i.paymentMethod === "OTHER")
+      .reduce((s, x) => s + Number(x.amount), 0);
     const expenseTotal = expenses.reduce((s, x) => s + Number(x.amount), 0);
     const plannedCommitment = recurring.reduce((s, x) => s + estimateRecurringExpense(x, startDate), 0);
     const totalPurchasePayments = purchasePayments.reduce((s, p) => s + Number(p.amount), 0);
@@ -4681,15 +4809,46 @@ export default async function ModulePage({
             {/* REVENUE & CASH INFLOWS TABLE */}
             <section className="report-section-block">
               <div className="section-heading">
-                <h3>3. Cash Inflows & Revenue</h3>
+                <h3>3. Cash Inflows &amp; Revenue</h3>
                 <span className="section-total-badge income-badge">Total: {money(incomeTotal, currency)}</span>
               </div>
+
+              {/* Cash vs Bank vs Other Channel Breakdown Strip */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  padding: "8px 12px",
+                  background: "var(--surface-muted, rgba(0,0,0,0.02))",
+                  border: "1px solid var(--line)",
+                  borderRadius: 8,
+                  marginBottom: 12,
+                  fontSize: 12,
+                }}
+              >
+                <span style={{ fontWeight: 600, color: "var(--text-muted)" }}>Inflow Channels:</span>
+                <span className="badge green" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                  💵 Cash in Hand: <strong>{money(cashInHandIncome, currency)}</strong>
+                </span>
+                <span className="badge purple" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                  🏦 Bank Accounts: <strong>{money(bankIncome, currency)}</strong>
+                </span>
+                {otherIncome > 0 && (
+                  <span className="badge cyan" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    🔄 Other Channels: <strong>{money(otherIncome, currency)}</strong>
+                  </span>
+                )}
+              </div>
+
               <DataTable className="report-table">
                 <thead>
                   <tr>
                     <th>Date (BS)</th>
                     <th>Inflow Title</th>
-                    <th>Source / Payer</th>
+                    <th>Channel / Account</th>
+                    <th>Source / Contact</th>
                     <th style={{ textAlign: "right" }}>Amount ({currency})</th>
                   </tr>
                 </thead>
@@ -4706,7 +4865,30 @@ export default async function ModulePage({
                         </div>
                         {inc.notes && <div className="muted-text note-text">{inc.notes}</div>}
                       </td>
-                      <td>{inc.source || "—"}</td>
+                      <td>
+                        {inc.paymentMethod === "BANK" ? (
+                          <span className="badge purple" style={{ fontSize: 10.5, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                            🏦 {inc.bankAccount ? inc.bankAccount.bankName : "Bank Account"}
+                          </span>
+                        ) : inc.paymentMethod === "OTHER" ? (
+                          <span className="badge cyan" style={{ fontSize: 10.5, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                            🔄 Other
+                          </span>
+                        ) : (
+                          <span className="badge green" style={{ fontSize: 10.5, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                            💵 Cash in Hand
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        {inc.contact ? (
+                          <Link href={`/${orgId}/crm/${inc.contact.id}`} className="table-clickable-title">
+                            {inc.contact.companyName || inc.contact.name}
+                          </Link>
+                        ) : (
+                          inc.source || "—"
+                        )}
+                      </td>
                       <td style={{ textAlign: "right", color: "var(--success)" }}>
                         <strong>+ {money(inc.amount, currency)}</strong>
                       </td>
@@ -4714,7 +4896,7 @@ export default async function ModulePage({
                   ))}
                   {!incomes.length && (
                     <tr>
-                      <td colSpan={4} className="table-empty-row">
+                      <td colSpan={5} className="table-empty-row">
                         No cash inflows recorded for this period.
                       </td>
                     </tr>
@@ -4722,7 +4904,7 @@ export default async function ModulePage({
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td colSpan={3} style={{ textAlign: "right", fontWeight: 700 }}>
+                    <td colSpan={4} style={{ textAlign: "right", fontWeight: 700 }}>
                       TOTAL REVENUE INFLOWS:
                     </td>
                     <td style={{ textAlign: "right", fontWeight: 700, color: "var(--success)" }}>
