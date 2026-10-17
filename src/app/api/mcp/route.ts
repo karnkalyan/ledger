@@ -1868,6 +1868,12 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
+  const accept = request.headers.get("accept") || "";
+  if (accept.includes("text/event-stream")) {
+    const { GET: handleSseGet } = await import("./sse/route");
+    return handleSseGet(request);
+  }
+
   const auth = await verifyMcpAuth(request);
   return jsonResponse({
     status: "ok",

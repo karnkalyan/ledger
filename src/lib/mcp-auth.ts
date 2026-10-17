@@ -78,6 +78,15 @@ export async function createMcpToken(payload: {
   return token;
 }
 
+export async function verifyMcpToken(token: string) {
+  try {
+    const { payload } = await jwtVerify(token, MCP_SECRET, { algorithms: ["HS256"] });
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Helper to fetch all organizations accessible by a user
  */

@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     token_endpoint: `${serverUrl}/api/oauth/token`,
     userinfo_endpoint: `${serverUrl}/api/oauth/session`,
     response_types_supported: ["code"],
-    grant_types_supported: ["authorization_code", "client_credentials"],
+    grant_types_supported: ["authorization_code", "client_credentials", "refresh_token"],
     token_endpoint_auth_methods_supported: ["client_secret_post", "client_secret_basic", "none"],
     scopes_supported: ["mcp:all", "openid", "profile", "email"],
     code_challenge_methods_supported: ["S256", "plain"],

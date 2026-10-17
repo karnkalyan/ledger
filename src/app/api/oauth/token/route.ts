@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { createMcpToken } from "@/lib/mcp-auth";
+import { createMcpToken, verifyMcpToken } from "@/lib/mcp-auth";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   let grantType = "authorization_code";
   let code = "";
+  let refreshTokenInput = "";
 
   const contentType = request.headers.get("content-type") || "";
 
@@ -13,10 +14,12 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     grantType = String(formData.get("grant_type") || "authorization_code");
     code = String(formData.get("code") || "");
+    refreshTokenInput = String(formData.get("refresh_token") || "");
   } else if (contentType.includes("application/json")) {
     const json = await request.json().catch(() => ({}));
     grantType = json.grant_type || "authorization_code";
     code = json.code || "";
+    refreshTokenInput = json.refresh_token || "";
   }
 
   let userId = "chatgpt-client";
@@ -28,7 +31,20 @@ export async function POST(request: Request) {
   let orgIds: string[] = [];
   let organizations: any[] = [];
 
-  if (code) {
+  if (grantType === "refresh_token" && refreshTokenInput) {
+    try {
+      const payload = await verifyMcpToken(refreshTokenInput);
+      if (payload) {
+        userId = String(payload.userId || payload.sub || userId);
+        name = String(payload.name || name);
+        email = String(payload.email || email);
+        role = String(payload.role || role);
+        orgId = String(payload.orgId || orgId);
+        orgSlug = String(payload.orgSlug || orgSlug);
+        if (Array.isArray(payload.orgIds)) orgIds = payload.orgIds as string[];
+      }
+    } catch {}
+  } else if (code) {
     try {
       const decoded = JSON.parse(Buffer.from(code, "base64url").toString("utf-8"));
       if (decoded.userId) userId = String(decoded.userId);
@@ -59,6 +75,7 @@ export async function POST(request: Request) {
       access_token: accessToken,
       token_type: "Bearer",
       expires_in: 2592000, // 30 days
+      refresh_token: accessToken,
       scope: "mcp:all",
       token: accessToken,
       orgId,
@@ -69,7 +86,7 @@ export async function POST(request: Request) {
     {
       headers: {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, x-mcp-key",
       },
     }
   );

@@ -10,6 +10,19 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, x-mcp-key, x-api-key",
 };
 
+function resolveBaseUrl(request: Request): string {
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const host = forwardedHost || request.headers.get("host") || "";
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  const proto = forwardedProto || (host.includes("localhost") ? "http" : "https");
+
+  if (host && !host.includes("localhost") && !host.startsWith("127.")) {
+    return `${proto}://${host}`;
+  }
+  const envUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL;
+  return (envUrl || "https://ledger.simulcast.com.np").replace(/\/$/, "");
+}
+
 /**
  * SSE Transport for Model Context Protocol (MCP 2024-11-05 standard)
  */
@@ -22,13 +35,14 @@ export async function GET(request: Request) {
     );
   }
 
+  const serverUrl = resolveBaseUrl(request);
   const encoder = new TextEncoder();
   const sessionId = `mcp_sess_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
 
   const stream = new ReadableStream({
     start(controller) {
-      // Send standard MCP endpoint event containing the URI where client posts JSON-RPC messages
-      controller.enqueue(encoder.encode(`event: endpoint\ndata: /api/mcp?sessionId=${sessionId}\n\n`));
+      // Send standard MCP endpoint event containing the full URI where client posts JSON-RPC messages
+      controller.enqueue(encoder.encode(`event: endpoint\ndata: ${serverUrl}/api/mcp?sessionId=${sessionId}\n\n`));
 
       // Heartbeat ping every 25 seconds to keep connection alive
       const interval = setInterval(() => {

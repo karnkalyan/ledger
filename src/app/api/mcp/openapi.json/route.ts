@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   const serverUrl = resolveBaseUrl(request);
 
   const openapiSpec = {
-    openapi: "3.1.0",
+    openapi: "3.0.3",
     info: {
       title: "Kashtrix ERP MCP & Ledger API",
       version: "1.0.0",
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
                   type: "object",
                   properties: {
                     jsonrpc: { type: "string", default: "2.0" },
-                    id: { type: ["string", "number"], default: 1 },
+                    id: { type: "string", default: "1" },
                     method: { type: "string", description: "tools/call or tools/list" },
                     params: { type: "object", description: "Method parameters" },
                   },
@@ -62,6 +62,18 @@ export async function GET(request: Request) {
           responses: {
             "200": {
               description: "JSON-RPC response",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      jsonrpc: { type: "string" },
+                      id: { type: "string" },
+                      result: { type: "object" },
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -83,6 +95,19 @@ export async function GET(request: Request) {
           responses: {
             "200": {
               description: "Live financial balance overview",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      success: { type: "boolean" },
+                      summary: { type: "object" },
+                      workspaceBreakdown: { type: "array", items: { type: "object" } },
+                      bankAccounts: { type: "array", items: { type: "object" } },
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -107,6 +132,19 @@ export async function GET(request: Request) {
           responses: {
             "200": {
               description: "Live financial balance overview",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      success: { type: "boolean" },
+                      summary: { type: "object" },
+                      workspaceBreakdown: { type: "array", items: { type: "object" } },
+                      bankAccounts: { type: "array", items: { type: "object" } },
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -147,7 +185,7 @@ export async function GET(request: Request) {
     headers: {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, x-mcp-key",
     },
   });
 }
@@ -158,7 +196,7 @@ export async function OPTIONS() {
     headers: {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, x-mcp-key",
     },
   });
 }
