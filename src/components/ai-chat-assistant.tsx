@@ -981,10 +981,10 @@ export function AiChatAssistant({
                 }}
               >
                 {[
-                  { label: "💰 Balances", prompt: "Show my liquid cash and bank balances" },
-                  { label: "📊 Expenses", prompt: "Show summary of recent expenses" },
-                  { label: "🧾 Invoices", prompt: "List unpaid invoices and dues" },
-                  { label: "📎 Statement Help", prompt: "How do I attach and auto-extract bank statements or bills?" },
+                  { label: "Balances", prompt: "Show my liquid cash and bank balances" },
+                  { label: "Expenses", prompt: "Show summary of recent expenses" },
+                  { label: "Invoices", prompt: "List unpaid invoices and dues" },
+                  { label: "Statement Help", prompt: "How do I attach and auto-extract bank statements or bills?" },
                 ].map((item) => (
                   <button
                     key={item.label}

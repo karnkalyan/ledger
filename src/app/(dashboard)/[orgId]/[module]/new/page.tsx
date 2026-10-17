@@ -170,7 +170,7 @@ export default async function NewEntryPage({params, searchParams}: {
                       id="isDirectorAccountCheckbox"
                       style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
                     />
-                    <span>💼 Categorize under Director Current Account ({entry.type === "record-deposit" ? "Capital Inflow / Loan" : "Personal Drawings"})</span>
+                    <span>Categorize under Director Current Account ({entry.type === "record-deposit" ? "Capital Inflow / Loan" : "Personal Drawings"})</span>
                   </label>
                   <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                     <label className="field" style={{ margin: 0 }}>

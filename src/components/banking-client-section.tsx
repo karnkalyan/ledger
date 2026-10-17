@@ -19,14 +19,12 @@ export function BankingClientSection({
   orgId,
   currency = "NPR",
   totalCount,
-  filterHrefBuilder,
 }: {
   accounts: BankAccountItem[];
   selectedAccountId: string;
   orgId: string;
   currency?: string;
   totalCount: number;
-  filterHrefBuilder: (params: { accountId?: string | null }) => string;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [targetBankAccountId, setTargetBankAccountId] = useState<string | undefined>(undefined);
@@ -113,7 +111,7 @@ export function BankingClientSection({
       >
         {accounts.map((acc) => {
           const isSelected = selectedAccountId === acc.id;
-          const href = filterHrefBuilder({ accountId: isSelected ? null : acc.id });
+          const href = acc.filterHref || `/${orgId}/banking${isSelected ? "" : `?accountId=${acc.id}`}`;
 
           return (
             <BankCardWidget

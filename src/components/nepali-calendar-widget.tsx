@@ -150,7 +150,7 @@ export function NepaliCalendarWidget() {
           </button>
         </div>
 
-        {/* Weekday headers */}
+        {/* Weekday headers - Sunday (0) and Saturday (6) are red (official weekend holidays) */}
         <div
           style={{
             display: "grid",
@@ -162,19 +162,23 @@ export function NepaliCalendarWidget() {
             color: "var(--text-muted)",
           }}
         >
-          {weekDaysShort.map((day, idx) => (
-            <div
-              key={idx}
-              style={{
-                height: 24,
-                display: "grid",
-                placeItems: "center",
-                color: idx === 6 ? "var(--danger, #ef4444)" : "var(--text-muted)",
-              }}
-            >
-              {day}
-            </div>
-          ))}
+          {weekDaysShort.map((day, idx) => {
+            const isWeekend = idx === 0 || idx === 6;
+            return (
+              <div
+                key={idx}
+                style={{
+                  height: 24,
+                  display: "grid",
+                  placeItems: "center",
+                  color: isWeekend ? "var(--danger, #ef4444)" : "var(--text-muted)",
+                  fontWeight: isWeekend ? 800 : 700,
+                }}
+              >
+                {day}
+              </div>
+            );
+          })}
         </div>
 
         {/* Grid of days */}
@@ -198,6 +202,10 @@ export function NepaliCalendarWidget() {
               todayDate?.month === viewMonth &&
               todayDate?.day === day;
 
+            // Day of week index (0 = Sunday, 6 = Saturday)
+            const dayOfWeek = (startDayIndex + day - 1) % 7;
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
             return (
               <div
                 key={day}
@@ -206,12 +214,25 @@ export function NepaliCalendarWidget() {
                   display: "grid",
                   placeItems: "center",
                   borderRadius: 4,
-                  fontWeight: isToday ? 800 : 500,
-                  background: isToday ? "var(--brand, #2563eb)" : "var(--soft)",
-                  color: isToday ? "#ffffff" : "var(--text)",
-                  border: isToday ? "1px solid var(--brand)" : "1px solid var(--line)",
+                  fontWeight: isToday ? 800 : isWeekend ? 700 : 500,
+                  background: isToday
+                    ? "var(--brand, #2563eb)"
+                    : isWeekend
+                    ? "rgba(239, 68, 68, 0.08)"
+                    : "var(--soft)",
+                  color: isToday
+                    ? "#ffffff"
+                    : isWeekend
+                    ? "var(--danger, #ef4444)"
+                    : "var(--text)",
+                  border: isToday
+                    ? "1px solid var(--brand)"
+                    : isWeekend
+                    ? "1px solid rgba(239, 68, 68, 0.25)"
+                    : "1px solid var(--line)",
                   transition: "background 0.15s ease",
                 }}
+                title={isWeekend ? `${day} (Weekend Holiday)` : undefined}
               >
                 {day}
               </div>

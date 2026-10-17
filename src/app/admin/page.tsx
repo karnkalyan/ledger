@@ -207,10 +207,10 @@ export default async function AdminVendorsPage({
       amount: Number(i.amount),
       channel:
         i.paymentMethod === "BANK" && i.bankAccount
-          ? `🏦 Bank: ${i.bankAccount.bankName}`
+          ? `Bank: ${i.bankAccount.bankName}`
           : i.paymentMethod === "CASH"
-          ? "💵 Cash in Hand"
-          : "🔄 Other Channel",
+          ? "Cash in Hand"
+          : "Other Channel",
       party: i.contact ? i.contact.companyName || i.contact.name : i.source || "—",
       editUrl: `/${i.organizationId}/income/${i.id}/edit`,
     }));
@@ -225,7 +225,7 @@ export default async function AdminVendorsPage({
       badgeCls: b.type === "DEPOSIT" ? "green" : "purple",
       title: b.description,
       amount: b.type === "DEPOSIT" ? Number(b.amount) : -Number(b.amount),
-      channel: `🏦 ${b.bankAccount.bankName} (${b.bankAccount.accountNumber})`,
+      channel: `${b.bankAccount.bankName} (${b.bankAccount.accountNumber})`,
       party: b.contact ? b.contact.companyName || b.contact.name : b.reference || "—",
       editUrl: `/${b.organizationId}/banking/${b.id}/edit`,
     }));

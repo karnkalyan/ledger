@@ -150,8 +150,8 @@ export function MobileMenuPageContent({
             icon: TrendingUp,
             subItems: [
               { label: "All Receipts", href: `/${orgId}/income` },
-              { label: "💵 Cash in Hand", href: `/${orgId}/income?channel=CASH` },
-              { label: "🏦 Bank Inflows", href: `/${orgId}/income?channel=BANK` },
+              { label: "Cash in Hand", href: `/${orgId}/income?channel=CASH` },
+              { label: "Bank Inflows", href: `/${orgId}/income?channel=BANK` },
               { label: "+ Record Income", href: `/${orgId}/income/new?type=record-income`, isCreate: true },
             ],
           },
@@ -425,11 +425,19 @@ export function MobileMenuPageContent({
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
           <div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
-              <span className="badge purple" style={{ fontSize: 10, textTransform: "uppercase", padding: "3px 8px" }}>
-                {kind === "COMPANY" ? "🏢 Commercial Enterprise" : "🏡 Household Suite"}
+              <span className="badge purple" style={{ fontSize: 10, textTransform: "uppercase", padding: "4px 8px", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                {kind === "COMPANY" ? (
+                  <>
+                    <Building2 size={12} /> Commercial Enterprise
+                  </>
+                ) : (
+                  <>
+                    <Home size={12} /> Household Suite
+                  </>
+                )}
               </span>
               {taxNumber && (
-                <span className="badge cyan" style={{ fontSize: 10, padding: "3px 8px" }}>
+                <span className="badge cyan" style={{ fontSize: 10, padding: "4px 8px" }}>
                   PAN/VAT: {taxNumber}
                 </span>
               )}

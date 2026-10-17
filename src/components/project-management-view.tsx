@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { money, shortDate } from "@/lib/format";
 import { ProjectModal } from "@/components/project-modal";
+import { ConfirmModal } from "@/components/confirm-modal";
 import { deleteProjectAction } from "@/app/(dashboard)/actions";
 import { toast } from "@/components/toast-provider";
 import { adToBs, formatBsDate } from "@/lib/nepali-calendar";
@@ -116,16 +117,40 @@ export function ProjectManagementView({
     return true;
   });
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete project "${name}"?`)) return;
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    id: string;
+    name: string;
+    loading: boolean;
+  }>({
+    isOpen: false,
+    id: "",
+    name: "",
+    loading: false,
+  });
+
+  const handleDelete = (id: string, name: string) => {
+    setDeleteConfirm({
+      isOpen: true,
+      id,
+      name,
+      loading: false,
+    });
+  };
+
+  const executeDeleteProject = async () => {
+    if (!deleteConfirm.id) return;
     try {
+      setDeleteConfirm((prev) => ({ ...prev, loading: true }));
       const fd = new FormData();
       fd.set("orgId", orgId);
-      fd.set("id", id);
+      fd.set("id", deleteConfirm.id);
       await deleteProjectAction(fd);
       toast.success("Project deleted successfully");
+      setDeleteConfirm({ isOpen: false, id: "", name: "", loading: false });
     } catch {
       toast.error("Failed to delete project");
+      setDeleteConfirm((prev) => ({ ...prev, loading: false }));
     }
   };
 
@@ -682,6 +707,19 @@ export function ProjectManagementView({
           </div>
         </div>
       )}
+
+      {/* Custom Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: "", name: "", loading: false })}
+        onConfirm={executeDeleteProject}
+        title="Delete Project"
+        message="Are you sure you want to permanently delete this project? Associated task associations and project logs may be affected."
+        itemLabel={deleteConfirm.name}
+        confirmLabel="Yes, Delete Project"
+        variant="danger"
+        isLoading={deleteConfirm.loading}
+      />
     </div>
   );
 }

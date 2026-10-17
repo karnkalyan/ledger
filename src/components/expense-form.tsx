@@ -233,7 +233,7 @@ export function ExpenseForm({
               onChange={(e) => setIsDirector(e.target.checked)}
               style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
             />
-            <span>💼 Director Current Account (Personal Drawings / Loan Outlay)</span>
+            <span>Director Current Account (Personal Drawings / Loan Outlay)</span>
           </label>
           {isDirector && (
             <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>

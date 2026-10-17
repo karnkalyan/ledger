@@ -177,7 +177,7 @@ export default async function EditDocumentPage({
                     defaultChecked={Boolean(expense.vendor?.toLowerCase().includes("director") || expense.notes?.toLowerCase().includes("director") || expense.title.toLowerCase().includes("director"))}
                     style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
                   />
-                  <span>💼 Director Current Account (Personal Drawings / Loan Outlay)</span>
+                  <span>Director Current Account (Personal Drawings / Loan Outlay)</span>
                 </label>
                 <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   <label className="field" style={{ margin: 0 }}>
@@ -300,9 +300,9 @@ export default async function EditDocumentPage({
               <label className="field">
                 <span className="field-label">Payment Channel / Reception Mode</span>
                 <select name="paymentMethod" defaultValue={income.paymentMethod || "CASH"}>
-                  <option value="CASH">💵 Cash in Hand (Physical Liquid Inflow)</option>
-                  <option value="BANK">🏦 Bank Account (Auto-updates Account Balance)</option>
-                  <option value="OTHER">🔄 Other Channel (Digital Wallet / Instrument)</option>
+                  <option value="CASH">Cash in Hand (Physical Liquid Inflow)</option>
+                  <option value="BANK">Bank Account (Auto-updates Account Balance)</option>
+                  <option value="OTHER">Other Channel (Digital Wallet / Instrument)</option>
                 </select>
               </label>
 

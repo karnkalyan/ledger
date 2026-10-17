@@ -22,6 +22,7 @@ import {
   deleteQuoteAction,
 } from "@/app/(dashboard)/actions";
 import { toast } from "@/components/toast-provider";
+import { ConfirmModal } from "@/components/confirm-modal";
 
 export interface ActionMenuItem {
   label: string;
@@ -70,6 +71,18 @@ export function RowActionMenu({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSoftDeleting, setIsSoftDeleting] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    type: "soft" | "hard";
+    title: string;
+    message: string;
+    itemLabel?: string;
+  }>({
+    isOpen: false,
+    type: "hard",
+    title: "",
+    message: "",
+  });
 
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -179,13 +192,20 @@ export function RowActionMenu({
     }
   };
 
-  const handleSoftDelete = async () => {
+  const openSoftDeleteModal = () => {
     if (!resource || isSoftDeleting) return;
-    const itemLabel = recordTitle ? ` "${recordTitle}"` : ` this ${resource}`;
-    const confirmed = window.confirm(
-      `Soft Delete: Are you sure you want to cancel / archive${itemLabel}?\n\nThe status will be marked as CANCELLED / INACTIVE.`
-    );
-    if (!confirmed) return;
+    setOpen(false);
+    setConfirmModal({
+      isOpen: true,
+      type: "soft",
+      title: "Archive / Soft Delete Record",
+      message: "Are you sure you want to cancel / archive this record? The status will be marked as CANCELLED or INACTIVE.",
+      itemLabel: recordTitle || `${resource} #${id.slice(-6)}`,
+    });
+  };
+
+  const executeSoftDelete = async () => {
+    if (!resource || isSoftDeleting) return;
 
     try {
       setIsSoftDeleting(true);
@@ -195,7 +215,7 @@ export function RowActionMenu({
       formData.set("id", id);
       await softDeleteRecordAction(formData);
       toast.success(`Record soft-deleted (status marked CANCELLED)`);
-      setOpen(false);
+      setConfirmModal((prev) => ({ ...prev, isOpen: false }));
       setStatusExpanded(false);
       router.refresh();
     } catch (err: any) {
@@ -205,14 +225,22 @@ export function RowActionMenu({
     }
   };
 
-  const handleHardDelete = async () => {
+  const openHardDeleteModal = () => {
     const targetResource = resource || deleteResource;
     if (!targetResource || isDeleting) return;
-    const itemLabel = recordTitle ? ` "${recordTitle}"` : ` this ${targetResource}`;
-    const confirmed = window.confirm(
-      `⚠️ PERMANENT HARD DELETE ⚠️\n\nAre you sure you want to PERMANENTLY delete${itemLabel}?\n\nThis will completely erase the record and any child entries from the database. This action CANNOT be undone.`
-    );
-    if (!confirmed) return;
+    setOpen(false);
+    setConfirmModal({
+      isOpen: true,
+      type: "hard",
+      title: "Permanent Hard Delete",
+      message: "Are you sure you want to PERMANENTLY delete this record? This will completely erase the entry and any child items from the database. This action CANNOT be undone.",
+      itemLabel: recordTitle || `${targetResource} #${id.slice(-6)}`,
+    });
+  };
+
+  const executeHardDelete = async () => {
+    const targetResource = resource || deleteResource;
+    if (!targetResource || isDeleting) return;
 
     try {
       setIsDeleting(true);
@@ -229,7 +257,7 @@ export function RowActionMenu({
         await hardDeleteRecordAction(formData);
       }
       toast.success("Record permanently deleted from database");
-      setOpen(false);
+      setConfirmModal((prev) => ({ ...prev, isOpen: false }));
       setStatusExpanded(false);
       router.refresh();
     } catch (err: any) {
@@ -403,7 +431,7 @@ export function RowActionMenu({
               <button
                 type="button"
                 className="row-action-dropdown-item warning"
-                onClick={handleSoftDelete}
+                onClick={openSoftDeleteModal}
                 disabled={isSoftDeleting || isDeleting}
                 title="Mark this record as Cancelled / Inactive"
               >
@@ -427,7 +455,7 @@ export function RowActionMenu({
               <button
                 type="button"
                 className="row-action-dropdown-item danger"
-                onClick={handleHardDelete}
+                onClick={openHardDeleteModal}
                 disabled={isDeleting || isSoftDeleting}
                 title="Permanently remove this record and child data from database"
               >
@@ -438,6 +466,21 @@ export function RowActionMenu({
           </div>,
           document.body
         )}
+
+      {/* CUSTOM CONFIRMATION MODAL (NO JAVASCRIPT BROWSER CONFIRM) */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.type === "soft" ? executeSoftDelete : executeHardDelete}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        itemLabel={confirmModal.itemLabel}
+        confirmLabel={
+          confirmModal.type === "soft" ? "Yes, Archive Record" : "Yes, Permanently Delete"
+        }
+        variant={confirmModal.type === "soft" ? "warning" : "danger"}
+        isLoading={isDeleting || isSoftDeleting}
+      />
     </div>
   );
 }

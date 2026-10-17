@@ -170,7 +170,7 @@ export function IncomeForm({
               </select>
             </label>
             <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 6 }}>
-              ✨ <strong>Auto-Reflect:</strong> This amount will automatically be recorded as a deposit in this bank account and update its ledger balance.
+              <strong>Auto-Reflect:</strong> This amount will automatically be recorded as a deposit in this bank account and update its ledger balance.
             </div>
           </div>
         )}
@@ -241,7 +241,7 @@ export function IncomeForm({
               }}
               style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
             />
-            <span>💼 Director Current Account (Capital Injection / Loan Inflow)</span>
+            <span>Director Current Account (Capital Injection / Loan Inflow)</span>
           </label>
           {isDirector && (
             <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>

@@ -1138,10 +1138,10 @@ export default async function ModulePage({
           description="Record client receipts, invoices, salaries, and cash inflows cleanly."
         >
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <Link href={"/" + orgId + "/banking/new?type=record-deposit"} className="secondary-btn">
-              🏦 Bank Deposit
+            <Link href={"/" + orgId + "/banking/new?type=record-deposit"} className="secondary-btn" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <Landmark size={14} /> Bank Deposit
             </Link>
-            <Link href={"/" + orgId + "/income/new?type=record-income"} className="success-btn">
+            <Link href={"/" + orgId + "/income/new?type=record-income"} className="success-btn" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
               <Plus size={14} /> Record Income
             </Link>
           </div>
@@ -1155,17 +1155,17 @@ export default async function ModulePage({
               meta: `${allItemsForKpi.length} total entries`,
             },
             {
-              label: "💵 Cash in Hand Receipts",
+              label: "Cash in Hand Receipts",
               value: money(cashInHandTotal, currency),
               meta: "Direct liquid cash inflows",
             },
             {
-              label: "🏦 Bank Account Inflows",
+              label: "Bank Account Inflows",
               value: money(bankAccountTotal, currency),
               meta: "Direct deposits to bank accounts",
             },
             {
-              label: "🔄 Other Channels",
+              label: "Other Channels",
               value: money(othersTotal, currency),
               meta: "Wallets / other instruments",
             },
@@ -1177,7 +1177,7 @@ export default async function ModulePage({
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <h3 style={{ margin: 0 }}>Income Inflows</h3>
               {activeFy && <span className="badge cyan">FY {activeFy.code}</span>}
-              <div style={{ display: "inline-flex", gap: 4, marginLeft: 10 }}>
+              <div style={{ display: "inline-flex", gap: 6, marginLeft: 10, flexWrap: "wrap" }}>
                 <Link
                   href={`/${orgId}/income`}
                   className={`filter-preset-chip ${channelFilter === "ALL" ? "active" : ""}`}
@@ -1188,23 +1188,23 @@ export default async function ModulePage({
                 <Link
                   href={`/${orgId}/income?channel=CASH`}
                   className={`filter-preset-chip ${channelFilter === "CASH" ? "active" : ""}`}
-                  style={{ fontSize: 11, padding: "3px 8px" }}
+                  style={{ fontSize: 11, padding: "3px 8px", display: "inline-flex", alignItems: "center", gap: 4 }}
                 >
-                  💵 Cash in Hand ({allItemsForKpi.filter((x) => resolveIncomeChannel(x, knownBankNames) === "CASH").length})
+                  <Banknote size={12} /> Cash in Hand ({allItemsForKpi.filter((x) => resolveIncomeChannel(x, knownBankNames) === "CASH").length})
                 </Link>
                 <Link
                   href={`/${orgId}/income?channel=BANK`}
                   className={`filter-preset-chip ${channelFilter === "BANK" ? "active" : ""}`}
-                  style={{ fontSize: 11, padding: "3px 8px" }}
+                  style={{ fontSize: 11, padding: "3px 8px", display: "inline-flex", alignItems: "center", gap: 4 }}
                 >
-                  🏦 Bank Account ({allItemsForKpi.filter((x) => resolveIncomeChannel(x, knownBankNames) === "BANK").length})
+                  <Landmark size={12} /> Bank Account ({allItemsForKpi.filter((x) => resolveIncomeChannel(x, knownBankNames) === "BANK").length})
                 </Link>
                 <Link
                   href={`/${orgId}/income?channel=OTHER`}
                   className={`filter-preset-chip ${channelFilter === "OTHER" ? "active" : ""}`}
-                  style={{ fontSize: 11, padding: "3px 8px" }}
+                  style={{ fontSize: 11, padding: "3px 8px", display: "inline-flex", alignItems: "center", gap: 4 }}
                 >
-                  🔄 Others ({allItemsForKpi.filter((x) => resolveIncomeChannel(x, knownBankNames) === "OTHER").length})
+                  <RefreshCw size={12} /> Others ({allItemsForKpi.filter((x) => resolveIncomeChannel(x, knownBankNames) === "OTHER").length})
                 </Link>
               </div>
             </div>
@@ -1249,16 +1249,16 @@ export default async function ModulePage({
                       </td>
                       <td data-label="Channel">
                         {ch === "BANK" ? (
-                          <span className="badge purple" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                            🏦 {x.bankAccount ? `${x.bankAccount.bankName} (${x.bankAccount.accountNumber})` : (x.source && x.source.toLowerCase().includes("bank") ? x.source : "Bank Account / Transfer")}
+                          <span className="badge purple" style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 9px", fontSize: 11, fontWeight: 700 }}>
+                            <Landmark size={13} /> {x.bankAccount ? `${x.bankAccount.bankName.toUpperCase()}` : (x.source && x.source.toLowerCase().includes("bank") ? x.source.toUpperCase() : "BANK ACCOUNT")}
                           </span>
                         ) : ch === "OTHER" ? (
-                          <span className="badge cyan" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                            🔄 Other Channel
+                          <span className="badge cyan" style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 9px", fontSize: 11, fontWeight: 700 }}>
+                            <RefreshCw size={13} /> OTHER CHANNEL
                           </span>
                         ) : (
-                          <span className="badge green" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                            💵 Cash in Hand
+                          <span className="badge green" style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 9px", fontSize: 11, fontWeight: 700 }}>
+                            <Banknote size={13} /> CASH IN HAND
                           </span>
                         )}
                       </td>
@@ -1432,22 +1432,25 @@ export default async function ModulePage({
 
         {/* Bank Account Interactive Cards & AI Statement Extraction */}
         <BankingClientSection
-          accounts={accounts.map((a) => ({
-            id: a.id,
-            bankName: a.bankName,
-            accountName: a.accountName,
-            accountNumber: a.accountNumber,
-            accountType: a.accountType,
-            branch: a.branch,
-            currency: a.currency,
-            currentBalance: Number(a.currentBalance),
-            _count: a._count,
-          }))}
+          accounts={accounts.map((a) => {
+            const isSelected = selectedAccountId === a.id;
+            return {
+              id: a.id,
+              bankName: a.bankName,
+              accountName: a.accountName,
+              accountNumber: a.accountNumber,
+              accountType: a.accountType,
+              branch: a.branch,
+              currency: a.currency,
+              currentBalance: Number(a.currentBalance),
+              _count: a._count,
+              filterHref: filterHref({ accountId: isSelected ? null : a.id }),
+            };
+          })}
           selectedAccountId={selectedAccountId}
           orgId={orgId}
           currency={currency}
           totalCount={totalCount}
-          filterHrefBuilder={filterHref}
         />
 
 
@@ -4853,15 +4856,15 @@ export default async function ModulePage({
                 }}
               >
                 <span style={{ fontWeight: 600, color: "var(--text-muted)" }}>Inflow Channels:</span>
-                <span className="badge green" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                  💵 Cash in Hand: <strong>{money(cashInHandIncome, currency)}</strong>
+                <span className="badge green" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700 }}>
+                  <Banknote size={13} /> Cash in Hand: <strong>{money(cashInHandIncome, currency)}</strong>
                 </span>
-                <span className="badge purple" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                  🏦 Bank Accounts: <strong>{money(bankIncome, currency)}</strong>
+                <span className="badge purple" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700 }}>
+                  <Landmark size={13} /> Bank Accounts: <strong>{money(bankIncome, currency)}</strong>
                 </span>
                 {otherIncome > 0 && (
-                  <span className="badge cyan" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                    🔄 Other Channels: <strong>{money(otherIncome, currency)}</strong>
+                  <span className="badge cyan" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700 }}>
+                    <RefreshCw size={13} /> Other Channels: <strong>{money(otherIncome, currency)}</strong>
                   </span>
                 )}
               </div>
@@ -4891,16 +4894,16 @@ export default async function ModulePage({
                       </td>
                       <td>
                         {resolveIncomeChannel(inc) === "BANK" ? (
-                          <span className="badge purple" style={{ fontSize: 10.5, display: "inline-flex", alignItems: "center", gap: 3 }}>
-                            🏦 {inc.bankAccount ? inc.bankAccount.bankName : (inc.source && inc.source.toLowerCase().includes("bank") ? inc.source : "Bank Account")}
+                          <span className="badge purple" style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                            <Landmark size={13} /> {inc.bankAccount ? inc.bankAccount.bankName.toUpperCase() : (inc.source && inc.source.toLowerCase().includes("bank") ? inc.source.toUpperCase() : "BANK ACCOUNT")}
                           </span>
                         ) : resolveIncomeChannel(inc) === "OTHER" ? (
-                          <span className="badge cyan" style={{ fontSize: 10.5, display: "inline-flex", alignItems: "center", gap: 3 }}>
-                            🔄 Other
+                          <span className="badge cyan" style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                            <RefreshCw size={13} /> OTHER
                           </span>
                         ) : (
-                          <span className="badge green" style={{ fontSize: 10.5, display: "inline-flex", alignItems: "center", gap: 3 }}>
-                            💵 Cash in Hand
+                          <span className="badge green" style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                            <Banknote size={13} /> CASH IN HAND
                           </span>
                         )}
                       </td>

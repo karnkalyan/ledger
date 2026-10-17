@@ -29,6 +29,7 @@ export interface BankAccountItem {
   _count?: {
     transactions: number;
   };
+  filterHref?: string;
 }
 
 export function formatAccountType(type?: string | null): string {

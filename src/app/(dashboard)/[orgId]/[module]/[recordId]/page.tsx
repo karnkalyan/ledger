@@ -1,7 +1,7 @@
 import { DataTable } from "@/components/data-table";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CheckCircle2, FileText, Edit3 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, FileText, Edit3, Landmark, Banknote, RefreshCw } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireOrganizationAccess } from "@/lib/session";
 import { money, shortDate } from "@/lib/format";
@@ -1467,15 +1467,17 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
                     </td>
                     <td data-label="Channel">
                       {resolveIncomeChannel(inc) === "BANK" ? (
-                        <span className="badge purple" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                          🏦 {inc.bankAccount ? `Bank: ${inc.bankAccount.bankName}` : (inc.source && inc.source.toLowerCase().includes("bank") ? inc.source : "Bank Account")}
+                        <span className="badge purple" style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 9px", fontSize: 11, fontWeight: 700 }}>
+                          <Landmark size={13} /> {inc.bankAccount ? `Bank: ${inc.bankAccount.bankName.toUpperCase()}` : (inc.source && inc.source.toLowerCase().includes("bank") ? inc.source.toUpperCase() : "BANK ACCOUNT")}
                         </span>
                       ) : resolveIncomeChannel(inc) === "CASH" ? (
-                        <span className="badge green" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                          💵 Cash in Hand
+                        <span className="badge green" style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 9px", fontSize: 11, fontWeight: 700 }}>
+                          <Banknote size={13} /> CASH IN HAND
                         </span>
                       ) : (
-                        <span className="badge cyan">🔄 {inc.paymentMethod || "Other"}</span>
+                        <span className="badge cyan" style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 9px", fontSize: 11, fontWeight: 700 }}>
+                          <RefreshCw size={13} /> {(inc.paymentMethod || "OTHER").toUpperCase()}
+                        </span>
                       )}
                     </td>
                     <td data-label="Source">{inc.source || "—"}</td>
