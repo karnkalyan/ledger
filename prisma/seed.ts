@@ -981,6 +981,8 @@ async function main() {
             source: "Siddhartha Bank Ltd (02017249683)",
             amount,
             receivedAt: txDate,
+            paymentMethod: "BANK",
+            bankAccountId: sBank.id,
             notes: `Bank ref: ${tx.reference || "N/A"}`,
           },
         });

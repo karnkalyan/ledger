@@ -41,17 +41,38 @@ export async function createExpenseAction(formData: FormData) {
   const entered = n(formData, "amount", 0);
   const formulaAmount = quantity * rate * days;
   const amount = entered > 0 ? entered : formulaAmount;
-  if (!s(formData,"title") || amount <= 0) return;
+  let title = s(formData,"title");
+  if (!title || amount <= 0) return;
+
+  const isDirectorAccount = s(formData, "isDirectorAccount") === "on" || s(formData, "isDirectorAccount") === "true";
+  const directorName = s(formData, "directorName") || "Director";
+  const directorTxType = s(formData, "directorTxType") || "DRAWINGS";
+
+  let vendor = s(formData, "vendor") || null;
+  let notes = s(formData, "notes") || null;
+
+  if (isDirectorAccount) {
+    if (!vendor) {
+      vendor = `Director: ${directorName}`;
+    }
+    const dirNote = `[Director Account: ${directorTxType} - ${directorName}]`;
+    notes = notes ? `${dirNote} ${notes}` : dirNote;
+    if (!title.toLowerCase().includes("director")) {
+      title = `${title} [Director: ${directorName}]`;
+    }
+  }
+
   const requestedCategory = s(formData,"categoryId");
   const categoryId = requestedCategory && await db.expenseCategory.findFirst({ where: { id: requestedCategory, organizationId: orgId }, select: { id: true } }) ? requestedCategory : null;
   await db.expense.create({ data: {
     organizationId: orgId,
     categoryId,
-    title: s(formData,"title"), vendor: s(formData,"vendor") || null,
+    title,
+    vendor,
     type: (s(formData,"type") || "ONE_TIME") as never,
     quantity: quantity || null, unit: s(formData,"unit") || null, unitRate: rate || null,
     daysCount: days || null, amount,
-    occurredAt: d(formData,"occurredAt") ?? new Date(), notes: s(formData,"notes") || null,
+    occurredAt: d(formData,"occurredAt") ?? new Date(), notes,
   }});
   refresh(orgId,"expenses");
 }
@@ -184,12 +205,36 @@ export async function createIncomeAction(formData: FormData) {
     : null;
   const contactId = validContact ? validContact.id : null;
 
-  const paymentMethod = (s(formData, "paymentMethod") || "CASH").toUpperCase();
   const rawBankAccountId = s(formData, "bankAccountId");
+  let paymentMethod = (s(formData, "paymentMethod") || "CASH").toUpperCase();
+  if (rawBankAccountId) {
+    paymentMethod = "BANK";
+  }
+
+  const isDirectorAccount = s(formData, "isDirectorAccount") === "on" || s(formData, "isDirectorAccount") === "true";
+  const directorName = s(formData, "directorName") || "Director";
+  const directorTxType = s(formData, "directorTxType") || "CAPITAL";
+
+  let source = s(formData, "source") || null;
+  if (!source && validContact) {
+    source = validContact.companyName || validContact.name;
+  }
+  if (isDirectorAccount && !source) {
+    source = `Director: ${directorName}`;
+  }
+
+  const receivedAt = d(formData, "receivedAt") ?? new Date();
+  let notes = s(formData, "notes") || null;
+  if (isDirectorAccount) {
+    const dirNote = `[Director Account: ${directorTxType} - ${directorName}]`;
+    notes = notes ? `${dirNote} ${notes}` : dirNote;
+  }
+
   let bankAccountId: string | null = null;
   let bankAccount = null;
 
-  if (paymentMethod === "BANK" && rawBankAccountId) {
+  if (rawBankAccountId) {
+    paymentMethod = "BANK";
     bankAccount = await db.bankAccount.findFirst({
       where: { id: rawBankAccountId, organizationId: orgId },
     });
@@ -197,13 +242,6 @@ export async function createIncomeAction(formData: FormData) {
       bankAccountId = bankAccount.id;
     }
   }
-
-  let source = s(formData, "source") || null;
-  if (!source && validContact) {
-    source = validContact.companyName || validContact.name;
-  }
-  const receivedAt = d(formData, "receivedAt") ?? new Date();
-  const notes = s(formData, "notes") || null;
 
   await db.$transaction(async (tx) => {
     const inc = await tx.income.create({
@@ -233,9 +271,11 @@ export async function createIncomeAction(formData: FormData) {
           type: "DEPOSIT",
           amount,
           balance: newBal,
-          description: `Income Receipt: ${title}`,
+          description: isDirectorAccount && !title.toLowerCase().includes("director")
+            ? `Income: ${title} [Director: ${directorName} - ${directorTxType}]`
+            : `Income Receipt: ${title}`,
           reference: source || (validContact ? (validContact.companyName || validContact.name) : null),
-          category: "Payment Received",
+          category: isDirectorAccount ? "Director Current Account (Inflow)" : "Payment Received",
           incomeId: inc.id,
           contactId,
         },
@@ -274,12 +314,15 @@ export async function updateIncomeAction(formData: FormData) {
     : null;
   const contactId = validContact ? validContact.id : null;
 
-  const paymentMethod = (s(formData, "paymentMethod") || "CASH").toUpperCase();
   const rawBankAccountId = s(formData, "bankAccountId");
+  let paymentMethod = (s(formData, "paymentMethod") || "CASH").toUpperCase();
+  if (rawBankAccountId) {
+    paymentMethod = "BANK";
+  }
   let bankAccountId: string | null = null;
   let targetBank = null;
 
-  if (paymentMethod === "BANK" && rawBankAccountId) {
+  if (rawBankAccountId) {
     targetBank = await db.bankAccount.findFirst({
       where: { id: rawBankAccountId, organizationId: orgId },
     });
@@ -712,6 +755,18 @@ export async function recordBankTransactionAction(formData: FormData) {
   const chequeNumber = s(formData, "chequeNumber") || null;
   const category = s(formData, "category") || null;
 
+  const isDirectorAccount = s(formData, "isDirectorAccount") === "on" || s(formData, "isDirectorAccount") === "true";
+  const directorName = s(formData, "directorName") || "Director";
+  const directorTxType = s(formData, "directorTxType") || (type === "DEPOSIT" ? "CAPITAL" : "DRAWINGS");
+
+  const effectiveCategory = isDirectorAccount
+    ? `Director: ${directorName} (${directorTxType === "CAPITAL" ? "Capital Inflow" : directorTxType === "DRAWINGS" ? "Personal Drawings" : directorTxType})`
+    : (category || (contactName ? `CRM: ${contactName}` : null));
+
+  const effectiveDescription = isDirectorAccount && !description.toLowerCase().includes("director")
+    ? `${description} [Director: ${directorName} - ${directorTxType}]`
+    : description;
+
   const curBal = Number(bankAccount.currentBalance);
   const newBal = type === "DEPOSIT" ? curBal + amount : curBal - amount;
 
@@ -723,14 +778,14 @@ export async function recordBankTransactionAction(formData: FormData) {
       const inc = await tx.income.create({
         data: {
           organizationId: orgId,
-          title: description,
-          source: contactName || customParty || `${bankAccount.bankName} (${bankAccount.accountNumber})`,
+          title: effectiveDescription,
+          source: isDirectorAccount ? `Director: ${directorName}` : (contactName || customParty || `${bankAccount.bankName} (${bankAccount.accountNumber})`),
           amount,
           receivedAt: txDate,
           paymentMethod: "BANK",
           bankAccountId,
           contactId,
-          notes: reference ? `Ref: ${reference}` : null,
+          notes: isDirectorAccount ? `[Director Account: ${directorTxType}] ${reference ? `Ref: ${reference}` : ""}`.trim() : (reference ? `Ref: ${reference}` : null),
         },
       });
       incomeId = inc.id;
@@ -738,12 +793,12 @@ export async function recordBankTransactionAction(formData: FormData) {
       const exp = await tx.expense.create({
         data: {
           organizationId: orgId,
-          title: description,
-          vendor: contactName || customParty || reference || bankAccount.bankName,
+          title: effectiveDescription,
+          vendor: isDirectorAccount ? `Director: ${directorName}` : (contactName || customParty || reference || bankAccount.bankName),
           type: "ONE_TIME",
           amount,
           occurredAt: txDate,
-          notes: chequeNumber ? `Cheque #${chequeNumber}` : null,
+          notes: isDirectorAccount ? `[Director Account: ${directorTxType}] ${chequeNumber ? `Cheque #${chequeNumber}` : ""}`.trim() : (chequeNumber ? `Cheque #${chequeNumber}` : null),
         },
       });
       expenseId = exp.id;
@@ -757,10 +812,10 @@ export async function recordBankTransactionAction(formData: FormData) {
         type,
         amount,
         balance: newBal,
-        description,
+        description: effectiveDescription,
         reference,
         chequeNumber,
-        category: category || (contactName ? `CRM: ${contactName}` : null),
+        category: effectiveCategory,
         contactId,
         incomeId,
         expenseId,

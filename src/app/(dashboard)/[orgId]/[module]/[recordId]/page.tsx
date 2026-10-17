@@ -10,6 +10,7 @@ import { convertQuoteToInvoiceAction, recordInvoicePaymentAction, updateStatusAc
 import { PrintButton } from "@/components/print-button";
 import { NepaliDatePicker } from "@/components/nepali-date-picker";
 import { LoanSettlementForm } from "@/components/loan-settlement-form";
+import { resolveIncomeChannel } from "../page";
 
 function Badge({ value }: { value: string }) {
   const v = value.toUpperCase();
@@ -1276,11 +1277,11 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
                       {inc.notes && <div className="table-sub">{inc.notes}</div>}
                     </td>
                     <td data-label="Channel">
-                      {inc.paymentMethod === "BANK" ? (
+                      {resolveIncomeChannel(inc) === "BANK" ? (
                         <span className="badge purple" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                          🏦 {inc.bankAccount ? `Bank: ${inc.bankAccount.bankName}` : "Bank Account"}
+                          🏦 {inc.bankAccount ? `Bank: ${inc.bankAccount.bankName}` : (inc.source && inc.source.toLowerCase().includes("bank") ? inc.source : "Bank Account")}
                         </span>
-                      ) : inc.paymentMethod === "CASH" ? (
+                      ) : resolveIncomeChannel(inc) === "CASH" ? (
                         <span className="badge green" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
                           💵 Cash in Hand
                         </span>

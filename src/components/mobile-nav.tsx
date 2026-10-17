@@ -237,7 +237,7 @@ export function MobileAppBottomNav({
         </div>
       )}
 
-      {/* MOBILE BOTTOM NAVIGATION BAR */}
+      {/* MOBILE BOTTOM NAVIGATION BAR (EXACTLY 5 SYMMETRIC SLOTS: 2 LEFT, CENTER +, 2 RIGHT) */}
       <nav
         className="mobile-app-bottom-bar"
         aria-label="Mobile Navigation"
@@ -258,7 +258,7 @@ export function MobileAppBottomNav({
           <span>Expenses</span>
         </Link>
 
-        {/* ELEVATED QUICK ADD BUTTON */}
+        {/* ELEVATED CENTER QUICK ADD BUTTON */}
         <button
           type="button"
           onClick={() => setQuickMenuOpen((prev) => !prev)}
@@ -269,32 +269,21 @@ export function MobileAppBottomNav({
         </button>
 
         <Link
-          href={`/${orgId}/income`}
-          className={`mobile-tab-btn ${isActive(`/${orgId}/income`) ? "active" : ""}`}
-        >
-          <TrendingUp size={20} />
-          <span>Income</span>
-        </Link>
-
-        <Link
           href={`/${orgId}/banking`}
-          className={`mobile-tab-btn ${isActive(`/${orgId}/banking`) ? "active" : ""}`}
+          className={`mobile-tab-btn ${isActive(`/${orgId}/banking`) || isActive(`/${orgId}/income`) ? "active" : ""}`}
         >
           <Landmark size={20} />
           <span>Banking</span>
         </Link>
 
-        {onOpenSidebar && (
-          <button
-            type="button"
-            onClick={onOpenSidebar}
-            className="mobile-tab-btn"
-            aria-label="Open full menu"
-          >
-            <Menu size={20} />
-            <span>Menu</span>
-          </button>
-        )}
+        <Link
+          href={`/${orgId}/menu`}
+          className={`mobile-tab-btn ${isActive(`/${orgId}/menu`) ? "active" : ""}`}
+          aria-label="Open module menu"
+        >
+          <Menu size={20} />
+          <span>Menu</span>
+        </Link>
       </nav>
     </>
   );

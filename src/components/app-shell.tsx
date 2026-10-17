@@ -65,14 +65,14 @@ export function AppShell({
       <div className="main-column">
         <header className="topbar">
           <div className="topbar-left">
-            <button
-              type="button"
+            <Link
+              href={`/${org.id}/menu`}
               className="mobile-menu-btn"
-              onClick={() => setSidebarOpen(true)}
-              aria-label="Open menu"
+              aria-label="Open menu page"
+              title="Open module menu"
             >
               <Menu size={18} />
-            </button>
+            </Link>
             <button
               type="button"
               className="ghost-btn icon-btn desktop-only"

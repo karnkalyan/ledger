@@ -161,6 +161,47 @@ export default async function NewEntryPage({params, searchParams}: {
                   <input name="partyName" placeholder="Client, Vendor, or Custom entity name" />
                 </label>
 
+                {/* DIRECTOR ACCOUNT CATEGORIZATION */}
+                <div className="field full" style={{ background: "var(--soft)", padding: "12px 14px", borderRadius: 8, border: "1px solid var(--line)" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600 }}>
+                    <input
+                      type="checkbox"
+                      name="isDirectorAccount"
+                      id="isDirectorAccountCheckbox"
+                      style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
+                    />
+                    <span>💼 Categorize under Director Current Account ({entry.type === "record-deposit" ? "Capital Inflow / Loan" : "Personal Drawings"})</span>
+                  </label>
+                  <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <label className="field" style={{ margin: 0 }}>
+                      <span className="field-label" style={{ fontSize: 11 }}>Director Name</span>
+                      <input
+                        name="directorName"
+                        defaultValue="Director"
+                        placeholder="Director Name"
+                      />
+                    </label>
+                    <label className="field" style={{ margin: 0 }}>
+                      <span className="field-label" style={{ fontSize: 11 }}>Director Transaction Type</span>
+                      <select name="directorTxType">
+                        {entry.type === "record-deposit" ? (
+                          <>
+                            <option value="CAPITAL">Director Capital Inflow</option>
+                            <option value="LOAN">Director Loan to Company</option>
+                            <option value="DRAWINGS_REPAYMENT">Director Drawings Repayment</option>
+                          </>
+                        ) : (
+                          <>
+                            <option value="DRAWINGS">Director Personal Drawings</option>
+                            <option value="REIMBURSEMENT">Loan Repayment / Reimbursement to Director</option>
+                            <option value="EXPENSE_ADVANCE">Director Advance</option>
+                          </>
+                        )}
+                      </select>
+                    </label>
+                  </div>
+                </div>
+
                 <label className="field full">
                   Description / Particulars
                   <input name="description" required placeholder={entry.type === "record-deposit" ? "Client payment / Cash deposit / Account remittance" : "Vendor payment / Office rent / Transfer"} />

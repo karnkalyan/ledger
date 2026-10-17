@@ -18,6 +18,7 @@ import {
   Globe,
   CheckSquare,
   Plus,
+  Menu,
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireOrganizationAccess } from "@/lib/session";
@@ -243,7 +244,43 @@ export default async function DashboardPage({
               <Plus size={13} /> Create Invoice
             </Link>
           )}
+          <Link
+            className="secondary-btn mobile-only"
+            href={`/${orgId}/menu`}
+            style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+          >
+            <Menu size={13} /> All Modules
+          </Link>
         </div>
+      </div>
+
+      {/* MOBILE DASHBOARD MODULES QUICK ACCESS BANNER */}
+      <div
+        className="mobile-only"
+        style={{
+          background: "linear-gradient(135deg, var(--soft) 0%, var(--surface) 100%)",
+          border: "1px solid var(--line)",
+          borderRadius: 12,
+          padding: "12px 14px",
+          marginBottom: 16,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 10,
+          boxShadow: "0 1px 4px rgba(0,0,0,0.03)",
+        }}
+      >
+        <div>
+          <strong style={{ fontSize: 13, display: "block" }}>📑 App Modules &amp; Sub-items Menu</strong>
+          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Browse commerce, banking, CRM &amp; utility pages cleanly</span>
+        </div>
+        <Link
+          href={`/${orgId}/menu`}
+          className="primary-btn"
+          style={{ fontSize: 11.5, padding: "6px 12px", whiteSpace: "nowrap", flexShrink: 0 }}
+        >
+          Open Menu →
+        </Link>
       </div>
 
       {/* TOP KPI CARDS */}

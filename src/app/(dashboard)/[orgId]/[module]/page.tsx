@@ -48,6 +48,7 @@ import { WalletManagementView } from "@/components/wallet-management-view";
 import { WorkLogManagementView } from "@/components/worklog-management-view";
 import { WorkLogModal } from "@/components/worklog-modal";
 import { ElectricityReadingForm } from "@/components/electricity-reading-form";
+import { MobileMenuPageContent } from "@/components/mobile-menu-page";
 import { cookies } from "next/headers";
 import { resolveActiveFiscalYear, buildFiscalYearFromStart } from "@/lib/fiscal-year";
 import {
@@ -71,7 +72,7 @@ import {
 } from "@/app/(dashboard)/actions";
 
 const officeOnly = new Set(["sales","purchase","stock","crm","leads","staff","payroll","leaves","invoices","quotes","licenses","projects","wallets","worklogs"]);
-const allModules = new Set(["sales","purchase","stock","crm","leads","staff","payroll","leaves","invoices","quotes","licenses","income","expenses","banking","bank","tasks","reminders","reports","loans","settings","projects","wallets","worklogs"]);
+const allModules = new Set(["sales","purchase","stock","crm","leads","staff","payroll","leaves","invoices","quotes","licenses","income","expenses","banking","bank","tasks","reminders","reports","loans","settings","projects","wallets","worklogs","menu"]);
 
 function highlightMatch(text: string | null | undefined, queryStr: string) {
   if (!text) return "";
@@ -94,6 +95,50 @@ function highlightMatch(text: string | null | undefined, queryStr: string) {
       )}
     </>
   );
+}
+
+export function resolveIncomeChannel(x: {
+  paymentMethod?: string | null;
+  bankAccountId?: string | null;
+  bankAccount?: any;
+  title?: string | null;
+  source?: string | null;
+}): "BANK" | "OTHER" | "CASH" {
+  if (x.paymentMethod === "BANK" || Boolean(x.bankAccountId) || Boolean(x.bankAccount)) {
+    return "BANK";
+  }
+  if (x.paymentMethod === "OTHER") {
+    return "OTHER";
+  }
+  const text = `${x.title || ""} ${x.source || ""}`.toLowerCase();
+  if (
+    text.includes("bank") ||
+    text.includes("nabil") ||
+    text.includes("siddhartha") ||
+    text.includes("fund trf") ||
+    text.includes("transfer") ||
+    text.includes("cheque") ||
+    text.includes("ips") ||
+    text.includes("connectips") ||
+    text.includes("fonepay") ||
+    text.includes("nic asia") ||
+    text.includes("global ime") ||
+    text.includes("prabhu") ||
+    text.includes("sanima") ||
+    text.includes("everest") ||
+    text.includes("machhapuchhre") ||
+    text.includes("rastriya") ||
+    text.includes("kumari") ||
+    text.includes("laxmi") ||
+    text.includes("deposit") ||
+    text.includes("wd:")
+  ) {
+    return "BANK";
+  }
+  if (text.includes("esewa") || text.includes("khalti") || text.includes("wallet")) {
+    return "OTHER";
+  }
+  return "CASH";
 }
 
 function Header({
@@ -230,9 +275,24 @@ export default async function ModulePage({
   const { orgId, module } = await params;
   const query = await searchParams;
   if (!allModules.has(module)) notFound();
-  const { organization } = await requireOrganizationAccess(orgId);
+  const { organization, user } = await requireOrganizationAccess(orgId);
   if (organization.kind !== "COMPANY" && officeOnly.has(module)) redirect(`/${orgId}`);
   const currency = organization.currency;
+
+  if (module === "menu") {
+    return (
+      <main className="page-wrap">
+        <MobileMenuPageContent
+          orgId={orgId}
+          orgName={organization.name}
+          kind={organization.kind}
+          taxNumber={organization.taxNumber}
+          currency={organization.currency}
+          userRole={user.role}
+        />
+      </main>
+    );
+  }
   const now = new Date();
   const ms = startOfMonth(now), me = endOfMonth(now);
 
@@ -998,21 +1058,34 @@ export default async function ModulePage({
 
   if (module === "income") {
     const channelFilter = (query.channel as string) || "ALL";
-    const incomeWhere: any = {
-      organizationId: orgId,
-      ...(activeFy ? { receivedAt: { gte: activeFy.startDate, lte: activeFy.endDate } } : {}),
-      ...(channelFilter === "CASH"
-        ? { paymentMethod: "CASH" }
-        : channelFilter === "BANK"
-        ? { paymentMethod: "BANK" }
-        : channelFilter === "OTHER"
-        ? { paymentMethod: "OTHER" }
-        : {}),
-    };
 
-    const [items, allItemsForKpi, agg] = await Promise.all([
+    // Auto-heal any existing bank-related incomes in DB that defaulted to CASH
+    try {
+      await (db.income as any).updateMany({
+        where: {
+          organizationId: orgId,
+          paymentMethod: { not: "BANK" },
+          OR: [
+            { bankAccountId: { not: null } },
+            { bankTransactions: { some: {} } },
+            { source: { contains: "Bank" } },
+            { source: { contains: "Siddhartha" } },
+            { source: { contains: "Nabil" } },
+            { title: { contains: "Fund Trf" } },
+            { title: { contains: "Bank" } },
+            { title: { contains: "WD:" } },
+          ],
+        },
+        data: { paymentMethod: "BANK" },
+      });
+    } catch (_) {}
+
+    const [rawItems, allItemsForKpi, agg] = await Promise.all([
       db.income.findMany({
-        where: incomeWhere,
+        where: {
+          organizationId: orgId,
+          ...(activeFy ? { receivedAt: { gte: activeFy.startDate, lte: activeFy.endDate } } : {}),
+        },
         include: { contact: true, bankAccount: true },
         orderBy: { receivedAt: "desc" },
       }),
@@ -1021,7 +1094,7 @@ export default async function ModulePage({
           organizationId: orgId,
           ...(activeFy ? { receivedAt: { gte: activeFy.startDate, lte: activeFy.endDate } } : {}),
         },
-        select: { amount: true, paymentMethod: true },
+        select: { id: true, amount: true, paymentMethod: true, bankAccountId: true, title: true, source: true },
       }),
       db.income.aggregate({
         where: {
@@ -1032,14 +1105,18 @@ export default async function ModulePage({
       }),
     ]);
 
+    const items = channelFilter === "ALL"
+      ? rawItems
+      : rawItems.filter((x) => resolveIncomeChannel(x) === channelFilter);
+
     const cashInHandTotal = allItemsForKpi
-      .filter((x) => (x.paymentMethod || "CASH") === "CASH")
+      .filter((x) => resolveIncomeChannel(x) === "CASH")
       .reduce((s, x) => s + Number(x.amount), 0);
     const bankAccountTotal = allItemsForKpi
-      .filter((x) => x.paymentMethod === "BANK")
+      .filter((x) => resolveIncomeChannel(x) === "BANK")
       .reduce((s, x) => s + Number(x.amount), 0);
     const othersTotal = allItemsForKpi
-      .filter((x) => x.paymentMethod === "OTHER")
+      .filter((x) => resolveIncomeChannel(x) === "OTHER")
       .reduce((s, x) => s + Number(x.amount), 0);
     const totalReceipts = allItemsForKpi.reduce((s, x) => s + Number(x.amount), 0);
 
@@ -1102,21 +1179,21 @@ export default async function ModulePage({
                   className={`filter-preset-chip ${channelFilter === "CASH" ? "active" : ""}`}
                   style={{ fontSize: 11, padding: "3px 8px" }}
                 >
-                  💵 Cash in Hand ({allItemsForKpi.filter((x) => (x.paymentMethod || "CASH") === "CASH").length})
+                  💵 Cash in Hand ({allItemsForKpi.filter((x) => resolveIncomeChannel(x) === "CASH").length})
                 </Link>
                 <Link
                   href={`/${orgId}/income?channel=BANK`}
                   className={`filter-preset-chip ${channelFilter === "BANK" ? "active" : ""}`}
                   style={{ fontSize: 11, padding: "3px 8px" }}
                 >
-                  🏦 Bank Account ({allItemsForKpi.filter((x) => x.paymentMethod === "BANK").length})
+                  🏦 Bank Account ({allItemsForKpi.filter((x) => resolveIncomeChannel(x) === "BANK").length})
                 </Link>
                 <Link
                   href={`/${orgId}/income?channel=OTHER`}
                   className={`filter-preset-chip ${channelFilter === "OTHER" ? "active" : ""}`}
                   style={{ fontSize: 11, padding: "3px 8px" }}
                 >
-                  🔄 Others ({allItemsForKpi.filter((x) => x.paymentMethod === "OTHER").length})
+                  🔄 Others ({allItemsForKpi.filter((x) => resolveIncomeChannel(x) === "OTHER").length})
                 </Link>
               </div>
             </div>
@@ -1138,40 +1215,42 @@ export default async function ModulePage({
                 </tr>
               </thead>
               <tbody>
-                {items.map((x) => (
-                  <tr key={x.id}>
-                    <td data-label="Date">
-                      <div>{formatBsDate(x.receivedAt)}</div>
-                      <div className="table-sub">{x.receivedAt.toISOString().slice(0, 10)} AD</div>
-                    </td>
-                    <td data-label="Title" className="table-title">
-                      <strong>{x.title}</strong>
-                      {x.notes && <div className="table-sub">{x.notes}</div>}
-                    </td>
-                    <td data-label="Payer">
-                      {x.contact ? (
-                        <Link href={`/${orgId}/crm/${x.contact.id}`} className="table-clickable-title">
-                          {x.contact.companyName || x.contact.name}
-                        </Link>
-                      ) : (
-                        x.source || "—"
-                      )}
-                    </td>
-                    <td data-label="Channel">
-                      {x.paymentMethod === "BANK" ? (
-                        <span className="badge purple" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                          🏦 {x.bankAccount ? `${x.bankAccount.bankName} (${x.bankAccount.accountNumber})` : "Bank Account"}
-                        </span>
-                      ) : x.paymentMethod === "OTHER" ? (
-                        <span className="badge cyan" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                          🔄 Other Channel
-                        </span>
-                      ) : (
-                        <span className="badge green" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                          💵 Cash in Hand
-                        </span>
-                      )}
-                    </td>
+                {items.map((x) => {
+                  const ch = resolveIncomeChannel(x);
+                  return (
+                    <tr key={x.id}>
+                      <td data-label="Date">
+                        <div>{formatBsDate(x.receivedAt)}</div>
+                        <div className="table-sub">{x.receivedAt.toISOString().slice(0, 10)} AD</div>
+                      </td>
+                      <td data-label="Title" className="table-title">
+                        <strong>{x.title}</strong>
+                        {x.notes && <div className="table-sub">{x.notes}</div>}
+                      </td>
+                      <td data-label="Payer">
+                        {x.contact ? (
+                          <Link href={`/${orgId}/crm/${x.contact.id}`} className="table-clickable-title">
+                            {x.contact.companyName || x.contact.name}
+                          </Link>
+                        ) : (
+                          x.source || "—"
+                        )}
+                      </td>
+                      <td data-label="Channel">
+                        {ch === "BANK" ? (
+                          <span className="badge purple" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                            🏦 {x.bankAccount ? `${x.bankAccount.bankName} (${x.bankAccount.accountNumber})` : (x.source && x.source.toLowerCase().includes("bank") ? x.source : "Bank Account / Transfer")}
+                          </span>
+                        ) : ch === "OTHER" ? (
+                          <span className="badge cyan" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                            🔄 Other Channel
+                          </span>
+                        ) : (
+                          <span className="badge green" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                            💵 Cash in Hand
+                          </span>
+                        )}
+                      </td>
                     <td data-label="Amount" className="amount-pos" style={{ textAlign: "right", fontWeight: 700 }}>
                       + {money(x.amount, currency)}
                     </td>
@@ -1186,7 +1265,8 @@ export default async function ModulePage({
                       />
                     </td>
                   </tr>
-                ))}
+                );
+              })}
                 {!items.length && (
                   <tr>
                     <td colSpan={6}>
@@ -4420,13 +4500,13 @@ export default async function ModulePage({
 
     const incomeTotal = incomes.reduce((s, x) => s + Number(x.amount), 0);
     const cashInHandIncome = incomes
-      .filter((i) => (i.paymentMethod || "CASH") === "CASH")
+      .filter((i) => resolveIncomeChannel(i) === "CASH")
       .reduce((s, x) => s + Number(x.amount), 0);
     const bankIncome = incomes
-      .filter((i) => i.paymentMethod === "BANK")
+      .filter((i) => resolveIncomeChannel(i) === "BANK")
       .reduce((s, x) => s + Number(x.amount), 0);
     const otherIncome = incomes
-      .filter((i) => i.paymentMethod === "OTHER")
+      .filter((i) => resolveIncomeChannel(i) === "OTHER")
       .reduce((s, x) => s + Number(x.amount), 0);
     const expenseTotal = expenses.reduce((s, x) => s + Number(x.amount), 0);
     const plannedCommitment = recurring.reduce((s, x) => s + estimateRecurringExpense(x, startDate), 0);
@@ -4869,11 +4949,11 @@ export default async function ModulePage({
                         {inc.notes && <div className="muted-text note-text">{inc.notes}</div>}
                       </td>
                       <td>
-                        {inc.paymentMethod === "BANK" ? (
+                        {resolveIncomeChannel(inc) === "BANK" ? (
                           <span className="badge purple" style={{ fontSize: 10.5, display: "inline-flex", alignItems: "center", gap: 3 }}>
-                            🏦 {inc.bankAccount ? inc.bankAccount.bankName : "Bank Account"}
+                            🏦 {inc.bankAccount ? inc.bankAccount.bankName : (inc.source && inc.source.toLowerCase().includes("bank") ? inc.source : "Bank Account")}
                           </span>
-                        ) : inc.paymentMethod === "OTHER" ? (
+                        ) : resolveIncomeChannel(inc) === "OTHER" ? (
                           <span className="badge cyan" style={{ fontSize: 10.5, display: "inline-flex", alignItems: "center", gap: 3 }}>
                             🔄 Other
                           </span>
