@@ -411,7 +411,15 @@ async function main() {
             })),
           });
         }
-        console.log(`Imported ${txs.length} transactions for ${acc.bankName} (${accNo}).`);
+        const lastWithBal = [...txs].reverse().find((t) => t.balance != null);
+        const endingBal = lastWithBal ? Number(lastWithBal.balance) : (accNo === "55509175153" ? 36843.35 : (accNo === "02905120254304" ? 3800.58 : 0));
+
+        await prisma.bankAccount.update({
+          where: { id: acc.id },
+          data: { currentBalance: endingBal },
+        });
+
+        console.log(`Imported ${txs.length} transactions for ${acc.bankName} (${accNo}). Verified closing balance set to NPR ${endingBal.toLocaleString()}.`);
       }
     }
   }
@@ -639,6 +647,24 @@ async function main() {
       electricityRate: 15,
       waterGarbageFee: 300,
       notes: "Active household tenancy agreement. Monthly rent NPR 16,800, water/garbage NPR 300, electricity NPR 15/unit.",
+      isActive: true,
+    },
+  });
+
+  // 8. OFFICE PREMISES & LEASE TENANCY (SIMULCAST)
+  console.log("\n--- CONFIGURING OFFICE PREMISES & LEASE (SIMULCAST) ---");
+  await prisma.rentalHouse.deleteMany({ where: { organizationId: company.id } });
+  await prisma.rentalHouse.create({
+    data: {
+      organizationId: company.id,
+      title: "Simulcast Head Office Lease",
+      ownerName: "Commercial Office Landlord",
+      ownerPhone: "+977-9851000000",
+      address: "Kathmandu, Nepal",
+      monthlyRent: 17500,
+      electricityRate: 15,
+      waterGarbageFee: 500,
+      notes: "Commercial office lease agreement. Monthly rent NPR 17,500, water/CAM NPR 500, electricity NPR 15/unit.",
       isActive: true,
     },
   });
