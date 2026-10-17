@@ -1,21 +1,21 @@
 services:
-  mediko:
+  flowledger:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: mediko_app
+    container_name: flowledger_app
     restart: unless-stopped
     ports:
-      - "${PORT:-3081}:${PORT:-3081}"
+      - "${PORT:-3080}:${PORT:-3080}"
     environment:
       NODE_ENV: production
-      DATABASE_URL: ${DATABASE_URL:-mysql://root:quantumSql%40123@host.docker.internal:3306/medico}
+      DATABASE_URL: ${DATABASE_URL:-mysql://root:quantumSql%40123@host.docker.internal:3306/ledger}
       AUTH_SECRET: ${AUTH_SECRET:-eFRIxdl2TCtTV0MJKnbaakG6Hhnav9tWadtiefwooXWqfwFVVHzuiRZggP4ZY7O4}
       CRON_SECRET: ${CRON_SECRET:-63EWQf3Ttdf-UW9OoID6fGHC2J4JZ32-lSkHqY-sA0QZvFtw_dYsJHybCgDMC2DL}
-      SEED_ON_STARTUP: ${SEED_ON_STARTUP:-true}
-      PORT: ${PORT:-3081}
-      APP_URL: ${APP_URL:-https://mediko.simulcast.com.np}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://mediko.simulcast.com.np}
+      SEED_ON_STARTUP: ${SEED_ON_STARTUP:-false}
+      PORT: ${PORT:-3080}
+      APP_URL: ${APP_URL:-https://ledger.simulcast.com.np}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://ledger.simulcast.com.np}
     extra_hosts:
       # Allows the container to resolve host.docker.internal to the VPS host where MySQL is running
       - "host.docker.internal:host-gateway"
