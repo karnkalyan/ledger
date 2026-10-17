@@ -14,8 +14,8 @@ services:
       CRON_SECRET: ${CRON_SECRET:-63EWQf3Ttdf-UW9OoID6fGHC2J4JZ32-lSkHqY-sA0QZvFtw_dYsJHybCgDMC2DL}
       SEED_ON_STARTUP: ${SEED_ON_STARTUP:-false}
       PORT: ${PORT:-3080}
-      APP_URL: ${APP_URL:-https://leader.simulcast.com.np}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://leader.simulcast.com.np}
+      APP_URL: ${APP_URL:-https://ledger.simulcast.com.np}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://ledger.simulcast.com.np}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       MCP_API_KEY: ${MCP_API_KEY:-2b533bcb16c0ea4d2439039ed9d81a3e33ac0964207b34fb2bea14a8f096561f}
       MCP_JWT_SECRET: ${MCP_JWT_SECRET:-xC19T5q1-MrjBY4VmMNkYtwLfsKK7n4MZbO3B3oShy14Nt2iXzTwaQos2wVj-r6N}
