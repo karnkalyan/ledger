@@ -71,11 +71,39 @@ export async function createExpenseAction(formData: FormData) {
 
   await db.$transaction(async (tx) => {
     let targetBank = null;
+    const walletProvider = s(formData, "walletProvider") || "eSewa";
+    const walletId = s(formData, "walletId");
+
     if (paymentMethod === "BANK" && rawBankAccountId) {
       targetBank = await tx.bankAccount.findFirst({
         where: { id: rawBankAccountId, organizationId: orgId },
       });
+    } else if (paymentMethod === "WALLET") {
+      targetBank = await tx.bankAccount.findFirst({
+        where: {
+          organizationId: orgId,
+          OR: [
+            { bankName: { contains: walletProvider } },
+            { accountType: "DIGITAL_WALLET" },
+          ],
+        },
+      });
+    } else if (paymentMethod === "CASH") {
+      targetBank = await tx.bankAccount.findFirst({
+        where: {
+          organizationId: orgId,
+          OR: [
+            { accountType: "CASH" },
+            { accountNumber: "CASH-IN-HAND" },
+            { bankName: { contains: "Cash" } },
+          ],
+        },
+      });
     }
+
+    const expNotes = notes
+      ? `${notes}${paymentMethod === "WALLET" ? ` [Paid via Wallet: ${walletProvider}${walletId ? ` - ${walletId}` : ""}]` : paymentMethod === "BANK" ? ` [Paid via: BANK${targetBank ? ` - ${targetBank.bankName}` : ""}]` : " [Paid via Cash in Hand]"}`
+      : (paymentMethod === "WALLET" ? `[Paid via Wallet: ${walletProvider}${walletId ? ` - ${walletId}` : ""}]` : paymentMethod === "BANK" ? `[Paid via: BANK${targetBank ? ` - ${targetBank.bankName}` : ""}]` : "[Paid via Cash in Hand]");
 
     const exp = await tx.expense.create({
       data: {
@@ -90,11 +118,11 @@ export async function createExpenseAction(formData: FormData) {
         daysCount: days || null,
         amount,
         occurredAt,
-        notes: notes ? `${notes}${paymentMethod !== "CASH" ? ` [Paid via: ${paymentMethod}${targetBank ? ` - ${targetBank.bankName}` : ""}]` : " [Paid via Cash in Hand]"}` : (paymentMethod !== "CASH" ? `[Paid via: ${paymentMethod}${targetBank ? ` - ${targetBank.bankName}` : ""}]` : "[Paid via Cash in Hand]"),
+        notes: expNotes,
       },
     });
 
-    // If paid via bank, create linked bank transaction and deduct balance
+    // If linked to bank, wallet, or cash account, create linked bank transaction and deduct balance
     if (targetBank) {
       const curBal = Number(targetBank.currentBalance);
       const newBal = curBal - amount;
@@ -107,7 +135,7 @@ export async function createExpenseAction(formData: FormData) {
           amount,
           balance: newBal,
           description: `Expense: ${title}`,
-          reference: vendor || null,
+          reference: vendor || walletId || null,
           category: isDirectorAccount ? "Director Drawings" : (requestedCategory ? "Operational Expense" : "Direct Expense"),
           expenseId: exp.id,
         },
@@ -941,28 +969,153 @@ export async function recordBankTransactionAction(formData: FormData) {
       });
       incomeId = inc.id;
     } else if (isTransfer) {
-      // INTERNAL TRANSFER / CONTRA ENTRY (Bank -> Cash in Hand / ATM or Wallet)
-      // Do NOT create an Expense record here! Creating an expense here would double count expenses
-      // when the user subsequently records purchases made with this cash or wallet funds.
-      // Instead, record an inflow into Cash in Hand / Digital Wallet so liquidity reflects properly!
+      // INTERNAL ACCOUNTING / CONTRA ENTRY (Bank -> Cash in Hand / ATM or Wallet)
+      // Pure asset transfer: Strictly NEITHER an Expense NOR an Income in the P&L!
+      // Only subsequent spending from the wallet or cash records an actual Expense.
+      incomeId = null;
+      expenseId = null;
+
       const targetChannel = transferTarget === "ESEWA" || description.toLowerCase().includes("esewa")
         ? "ESEWA"
         : transferTarget === "KHALTI" || description.toLowerCase().includes("khalti")
         ? "KHALTI"
+        : transferTarget === "OTHER_WALLET"
+        ? "OTHER_WALLET"
         : "CASH";
 
-      const transferInc = await tx.income.create({
+      let destAccount = null;
+      if (targetChannel === "CASH") {
+        destAccount = await tx.bankAccount.findFirst({
+          where: {
+            organizationId: orgId,
+            OR: [
+              { accountType: "CASH" },
+              { accountNumber: "CASH-IN-HAND" },
+              { bankName: { contains: "Cash" } },
+            ],
+          },
+        });
+        if (!destAccount) {
+          destAccount = await tx.bankAccount.create({
+            data: {
+              organizationId: orgId,
+              bankName: "Cash in Hand",
+              accountName: "Cash in Hand / Petty Cash",
+              accountNumber: "CASH-IN-HAND",
+              accountType: "CASH",
+              currency: bankAccount.currency || "NPR",
+              openingBalance: 0,
+              currentBalance: 0,
+              isActive: true,
+            },
+          });
+        }
+      } else if (targetChannel === "ESEWA") {
+        destAccount = await tx.bankAccount.findFirst({
+          where: {
+            organizationId: orgId,
+            OR: [
+              { accountNumber: "ESEWA-WALLET" },
+              { bankName: { contains: "eSewa" } },
+            ],
+          },
+        });
+        if (!destAccount) {
+          destAccount = await tx.bankAccount.create({
+            data: {
+              organizationId: orgId,
+              bankName: "eSewa Wallet",
+              accountName: "eSewa Digital Wallet",
+              accountNumber: "ESEWA-WALLET",
+              accountType: "DIGITAL_WALLET",
+              currency: bankAccount.currency || "NPR",
+              openingBalance: 0,
+              currentBalance: 0,
+              isActive: true,
+            },
+          });
+        }
+      } else if (targetChannel === "KHALTI") {
+        destAccount = await tx.bankAccount.findFirst({
+          where: {
+            organizationId: orgId,
+            OR: [
+              { accountNumber: "KHALTI-WALLET" },
+              { bankName: { contains: "Khalti" } },
+            ],
+          },
+        });
+        if (!destAccount) {
+          destAccount = await tx.bankAccount.create({
+            data: {
+              organizationId: orgId,
+              bankName: "Khalti Wallet",
+              accountName: "Khalti Digital Wallet",
+              accountNumber: "KHALTI-WALLET",
+              accountType: "DIGITAL_WALLET",
+              currency: bankAccount.currency || "NPR",
+              openingBalance: 0,
+              currentBalance: 0,
+              isActive: true,
+            },
+          });
+        }
+      } else {
+        destAccount = await tx.bankAccount.findFirst({
+          where: {
+            organizationId: orgId,
+            accountType: "DIGITAL_WALLET",
+          },
+        });
+        if (!destAccount) {
+          destAccount = await tx.bankAccount.create({
+            data: {
+              organizationId: orgId,
+              bankName: "Digital Wallet",
+              accountName: "Personal Digital Wallet",
+              accountNumber: "DIGITAL-WALLET",
+              accountType: "DIGITAL_WALLET",
+              currency: bankAccount.currency || "NPR",
+              openingBalance: 0,
+              currentBalance: 0,
+              isActive: true,
+            },
+          });
+        }
+      }
+
+      // Credit destination account and log reciprocal deposit transaction (internal contra, no P&L impact)
+      const destCurBal = Number(destAccount.currentBalance);
+      const destNewBal = destCurBal + amount;
+      await tx.bankAccount.update({
+        where: { id: destAccount.id },
+        data: { currentBalance: destNewBal },
+      });
+
+      await tx.bankTransaction.create({
         data: {
           organizationId: orgId,
-          title: `Internal Transfer: ${effectiveDescription} (from ${bankAccount.bankName})`,
-          source: `Bank Withdrawal: ${bankAccount.bankName}`,
+          bankAccountId: destAccount.id,
+          transactionDate: txDate,
+          type: "DEPOSIT",
           amount,
-          receivedAt: txDate,
-          paymentMethod: targetChannel === "CASH" ? "CASH" : "OTHER",
-          notes: `Internal transfer / ATM withdrawal from Bank A/C ${bankAccount.accountNumber}. Available for market expenses without double-counting.`,
+          balance: destNewBal,
+          description: `Internal Transfer from ${bankAccount.bankName} (${bankAccount.accountNumber})`,
+          reference: reference || `TRF-FROM-${bankAccount.accountNumber.slice(-4)}`,
+          category: "Internal Transfer",
+          contactId,
+          incomeId: null,
+          expenseId: null,
         },
       });
-      incomeId = transferInc.id;
+
+      // Purge any legacy pseudo-income rows if previously created
+      await tx.income.deleteMany({
+        where: {
+          organizationId: orgId,
+          title: { startsWith: "Internal Transfer:" },
+        },
+      });
     } else {
       const exp = await tx.expense.create({
         data: {
@@ -986,7 +1139,7 @@ export async function recordBankTransactionAction(formData: FormData) {
         type,
         amount,
         balance: newBal,
-        description: effectiveDescription,
+        description: isTransfer ? `Internal Transfer to ${effectiveCategory}: ${description}` : effectiveDescription,
         reference,
         chequeNumber,
         category: effectiveCategory,

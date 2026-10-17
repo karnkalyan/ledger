@@ -56,7 +56,12 @@ export default async function NewEntryPage({params, searchParams}: {
   module === "expenses" ? db.income.aggregate({where:{organizationId:orgId, paymentMethod:"CASH"}, _sum:{amount:true}}) : Promise.resolve({_sum:{amount:null}}),
   module === "expenses" ? db.expense.aggregate({where:{organizationId:orgId, notes:{contains:"Cash in Hand"}, isEstimated:false}, _sum:{amount:true}}) : Promise.resolve({_sum:{amount:null}}),
  ]);
- const cashInHandBalance = Math.max(0, Number(cashIncomeAgg._sum.amount || 0) - Number(cashExpenseAgg._sum.amount || 0));
+ const cashAccount = bankAccounts.find(
+  (b) => b.accountType === "CASH" || b.accountNumber === "CASH-IN-HAND" || b.bankName.toLowerCase().includes("cash")
+ );
+ const cashInHandBalance = cashAccount
+  ? Math.max(0, Number(cashAccount.currentBalance || 0))
+  : Math.max(0, Number(cashIncomeAgg._sum.amount || 0) - Number(cashExpenseAgg._sum.amount || 0));
  const products = rawProducts.map(p => ({id:p.id,name:p.name,sku:p.sku,salePrice:Number(p.salePrice),purchasePrice:Number(p.purchasePrice)}));
  let form: React.ReactNode;
  switch(entry.type) {

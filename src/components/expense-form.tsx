@@ -216,26 +216,53 @@ export function ExpenseForm({
               )}
 
               {paymentMethod === "WALLET" && (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
-                  <label className="field" style={{ margin: 0 }}>
-                    <span className="field-label" style={{ fontSize: 11 }}>Digital Wallet Name</span>
-                    <select
-                      name="walletProvider"
-                      value={walletName}
-                      onChange={(e) => setWalletName(e.target.value)}
-                    >
-                      <option value="eSewa">eSewa Wallet</option>
-                      <option value="Khalti">Khalti Digital Wallet</option>
-                      <option value="IME Pay">IME Pay</option>
-                      <option value="Prabhu Pay">Prabhu Pay</option>
-                      <option value="Other">Other Wallet</option>
-                    </select>
-                  </label>
-                  <label className="field" style={{ margin: 0 }}>
-                    <span className="field-label" style={{ fontSize: 11 }}>Wallet ID / Linked Mobile</span>
-                    <input name="walletId" placeholder="98XXXXXXXX" />
-                  </label>
-                </div>
+                <>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+                    <label className="field" style={{ margin: 0 }}>
+                      <span className="field-label" style={{ fontSize: 11 }}>Digital Wallet Name</span>
+                      <select
+                        name="walletProvider"
+                        value={walletName}
+                        onChange={(e) => setWalletName(e.target.value)}
+                      >
+                        <option value="eSewa">eSewa Wallet</option>
+                        <option value="Khalti">Khalti Digital Wallet</option>
+                        <option value="IME Pay">IME Pay</option>
+                        <option value="Prabhu Pay">Prabhu Pay</option>
+                        <option value="Other">Other Wallet</option>
+                      </select>
+                    </label>
+                    <label className="field" style={{ margin: 0 }}>
+                      <span className="field-label" style={{ fontSize: 11 }}>Wallet ID / Linked Mobile</span>
+                      <input name="walletId" placeholder="98XXXXXXXX" />
+                    </label>
+                  </div>
+                  {(() => {
+                    const matchedWallet = bankAccounts.find(
+                      (b) => b.bankName.toLowerCase().includes(walletName.toLowerCase()) ||
+                             (b.accountType === "DIGITAL_WALLET" && b.bankName.toLowerCase().includes(walletName.toLowerCase()))
+                    );
+                    const bal = matchedWallet ? Number(matchedWallet.currentBalance || 0) : null;
+                    return (
+                      <div style={{ marginTop: 6, fontSize: 11.5, color: "var(--text-secondary)" }}>
+                        {matchedWallet ? (
+                          <span>
+                            Tracked Wallet Balance: <strong style={{ color: bal && bal > 0 ? "var(--green)" : "var(--amber)" }}>NPR {bal?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
+                            {bal !== null && bal < finalAmount && finalAmount > 0 && (
+                              <span style={{ color: "var(--danger)", marginLeft: 8 }}>
+                                (⚠️ Low balance — transfer from Bank to Wallet if needed)
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          <span style={{ color: "var(--text-muted)" }}>
+                            Tip: Transfer funds from your Bank Account to {walletName} via Banking to track live wallet balance.
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </>
               )}
 
               {/* Insufficient Cash in Hand Warning / Guidance */}
