@@ -437,3 +437,109 @@ export function formatBsDate(date: Date | string | null | undefined, includeDayO
   }
   return `${bs.day} ${bs.monthName} ${bs.year} BS`;
 }
+
+/**
+ * Dynamically resolves any period input (e.g. "ashoj", "ashwin 2083", "2083-06", "today")
+ * into precise Gregorian (AD) Date range without any hardcoded dates.
+ */
+export function resolveNepaliPeriodToAdRange(input?: string | null): {
+  startDate?: Date;
+  endDate?: Date;
+  label: string;
+} {
+  if (!input || !input.trim() || input.trim().toLowerCase() === "all") {
+    return { label: "All Transactions" };
+  }
+
+  const s = input.trim().toLowerCase();
+
+  if (s === "today") {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    return { startDate: start, endDate: end, label: `Today (${now.toISOString().slice(0, 10)})` };
+  }
+
+  // Derive current BS year dynamically from today's date
+  const currentBs = adToBs(new Date());
+  let targetYear = currentBs.year;
+
+  // Extract 4-digit BS year if provided in query string (e.g. 2080-2090)
+  const yearMatch = s.match(/\b(20[7-9]\d)\b/);
+  if (yearMatch) {
+    targetYear = parseInt(yearMatch[1], 10);
+  }
+
+  let targetMonth: number | null = null;
+  const namedMonths: Array<[string, number]> = [
+    ["baishakh", 1], ["baisakh", 1],
+    ["jestha", 2], ["jeth", 2],
+    ["ashadh", 3], ["asar", 3], ["asad", 3],
+    ["shrawan", 4], ["saun", 4], ["sawan", 4],
+    ["bhadra", 5], ["bhadau", 5], ["bhadon", 5],
+    ["ashwin", 6], ["ashoj", 6], ["asoj", 6],
+    ["kartik", 7], ["katik", 7],
+    ["mangsir", 8], ["marga", 8],
+    ["poush", 9], ["paush", 9], ["pus", 9],
+    ["magh", 10],
+    ["falgun", 11], ["phagun", 11],
+    ["chaitra", 12], ["chait", 12],
+  ];
+
+  for (const [name, num] of namedMonths) {
+    if (s.includes(name)) {
+      targetMonth = num;
+      break;
+    }
+  }
+
+  // Check if string matches "YYYY-MM" (e.g. "2083-06" or "2026-10")
+  const dashMatch = s.match(/(\d{4})-(\d{1,2})/);
+  if (dashMatch) {
+    const y = parseInt(dashMatch[1], 10);
+    const m = parseInt(dashMatch[2], 10);
+    if (y >= 2070 && y <= 2100 && m >= 1 && m <= 12) {
+      targetYear = y;
+      targetMonth = m;
+    } else if (y >= 2020 && y <= 2040 && m >= 1 && m <= 12) {
+      const startDate = new Date(Date.UTC(y, m - 1, 1, 0, 0, 0));
+      const lastDay = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999));
+      return {
+        startDate,
+        endDate: lastDay,
+        label: `${y}-${String(m).padStart(2, "0")} AD`,
+      };
+    }
+  }
+
+  // If still not matched, check standalone month number 01-12
+  if (targetMonth === null) {
+    const numMatch = s.match(/\b(0?[1-9]|1[0-2])\b/);
+    if (numMatch && (!yearMatch || yearMatch[1] !== numMatch[1])) {
+      targetMonth = parseInt(numMatch[1], 10);
+    }
+  }
+
+  if (targetMonth !== null && targetMonth >= 1 && targetMonth <= 12) {
+    const totalDaysInMonth = getDaysInBsMonth(targetYear, targetMonth);
+
+    const startAd = bsToAd(targetYear, targetMonth, 1);
+    const endAd = bsToAd(targetYear, targetMonth, totalDaysInMonth);
+
+    // Set to boundary of start day and end day
+    const startDate = new Date(startAd.getFullYear(), startAd.getMonth(), startAd.getDate(), 0, 0, 0, 0);
+    const endDate = new Date(endAd.getFullYear(), endAd.getMonth(), endAd.getDate(), 23, 59, 59, 999);
+
+    const monthNameEn = NEPALI_MONTHS_EN[targetMonth - 1];
+    const monthNameNe = NEPALI_MONTHS_NE[targetMonth - 1];
+
+    return {
+      startDate,
+      endDate,
+      label: `${monthNameEn} ${targetYear} BS (${monthNameNe} ${targetYear})`,
+    };
+  }
+
+  return { label: input };
+}
+

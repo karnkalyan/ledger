@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verifyMcpAuth, resolveOrgFilter } from "@/lib/mcp-auth";
+import { resolveNepaliPeriodToAdRange } from "@/lib/nepali-calendar";
 
 export const dynamic = "force-dynamic";
 
@@ -51,45 +52,11 @@ async function handleTransactions(request: Request) {
     } catch {}
   }
 
-  // 1. Resolve date window
-  let startDate: Date | undefined;
-  let endDate: Date | undefined;
-  let humanPeriod = "All Historical Transactions";
-
-  const mLower = monthParam.trim().toLowerCase();
-  if (mLower.includes("ashoj") || mLower.includes("asoj") || mLower.includes("ashwin") || mLower === "2083-06" || mLower === "06") {
-    // Ashoj 2083 BS = approx Sep 17, 2026 - Oct 17, 2026
-    startDate = new Date("2026-09-15T00:00:00.000Z");
-    endDate = new Date("2026-10-18T23:59:59.999Z");
-    humanPeriod = "Ashoj 2083 BS (असोज २०८३ / Sep 17 – Oct 17, 2026)";
-  } else if (mLower.includes("bhadra") || mLower.includes("bhadau") || mLower === "2083-05" || mLower === "05") {
-    // Bhadra 2083 BS = approx Aug 17, 2026 - Sep 16, 2026
-    startDate = new Date("2026-08-16T00:00:00.000Z");
-    endDate = new Date("2026-09-17T23:59:59.999Z");
-    humanPeriod = "Bhadra 2083 BS (भदौ २०८३ / Aug 17 – Sep 16, 2026)";
-  } else if (mLower.includes("shrawan") || mLower.includes("saun") || mLower === "2083-04" || mLower === "04") {
-    startDate = new Date("2026-07-16T00:00:00.000Z");
-    endDate = new Date("2026-08-17T23:59:59.999Z");
-    humanPeriod = "Shrawan 2083 BS (साउन २०८३ / Jul 17 – Aug 16, 2026)";
-  } else if (mLower === "today") {
-    const now = new Date();
-    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-    endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-    humanPeriod = `Today (${now.toISOString().slice(0, 10)})`;
-  } else if (mLower === "this_month" || mLower === "this month" || mLower === "2026-10") {
-    startDate = new Date("2026-10-01T00:00:00.000Z");
-    endDate = new Date("2026-10-31T23:59:59.999Z");
-    humanPeriod = "October 2026";
-  } else if (mLower === "2026-09") {
-    startDate = new Date("2026-09-01T00:00:00.000Z");
-    endDate = new Date("2026-09-30T23:59:59.999Z");
-    humanPeriod = "September 2026";
-  } else if (monthParam && monthParam.length >= 7) {
-    const ym = monthParam.slice(0, 7);
-    startDate = new Date(`${ym}-01T00:00:00.000Z`);
-    endDate = new Date(`${ym}-31T23:59:59.999Z`);
-    humanPeriod = monthParam;
-  }
+  // 1. Dynamically resolve date window using Bikram Sambat Calendar Engine (zero hardcoded dates)
+  const resolvedPeriod = resolveNepaliPeriodToAdRange(monthParam);
+  const startDate = resolvedPeriod.startDate;
+  const endDate = resolvedPeriod.endDate;
+  const humanPeriod = resolvedPeriod.label;
 
   // 2. Resolve organization / workspace filter
   const orgFilter = await resolveOrgFilter(auth, workspaceParam || undefined);
