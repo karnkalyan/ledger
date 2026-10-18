@@ -34,6 +34,13 @@ function refresh(orgId: string, module = "") {
   revalidatePath(`/${orgId}`);
 }
 
+function refreshModules(orgId: string, ...modules: string[]) {
+  for (const module of new Set(modules)) {
+    revalidatePath(`/${orgId}/${module}`);
+  }
+  revalidatePath(`/${orgId}`);
+}
+
 export async function createExpenseAction(formData: FormData) {
   const orgId = s(formData, "orgId"); await orgAccess(orgId);
   const quantity = n(formData, "quantity", 1);
@@ -964,12 +971,16 @@ export async function recordBankTransactionAction(formData: FormData) {
     ? `${description} [Director: ${directorName} - ${directorTxType}]`
     : description;
 
-  const curBal = Number(bankAccount.currentBalance);
-  const newBal = type === "DEPOSIT" ? curBal + amount : curBal - amount;
-
   await db.$transaction(async (tx) => {
     let incomeId: string | null = null;
     let expenseId: string | null = null;
+    const updatedSourceAccount = await tx.bankAccount.update({
+      where: { id: bankAccountId },
+      data: {
+        currentBalance: type === "DEPOSIT" ? { increment: amount } : { decrement: amount },
+      },
+    });
+    const newBal = Number(updatedSourceAccount.currentBalance);
 
     if (type === "DEPOSIT") {
       const inc = await tx.income.create({
@@ -1103,12 +1114,11 @@ export async function recordBankTransactionAction(formData: FormData) {
       }
 
       // Credit destination account and log reciprocal deposit transaction (internal contra, no P&L impact)
-      const destCurBal = Number(destAccount.currentBalance);
-      const destNewBal = destCurBal + amount;
-      await tx.bankAccount.update({
+      const updatedDestination = await tx.bankAccount.update({
         where: { id: destAccount.id },
-        data: { currentBalance: destNewBal },
+        data: { currentBalance: { increment: amount } },
       });
+      const destNewBal = Number(updatedDestination.currentBalance);
 
       await tx.bankTransaction.create({
         data: {
@@ -1127,13 +1137,6 @@ export async function recordBankTransactionAction(formData: FormData) {
         },
       });
 
-      // Purge any legacy pseudo-income rows if previously created
-      await tx.income.deleteMany({
-        where: {
-          organizationId: orgId,
-          title: { startsWith: "Internal Transfer:" },
-        },
-      });
     } else {
       const exp = await tx.expense.create({
         data: {
@@ -1166,18 +1169,11 @@ export async function recordBankTransactionAction(formData: FormData) {
         expenseId,
       },
     });
-
-    await tx.bankAccount.update({
-      where: { id: bankAccountId },
-      data: { currentBalance: newBal },
-    });
   });
 
-  refresh(orgId, "banking");
-  refresh(orgId, "expenses");
-  refresh(orgId, "income");
+  refreshModules(orgId, "banking", "expenses", "income");
   if (contactId) {
-    refresh(orgId, "crm");
+    revalidatePath(`/${orgId}/crm`);
   }
   revalidatePath(`/${orgId}/reports`);
 }

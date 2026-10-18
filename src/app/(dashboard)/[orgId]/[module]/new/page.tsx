@@ -7,6 +7,7 @@ import { ExpenseForm } from "@/components/expense-form";
 import { IncomeForm } from "@/components/income-form";
 import { DocumentComposer } from "@/components/document-composer";
 import { NepaliDatePicker } from "@/components/nepali-date-picker";
+import { FormPendingFeedback } from "@/components/form-pending-feedback";
 import { saveIncomeAction, saveContactAction, saveLeadAction, saveStockMovementAction, saveProductAction, saveEmployeeAction, savePayrollAction, saveLeaveAction, saveTaskAction, saveLicenseAction, saveReminderAction, saveExpenseAction, saveRecurringExpenseAction, saveCommerceDocumentAction, saveBankAccountAction, saveBankTransactionAction, saveLoanAction } from "./actions";
 const entries = [
   { module: "loans", type: "new-loan", title: "Record Loan (Taken / Given)", subtitle: "Configure borrower or lender, principal, daily/monthly/yearly interest rate, and due date." },
@@ -100,6 +101,7 @@ export default async function NewEntryPage({params, searchParams}: {
   ); break;
   case "new-account": form = (<>
             <form action={saveBankAccountAction}>
+              <FormPendingFeedback processingMessage="Saving the bank account..." successMessage="Bank account added successfully" />
               <input type="hidden" name="orgId" value={orgId} />
               <div className="form-grid">
                 <label className="field full">
@@ -151,6 +153,10 @@ export default async function NewEntryPage({params, searchParams}: {
   case "record-deposit":
   case "record-withdrawal": form = (<>
             <form action={saveBankTransactionAction}>
+              <FormPendingFeedback
+                processingMessage={entry.type === "record-deposit" ? "Recording deposit and updating the ledgers..." : "Recording withdrawal and updating the ledgers..."}
+                successMessage={entry.type === "record-deposit" ? "Bank deposit recorded successfully" : "Bank withdrawal recorded successfully"}
+              />
               <input type="hidden" name="orgId" value={orgId} />
               <input type="hidden" name="type" value={entry.type === "record-deposit" ? "DEPOSIT" : "WITHDRAWAL"} />
               <div className="form-grid">
@@ -272,6 +278,7 @@ export default async function NewEntryPage({params, searchParams}: {
           </>); break;
  case "add-contact": form = (<>
             <form action={saveContactAction}>
+              <FormPendingFeedback processingMessage="Saving contact..." successMessage="Contact created successfully" />
               <input type="hidden" name="orgId" value={orgId} />
               <div className="form-grid">
                 <label className="field">
@@ -318,6 +325,7 @@ export default async function NewEntryPage({params, searchParams}: {
           </>); break;
  case "add-lead": form = (<>
             <form action={saveLeadAction}>
+              <FormPendingFeedback processingMessage="Saving sales opportunity..." successMessage="Sales opportunity created successfully" />
               <input type="hidden" name="orgId" value={orgId} />
               <div className="form-grid">
                 <label className="field full">Opportunity Title<input name="title" required placeholder="e.g. Broadcast Setup Contract" /></label>
@@ -335,6 +343,7 @@ export default async function NewEntryPage({params, searchParams}: {
           </>); break;
  case "movement": form = (<>
             <form action={saveStockMovementAction}>
+              <FormPendingFeedback processingMessage="Updating stock..." successMessage="Stock movement recorded successfully" />
               <input type="hidden" name="orgId" value={orgId} />
               <div className="form-grid">
                 <label className="field full">Item SKU<select name="productId" required><option value="">Select Item</option>{products.map((p) => (<option value={p.id} key={p.id}>{p.sku} · {p.name}</option>))}</select></label>
@@ -351,6 +360,7 @@ export default async function NewEntryPage({params, searchParams}: {
           </>); break;
  case "new-product": form = (<>
             <form action={saveProductAction}>
+              <FormPendingFeedback processingMessage="Saving product..." successMessage="Product created successfully" />
               <input type="hidden" name="orgId" value={orgId} />
               <div className="form-grid">
                 <label className="field">SKU<input name="sku" required placeholder="PRD-001" /></label>
@@ -366,6 +376,7 @@ export default async function NewEntryPage({params, searchParams}: {
           </>); break;
  case "add-employee": form = (<>
             <form action={saveEmployeeAction}>
+              <FormPendingFeedback processingMessage="Saving team member..." successMessage="Team member created successfully" />
               <input type="hidden" name="orgId" value={orgId} />
               <div className="form-grid">
                 <label className="field">Employee Code<input name="employeeCode" required placeholder="EMP-001" /></label>
@@ -384,6 +395,7 @@ export default async function NewEntryPage({params, searchParams}: {
           </>); break;
  case "new-payroll": form = (<>
             <form action={savePayrollAction}>
+              <FormPendingFeedback processingMessage="Generating payroll record..." successMessage="Payroll record created successfully" />
               <input type="hidden" name="orgId" value={orgId} />
               <div className="form-grid">
                 <label className="field full">Employee<select name="employeeId" required><option value="">Select Employee</option>{staff.map((e) => (<option value={e.id} key={e.id}>{e.employeeCode} · {e.name}</option>))}</select></label>
@@ -403,6 +415,7 @@ export default async function NewEntryPage({params, searchParams}: {
           </>); break;
  case "request-leave": form = (<>
             <form action={saveLeaveAction}>
+              <FormPendingFeedback processingMessage="Submitting leave request..." successMessage="Leave request submitted successfully" />
               <input type="hidden" name="orgId" value={orgId} />
               <div className="form-grid">
                 <label className="field full">Employee<select name="employeeId" required><option value="">Select Employee</option>{staff.map((e) => (<option value={e.id} key={e.id}>{e.name}</option>))}</select></label>
@@ -420,6 +433,7 @@ export default async function NewEntryPage({params, searchParams}: {
           </>); break;
  case "add-task": form = (<>
             <form action={saveTaskAction}>
+              <FormPendingFeedback processingMessage="Saving task..." successMessage="Task created successfully" />
               <input type="hidden" name="orgId" value={orgId} />
               <div className="form-grid">
                 <label className="field full">Task Title<input name="title" required placeholder="Prepare quarterly tax statement" /></label>
@@ -436,6 +450,7 @@ export default async function NewEntryPage({params, searchParams}: {
           </>); break;
  case "add-license": form = (<>
             <form action={saveLicenseAction}>
+              <FormPendingFeedback processingMessage="Saving license..." successMessage="License saved successfully" />
               <input type="hidden" name="orgId" value={orgId} />
               <div className="form-grid">
                 <label className="field full">License / Subscription Name<input name="name" required placeholder="e.g. Adobe Creative Cloud Enterprise" /></label>
@@ -456,6 +471,7 @@ export default async function NewEntryPage({params, searchParams}: {
           </>); break;
  case "add-reminder": form = (<>
             <form action={saveReminderAction}>
+              <FormPendingFeedback processingMessage="Saving reminder..." successMessage="Reminder created successfully" />
               <input type="hidden" name="orgId" value={orgId} />
               <div className="form-grid">
                 <label className="field full">Reminder Title<input name="title" required placeholder="Pay commercial building rent" /></label>
@@ -481,6 +497,7 @@ export default async function NewEntryPage({params, searchParams}: {
           </>); break;
  case "new-loan": form = (
     <form action={saveLoanAction}>
+      <FormPendingFeedback processingMessage="Saving the loan record..." successMessage="Loan record created successfully" />
       <input type="hidden" name="orgId" value={orgId} />
       <div className="form-grid">
         <label className="field full">

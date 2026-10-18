@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { createExpenseAction, createRecurringExpenseAction } from "@/app/(dashboard)/actions";
 import { NepaliDatePicker } from "@/components/nepali-date-picker";
+import { FormPendingFeedback } from "@/components/form-pending-feedback";
 import { Calculator, DollarSign, Banknote, Landmark, AlertTriangle, Wallet2 } from "lucide-react";
 
 type Category = { id: string; name: string };
@@ -59,6 +60,10 @@ export function ExpenseForm({
 
   return (
     <form action={action} className="clean-expense-form">
+      <FormPendingFeedback
+        processingMessage={recurring ? "Saving the recurring expense rule..." : "Recording the expense and updating balances..."}
+        successMessage={recurring ? "Recurring expense saved successfully" : "Expense recorded successfully"}
+      />
       <input type="hidden" name="orgId" value={orgId} />
 
       <div className="form-grid">

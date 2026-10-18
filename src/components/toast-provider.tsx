@@ -1,8 +1,20 @@
 "use client";
 
+import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Toaster, toast } from "react-hot-toast";
+import { clearPendingOperation, readPendingOperation } from "@/lib/pending-operation";
 
 export function ToastProvider() {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const operation = readPendingOperation();
+    if (!operation) return;
+    clearPendingOperation();
+    toast.success(operation.successMessage, { id: "flowledger-form-operation" });
+  }, [pathname]);
+
   return (
     <Toaster
       position="top-right"

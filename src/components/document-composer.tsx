@@ -4,6 +4,7 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import { Plus, Trash2, Search, Check, X, Package, Building2, User } from "lucide-react";
 import { createCommerceDocumentAction } from "@/app/(dashboard)/actions";
 import { NepaliDatePicker } from "@/components/nepali-date-picker";
+import { FormPendingFeedback } from "@/components/form-pending-feedback";
 
 export type Line = { description: string; quantity: number; unitPrice: number; taxRate: number; productId?: string };
 type Contact = { id: string; name: string; companyName: string | null; type?: string };
@@ -177,6 +178,7 @@ export function DocumentComposer({
 
   return (
     <form action={action}>
+      <FormPendingFeedback processingMessage={`Saving ${L.title.toLowerCase().replace("create ", "")}...`} successMessage={`${L.title.replace("Create ", "")} saved successfully`} />
       <input type="hidden" name="orgId" value={orgId} />
       <input type="hidden" name="kind" value={kind} />
       {initialData?.id && <input type="hidden" name="id" value={initialData.id} />}

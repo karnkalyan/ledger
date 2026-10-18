@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { saveElectricityLogAction } from "@/app/(dashboard)/actions";
 import { Zap, RotateCcw, CheckCircle2 } from "lucide-react";
 import { adToBs, NEPALI_MONTHS_EN, NEPALI_MONTHS_NE } from "@/lib/nepali-calendar";
+import { FormPendingFeedback } from "@/components/form-pending-feedback";
 
 export function ElectricityReadingForm({
   orgId,
@@ -79,6 +80,7 @@ export function ElectricityReadingForm({
         border: "1px solid var(--line)",
       }}
     >
+      <FormPendingFeedback processingMessage="Saving electricity reading..." successMessage="Electricity reading saved successfully" />
       <input type="hidden" name="orgId" value={orgId} />
       <input type="hidden" name="previousUnit" value={previousUnit} />
       <input type="hidden" name="paid" value={paidStatus ? "true" : "false"} />

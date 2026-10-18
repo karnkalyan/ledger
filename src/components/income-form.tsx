@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { NepaliDatePicker } from "@/components/nepali-date-picker";
+import { FormPendingFeedback } from "@/components/form-pending-feedback";
 import { Banknote, Landmark, Wallet2 } from "lucide-react";
 
 type Contact = {
@@ -50,6 +51,7 @@ export function IncomeForm({
 
   return (
     <form action={action} className="clean-income-form">
+      <FormPendingFeedback processingMessage="Recording the income and updating balances..." successMessage="Income recorded successfully" />
       <input type="hidden" name="orgId" value={orgId} />
       <input type="hidden" name="paymentMethod" value={paymentMethod} />
 

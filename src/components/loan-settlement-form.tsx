@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { NepaliDatePicker } from "@/components/nepali-date-picker";
+import { FormPendingFeedback } from "@/components/form-pending-feedback";
 import { money } from "@/lib/format";
 import { Calculator, Check, Sparkles } from "lucide-react";
 
@@ -127,7 +128,7 @@ export function LoanSettlementForm({
   const totalSettleAmount = Math.max(0, (principal || 0) + (interest || 0));
 
   return (
-    <div style={{ marginTop: 16, borderTop: "1px solid var(--line)", paddingTop: 16 }}>
+    <div className="no-print" style={{ marginTop: 16, borderTop: "1px solid var(--line)", paddingTop: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
         <div>
           <h4 style={{ margin: 0, fontSize: 14 }}>
@@ -186,6 +187,7 @@ export function LoanSettlementForm({
       </div>
 
       <form action={action}>
+        <FormPendingFeedback processingMessage="Recording the loan settlement and updating ledgers..." successMessage="Loan settlement recorded successfully" />
         <input type="hidden" name="orgId" value={orgId} />
         <input type="hidden" name="loanId" value={loanId} />
 

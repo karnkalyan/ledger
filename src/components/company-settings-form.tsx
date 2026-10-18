@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CheckCircle2, Building2, Landmark, Image, Percent, Sparkles, RefreshCw, AlertCircle, Clock, CalendarDays, ShieldCheck, Hash, Briefcase } from "lucide-react";
+import { FormPendingFeedback } from "@/components/form-pending-feedback";
 
 interface OrganizationData {
   id: string;
@@ -74,6 +75,7 @@ export function CompanySettingsForm({
 
   return (
     <form action={action}>
+      <FormPendingFeedback processingMessage="Saving organization settings..." successMessage="Settings saved successfully" />
       <input type="hidden" name="orgId" value={org.id} />
 
       {isSaved && (

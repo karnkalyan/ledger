@@ -50,6 +50,7 @@ import { WorkLogModal } from "@/components/worklog-modal";
 import { ElectricityReadingForm } from "@/components/electricity-reading-form";
 import { MobileMenuPageContent } from "@/components/mobile-menu-page";
 import { BankingClientSection } from "@/components/banking-client-section";
+import { FormPendingFeedback } from "@/components/form-pending-feedback";
 import { RentalHouseSection } from "@/components/rental-house-section";
 import { MonthlyGeneratorModal } from "@/components/monthly-generator-modal";
 import { cookies } from "next/headers";
@@ -237,6 +238,7 @@ function Badge({ value }: { value: string }) {
 function StatusForm({ orgId, resource, id, current, options }: { orgId: string; resource: string; id: string; current: string; options: string[] }) {
   return (
     <form action={updateStatusAction} style={{ display: "flex", gap: 5, alignItems: "center" }}>
+      <FormPendingFeedback processingMessage="Updating status..." successMessage="Status updated successfully" />
       <input type="hidden" name="orgId" value={orgId} />
       <input type="hidden" name="resource" value={resource} />
       <input type="hidden" name="id" value={id} />
@@ -731,6 +733,7 @@ export default async function ModulePage({
                       </td>
                       <td data-label="Status">
                         <form action={toggleExpenseStatusAction} style={{ display: "inline-block", margin: 0 }}>
+                          <FormPendingFeedback processingMessage="Updating expense status..." successMessage="Expense status updated successfully" />
                           <input type="hidden" name="orgId" value={orgId} />
                           <input type="hidden" name="expenseId" value={x.id} />
                           {x.isEstimated ? (
@@ -869,6 +872,7 @@ export default async function ModulePage({
               </div>
 
               <form action={saveMilkLogAction} style={{ background: "var(--soft)", padding: 16, borderRadius: 6, marginBottom: 16 }}>
+                <FormPendingFeedback processingMessage="Saving milk log..." successMessage="Milk log saved successfully" />
                 <input type="hidden" name="orgId" value={orgId} />
                 <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1.3fr 1.3fr 1fr auto", gap: 12, alignItems: "end" }}>
                   <label className="field" style={{ margin: 0 }}>
@@ -943,6 +947,7 @@ export default async function ModulePage({
                           </td>
                           <td data-label="Status">
                             <form action={toggleMilkLogStatusAction} style={{ display: "inline-block", margin: 0 }}>
+                              <FormPendingFeedback processingMessage="Updating milk payment..." successMessage="Milk payment status updated" />
                               <input type="hidden" name="orgId" value={orgId} />
                               <input type="hidden" name="logId" value={m.id} />
                               {m.paid ? (
@@ -1042,6 +1047,7 @@ export default async function ModulePage({
                       </td>
                       <td data-label="Status">
                         <form action={toggleElectricityLogStatusAction} style={{ display: "inline-block", margin: 0 }}>
+                          <FormPendingFeedback processingMessage="Updating electricity payment..." successMessage="Electricity payment status updated" />
                           <input type="hidden" name="orgId" value={orgId} />
                           <input type="hidden" name="logId" value={log.id} />
                           {log.paid ? (
@@ -1302,19 +1308,14 @@ export default async function ModulePage({
   }
 
   if (module === "banking" || module === "bank") {
+    const BANKING_PAGE_SIZE = 100;
     const selectedAccountId = query.accountId?.trim() || "";
     const selectedType = query.type && ["DEPOSIT", "WITHDRAWAL"].includes(query.type.toUpperCase()) ? query.type.toUpperCase() : "";
     const searchQ = query.q?.trim() || "";
     const minAmount = query.minAmount ? Number(query.minAmount) : NaN;
     const maxAmount = query.maxAmount ? Number(query.maxAmount) : NaN;
-
-    const accounts = await db.bankAccount.findMany({
-      where: { organizationId: orgId },
-      include: {
-        _count: { select: { transactions: true } },
-      },
-      orderBy: { createdAt: "asc" },
-    });
+    const requestedPage = Math.max(1, Number.parseInt(query.page || "1", 10) || 1);
+    const showAllTransactions = query.show === "all";
 
     const amountFilter: any = {};
     if (!Number.isNaN(minAmount) && minAmount > 0) amountFilter.gte = minAmount;
@@ -1338,13 +1339,29 @@ export default async function ModulePage({
         : {}),
     };
 
-    const [transactions, totalCount] = await Promise.all([
+    const [accounts, transactions, totalCount, matchedCount, transactionStats] = await Promise.all([
+      db.bankAccount.findMany({
+        where: { organizationId: orgId },
+        include: {
+          _count: { select: { transactions: true } },
+        },
+        orderBy: { createdAt: "asc" },
+      }),
       db.bankTransaction.findMany({
         where: whereClause,
         include: { bankAccount: true },
-        orderBy: { transactionDate: "desc" },
+        orderBy: [{ transactionDate: "desc" }, { createdAt: "desc" }],
+        skip: showAllTransactions ? undefined : (requestedPage - 1) * BANKING_PAGE_SIZE,
+        take: showAllTransactions ? undefined : BANKING_PAGE_SIZE,
       }),
       db.bankTransaction.count({ where: { organizationId: orgId } }),
+      db.bankTransaction.count({ where: whereClause }),
+      db.bankTransaction.groupBy({
+        by: ["type"],
+        where: whereClause,
+        _count: { _all: true },
+        _sum: { amount: true },
+      }),
     ]);
 
     const activeAccount = accounts.find((a) => a.id === selectedAccountId);
@@ -1352,9 +1369,14 @@ export default async function ModulePage({
       ? Number(activeAccount.currentBalance)
       : accounts.reduce((sum, a) => sum + Number(a.currentBalance), 0);
 
-    const filteredDeposits = transactions.filter((t) => t.type === "DEPOSIT").reduce((sum, t) => sum + Number(t.amount), 0);
-    const filteredWithdrawals = transactions.filter((t) => t.type === "WITHDRAWAL").reduce((sum, t) => sum + Number(t.amount), 0);
+    const depositStats = transactionStats.find((stat) => stat.type === "DEPOSIT");
+    const withdrawalStats = transactionStats.find((stat) => stat.type === "WITHDRAWAL");
+    const filteredDeposits = Number(depositStats?._sum.amount || 0);
+    const filteredWithdrawals = Number(withdrawalStats?._sum.amount || 0);
+    const filteredDepositCount = depositStats?._count._all || 0;
+    const filteredWithdrawalCount = withdrawalStats?._count._all || 0;
     const filteredNet = filteredDeposits - filteredWithdrawals;
+    const bankingPageCount = Math.max(1, Math.ceil(matchedCount / BANKING_PAGE_SIZE));
     const isFiltered = Boolean(selectedAccountId || selectedType || searchQ || !Number.isNaN(minAmount) || !Number.isNaN(maxAmount));
 
     const filterHref = (newParams: {
@@ -1363,6 +1385,8 @@ export default async function ModulePage({
       q?: string | null;
       minAmount?: number | string | null;
       maxAmount?: number | string | null;
+      page?: number | string | null;
+      show?: string | null;
     }) => {
       const p = new URLSearchParams();
       const acc = newParams.accountId !== undefined ? newParams.accountId : selectedAccountId;
@@ -1376,6 +1400,8 @@ export default async function ModulePage({
       if (qStr) p.set("q", qStr);
       if (minVal) p.set("minAmount", minVal);
       if (maxVal) p.set("maxAmount", maxVal);
+      if (newParams.page) p.set("page", String(newParams.page));
+      if (newParams.show) p.set("show", newParams.show);
       return `/${orgId}/banking${p.size ? `?${p.toString()}` : ""}`;
     };
 
@@ -1423,17 +1449,17 @@ export default async function ModulePage({
             {
               label: isFiltered ? "Filtered Inflows" : "Total Deposits (Inflows)",
               value: `+ ${money(filteredDeposits, currency)}`,
-              meta: `${transactions.filter((t) => t.type === "DEPOSIT").length} credit transactions`,
+              meta: `${filteredDepositCount} credit transactions`,
             },
             {
               label: isFiltered ? "Filtered Outflows" : "Total Withdrawals (Outflows)",
               value: `- ${money(filteredWithdrawals, currency)}`,
-              meta: `${transactions.filter((t) => t.type === "WITHDRAWAL").length} debit transactions`,
+              meta: `${filteredWithdrawalCount} debit transactions`,
             },
             {
               label: isFiltered ? "Net Filtered Movement" : "Net Flow",
               value: `${filteredNet >= 0 ? "+" : ""}${money(filteredNet, currency)}`,
-              meta: `${transactions.length} of ${totalCount} records matched`,
+              meta: `${matchedCount} of ${totalCount} records matched`,
             },
           ]}
         />
@@ -1686,7 +1712,7 @@ export default async function ModulePage({
                   className="panel-link"
                   style={{ marginLeft: "auto", fontSize: 11 }}
                 >
-                  Clear All Filters ({transactions.length} matches)
+                  Clear All Filters ({matchedCount} matches)
                 </Link>
               </div>
             )}
@@ -1714,7 +1740,7 @@ export default async function ModulePage({
                 Currency: {currency} · Exported: {formatDualDate(new Date())}
               </div>
               <div style={{ fontSize: "8pt", color: "#1e3a8a", fontWeight: 600, marginTop: 2 }}>
-                {isFiltered ? `Filtered: ${searchQ ? `Matching "${searchQ}" · ` : ""}${transactions.length} records` : `Complete Statement · ${transactions.length} records`}
+                {isFiltered ? `Filtered: ${searchQ ? `Matching "${searchQ}" · ` : ""}${matchedCount} records` : `Complete Statement · ${matchedCount} records`}
               </div>
             </div>
           </div>
@@ -1763,12 +1789,19 @@ export default async function ModulePage({
               )}
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <span className="badge purple">{transactions.length} records</span>
+              <span className="badge purple">
+                {showAllTransactions ? `${matchedCount} records` : `${transactions.length} shown of ${matchedCount}`}
+              </span>
+              {!showAllTransactions && matchedCount > transactions.length && (
+                <Link href={filterHref({ show: "all", page: null })} className="ghost-btn no-print" style={{ fontSize: 11.5 }}>
+                  Load Full Statement for PDF
+                </Link>
+              )}
               <PrintButton label="Print Table / PDF" />
             </div>
           </div>
           <div className="table-scroll">
-            <DataTable className="responsive-table">
+            <DataTable className="responsive-table" paginate={false}>
               <thead>
                 <tr>
                   <th style={{ width: 95, minWidth: 95 }}>Date (BS / AD)</th>
@@ -1876,7 +1909,7 @@ export default async function ModulePage({
                 <tfoot>
                   <tr style={{ fontWeight: 700, background: "var(--soft)" }}>
                     <td colSpan={4} style={{ textAlign: "right", padding: "10px 14px" }}>
-                      <strong>Filtered Totals ({transactions.length} records):</strong>
+                      <strong>Statement Totals ({matchedCount} records):</strong>
                     </td>
                     <td className="amount-pos" style={{ textAlign: "right", padding: "10px 14px", fontWeight: 700 }}>
                       + {money(filteredDeposits, currency)}
@@ -1893,6 +1926,26 @@ export default async function ModulePage({
               )}
             </DataTable>
           </div>
+          {!showAllTransactions && bankingPageCount > 1 && (
+            <div className="table-pagination no-print" aria-label="Bank transaction pages">
+              <span>
+                Showing {(requestedPage - 1) * BANKING_PAGE_SIZE + (transactions.length ? 1 : 0)}–{Math.min(requestedPage * BANKING_PAGE_SIZE, matchedCount)} of {matchedCount} records
+              </span>
+              <div className="pagination-buttons">
+                {requestedPage > 1 ? (
+                  <Link className="ghost-btn" href={filterHref({ page: requestedPage - 1 })}>Previous</Link>
+                ) : (
+                  <button type="button" disabled>Previous</button>
+                )}
+                <span>Page {requestedPage} of {bankingPageCount}</span>
+                {requestedPage < bankingPageCount ? (
+                  <Link className="ghost-btn" href={filterHref({ page: requestedPage + 1 })}>Next</Link>
+                ) : (
+                  <button type="button" disabled>Next</button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </main>
     );
@@ -3247,6 +3300,9 @@ export default async function ModulePage({
         <Header
           title="Loan &amp; Debt Management"
           description="Manage borrowings (loans taken), lendings (loans given), daily/monthly/yearly interest calculations, and settlement tracking."
+          orgName={organization.name}
+          orgTax={organization.taxNumber}
+          orgAddress={organization.address}
         >
           <Link href={`/${orgId}/loans/new?type=new-loan`} className="primary-btn">
             <Plus size={14} /> Record Loan
@@ -3287,7 +3343,7 @@ export default async function ModulePage({
                 </Link>
               </div>
             </div>
-            <PrintButton label="Print Loan Summary / PDF" />
+            <PrintButton label="Print Loan Statement / PDF" />
           </div>
 
           <div className="table-scroll">

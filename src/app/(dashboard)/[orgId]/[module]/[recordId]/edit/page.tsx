@@ -12,6 +12,7 @@ import {
 } from "@/app/(dashboard)/actions";
 import { NepaliDatePicker } from "@/components/nepali-date-picker";
 import { money } from "@/lib/format";
+import { FormPendingFeedback } from "@/components/form-pending-feedback";
 
 export default async function EditDocumentPage({
   params,
@@ -58,6 +59,7 @@ export default async function EditDocumentPage({
 
         <section className="entry-form-card">
           <form action={handleUpdateExpense}>
+            <FormPendingFeedback processingMessage="Updating expense..." successMessage="Expense updated successfully" />
             <input type="hidden" name="orgId" value={orgId} />
             <input type="hidden" name="id" value={expense.id} />
 
@@ -261,6 +263,7 @@ export default async function EditDocumentPage({
 
         <section className="entry-form-card">
           <form action={handleUpdateIncome}>
+            <FormPendingFeedback processingMessage="Updating income..." successMessage="Income updated successfully" />
             <input type="hidden" name="orgId" value={orgId} />
             <input type="hidden" name="id" value={income.id} />
 
@@ -432,6 +435,7 @@ export default async function EditDocumentPage({
 
         <section className="entry-form-card">
           <form action={handleUpdateBankTx}>
+            <FormPendingFeedback processingMessage="Updating bank transaction and balances..." successMessage="Bank transaction updated successfully" />
             <input type="hidden" name="orgId" value={orgId} />
             <input type="hidden" name="id" value={txRecord.id} />
 

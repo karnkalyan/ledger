@@ -10,6 +10,7 @@ import { convertQuoteToInvoiceAction, recordInvoicePaymentAction, updateStatusAc
 import { PrintButton } from "@/components/print-button";
 import { NepaliDatePicker } from "@/components/nepali-date-picker";
 import { LoanSettlementForm } from "@/components/loan-settlement-form";
+import { FormPendingFeedback } from "@/components/form-pending-feedback";
 import { resolveIncomeChannel } from "../page";
 
 function Badge({ value }: { value: string }) {
@@ -437,6 +438,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
               <span>{money(balance, organization.currency)} balance due</span>
             </div>
             <form action={recordInvoicePaymentAction}>
+              <FormPendingFeedback processingMessage="Recording invoice payment..." successMessage="Invoice payment recorded successfully" />
               <input type="hidden" name="orgId" value={orgId} />
               <input type="hidden" name="invoiceId" value={invoice.id} />
               <div className="form-grid">
@@ -473,6 +475,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
               <h3>Payment & Status History</h3>
             </div>
             <form action={updateStatusAction} style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+              <FormPendingFeedback processingMessage="Updating status..." successMessage="Status updated successfully" />
               <input type="hidden" name="orgId" value={orgId} />
               <input type="hidden" name="resource" value="invoice" />
               <input type="hidden" name="id" value={invoice.id} />
@@ -532,6 +535,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
             </Link>
           ) : (
             <form action={convertQuoteToInvoiceAction}>
+              <FormPendingFeedback processingMessage="Converting quote to invoice..." successMessage="Quote converted successfully" />
               <input type="hidden" name="orgId" value={orgId} />
               <input type="hidden" name="quoteId" value={quote.id} />
               <button className="primary-btn">
@@ -706,6 +710,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
           <h3>Quotation Stage & Status</h3>
         </div>
         <form action={updateStatusAction} style={{ display: "flex", gap: 6, maxWidth: 380 }}>
+          <FormPendingFeedback processingMessage="Updating status..." successMessage="Status updated successfully" />
           <input type="hidden" name="orgId" value={orgId} />
           <input type="hidden" name="resource" value="quote" />
           <input type="hidden" name="id" value={quote.id} />
@@ -912,6 +917,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
         {/* Status Update Form */}
         <div className="table-card no-print" style={{ padding: "14px 18px", marginTop: 20 }}>
           <form action={updateStatusAction} style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <FormPendingFeedback processingMessage="Updating status..." successMessage="Status updated successfully" />
             <span style={{ fontWeight: 600, fontSize: 13 }}>Update Sales Order Status:</span>
             <input type="hidden" name="orgId" value={orgId} />
             <input type="hidden" name="resource" value="sales" />
@@ -1142,6 +1148,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
             <div style={{ marginTop: 16, borderTop: "1px solid var(--line)", paddingTop: 16 }}>
               <h4 style={{ margin: "0 0 10px 0", fontSize: 14 }}>Record Payment Toward Outstanding Dues</h4>
               <form action={recordPurchasePaymentAction} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, alignItems: "flex-end" }}>
+                <FormPendingFeedback processingMessage="Recording purchase payment..." successMessage="Purchase payment recorded successfully" />
                 <input type="hidden" name="orgId" value={orgId} />
                 <input type="hidden" name="purchaseOrderId" value={po.id} />
                 <label className="field">
@@ -1757,7 +1764,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
             <p>Official loan agreement voucher, dynamic interest accrual ledger, and settlement tracker.</p>
           </div>
           <div className="page-actions">
-            <PrintButton label="Print Loan Agreement / PDF" />
+            <PrintButton label="Print Loan Statement / PDF" defaultOrientation="portrait" />
           </div>
         </div>
 
@@ -1870,9 +1877,13 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
         </div>
 
         {/* Payments History Ledger & Settlement Form */}
-        <div className="panel no-print" style={{ marginTop: 20 }}>
+        <div className="panel loan-statement-section" style={{ marginTop: 20 }}>
           <div className="panel-head">
-            <h3>Settlement &amp; Repayment History</h3>
+            <div>
+              <h3>Loan Account Statement</h3>
+              <span>{loan.payments.length} repayment entr{loan.payments.length === 1 ? "y" : "ies"} · Loan {loan.id.slice(-8).toUpperCase()}</span>
+            </div>
+            <PrintButton label="Print Statement / PDF" defaultOrientation="portrait" />
           </div>
           {loan.payments.length > 0 ? (
             <div className="table-scroll">
