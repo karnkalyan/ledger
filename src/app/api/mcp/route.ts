@@ -1185,6 +1185,888 @@ const TOOLS = [
       },
     },
   },
+
+  // 19. EXPENSE CATEGORIES CRUD
+  {
+    name: "get_expense_category",
+    description: "Get full details of a specific expense category by ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Expense Category ID" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "update_expense_category",
+    description: "Update an expense category's name, monthly budget, or icon.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        name: { type: "string" },
+        budgetMonthly: { type: "number" },
+        icon: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_expense_category",
+    description: "Delete an expense category.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+
+  // 20. INCOME CRUD
+  {
+    name: "get_income",
+    description: "Get full details of a specific income record by ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Income ID" },
+      },
+      required: ["id"],
+    },
+  },
+
+  // 21. INVOICE PAYMENTS CRUD
+  {
+    name: "delete_invoice_payment",
+    description: "Delete an invoice payment record and adjust the invoice paidAmount and status.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        paymentId: { type: "string", description: "Invoice Payment ID" },
+      },
+      required: ["paymentId"],
+    },
+  },
+
+  // 22. PURCHASES / VENDOR ORDERS CRUD
+  {
+    name: "get_purchase",
+    description: "Get purchase order details with line items and payments by ID or order number.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Purchase Order ID" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "update_purchase",
+    description: "Update a purchase order's status, notes, or discount.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        status: { type: "string", enum: ["DRAFT", "CONFIRMED", "PROCESSING", "COMPLETED", "CANCELLED"] },
+        notes: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_purchase",
+    description: "Permanently delete a purchase order and its linked items and payments.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "record_purchase_payment",
+    description: "Record a vendor payment against a purchase order and sync with expenses.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        purchaseOrderId: { type: "string" },
+        amount: { type: "number" },
+        paidAt: { type: "string" },
+        method: { type: "string", default: "Bank Transfer" },
+        reference: { type: "string" },
+        notes: { type: "string" },
+      },
+      required: ["purchaseOrderId", "amount"],
+    },
+  },
+
+  // 23. CONTACTS CRUD
+  {
+    name: "get_contact",
+    description: "Get customer or vendor contact details by ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "update_contact",
+    description: "Update customer or vendor contact profile.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        name: { type: "string" },
+        companyName: { type: "string" },
+        email: { type: "string" },
+        phone: { type: "string" },
+        address: { type: "string" },
+        taxNumber: { type: "string" },
+        notes: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_contact",
+    description: "Delete a contact record.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+
+  // 24. LEADS (CRM) CRUD
+  {
+    name: "list_leads",
+    description: "List sales pipeline leads with status, deal value, and follow-up dates.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        status: { type: "string", enum: ["NEW", "CONTACTED", "QUALIFIED", "PROPOSAL", "WON", "LOST"] },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "get_lead",
+    description: "Get sales lead details by ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "create_lead",
+    description: "Create a new sales opportunity lead in the CRM.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        title: { type: "string" },
+        contactId: { type: "string" },
+        source: { type: "string" },
+        status: { type: "string", enum: ["NEW", "CONTACTED", "QUALIFIED", "PROPOSAL", "WON", "LOST"], default: "NEW" },
+        value: { type: "number", default: 0 },
+        nextFollowUpAt: { type: "string" },
+        notes: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["title"],
+    },
+  },
+  {
+    name: "update_lead",
+    description: "Update sales lead status, estimated deal value, or notes.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        title: { type: "string" },
+        status: { type: "string", enum: ["NEW", "CONTACTED", "QUALIFIED", "PROPOSAL", "WON", "LOST"] },
+        value: { type: "number" },
+        nextFollowUpAt: { type: "string" },
+        notes: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_lead",
+    description: "Delete a sales lead.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+
+  // 25. PRODUCTS & INVENTORY CRUD
+  {
+    name: "get_product",
+    description: "Get product details by ID or SKU.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "update_product",
+    description: "Update product pricing, stock levels, reorder level, or active status.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        name: { type: "string" },
+        sku: { type: "string" },
+        unit: { type: "string" },
+        salePrice: { type: "number" },
+        purchasePrice: { type: "number" },
+        stockQty: { type: "number" },
+        reorderLevel: { type: "number" },
+        active: { type: "boolean" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_product",
+    description: "Delete a product and its stock movements.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+
+  // 26. SALES ORDERS CRUD
+  {
+    name: "get_sales_order",
+    description: "Get sales order details with line items by ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "update_sales_order",
+    description: "Update sales order status or notes.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        status: { type: "string", enum: ["DRAFT", "CONFIRMED", "PROCESSING", "COMPLETED", "CANCELLED"] },
+        notes: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_sales_order",
+    description: "Delete a sales order.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+
+  // 27. QUOTES CRUD
+  {
+    name: "get_quote",
+    description: "Get price quotation details with line items by ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "update_quote",
+    description: "Update quotation status, terms, or notes.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        status: { type: "string", enum: ["DRAFT", "SENT", "ACCEPTED", "REJECTED", "CANCELLED"] },
+        validUntil: { type: "string" },
+        notes: { type: "string" },
+        terms: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_quote",
+    description: "Delete a quotation.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+
+  // 28. LOANS CRUD
+  {
+    name: "get_loan",
+    description: "Get loan details with payment history by ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "update_loan",
+    description: "Update loan details, interest rate, due date, or notes.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        partyName: { type: "string" },
+        interestRate: { type: "number" },
+        dueDate: { type: "string" },
+        status: { type: "string", enum: ["ACTIVE", "SETTLED", "DEFAULTED"] },
+        notes: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_loan",
+    description: "Delete a loan and its repayment records.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+
+  // 29. RENTAL HOUSE CRUD
+  {
+    name: "get_rental_house",
+    description: "Get rental house details by ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+
+  // 30. UTILITIES CRUD
+  {
+    name: "delete_electricity_reading",
+    description: "Delete an electricity reading log.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_milk_log",
+    description: "Delete a monthly milk consumption log.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+
+  // 31. STAFF (HRM) CRUD
+  {
+    name: "get_employee",
+    description: "Get employee details with designation and basic salary by ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "update_employee",
+    description: "Update employee details, designation, basic salary, or status.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        name: { type: "string" },
+        email: { type: "string" },
+        phone: { type: "string" },
+        designation: { type: "string" },
+        department: { type: "string" },
+        basicSalary: { type: "number" },
+        status: { type: "string", enum: ["ACTIVE", "ON_LEAVE", "INACTIVE", "TERMINATED"] },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_employee",
+    description: "Delete an employee record.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+
+  // 32. PAYROLL CRUD
+  {
+    name: "get_payroll",
+    description: "Get payroll disbursement details by ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "update_payroll",
+    description: "Update payroll disbursement details.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        basic: { type: "number" },
+        allowance: { type: "number" },
+        overtime: { type: "number" },
+        deduction: { type: "number" },
+        tax: { type: "number" },
+        netPay: { type: "number" },
+        notes: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_payroll",
+    description: "Delete a payroll record.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+
+  // 33. LEAVES CRUD
+  {
+    name: "get_leave",
+    description: "Get leave request details by ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "update_leave",
+    description: "Update leave request status (APPROVED, REJECTED, CANCELLED) or notes.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        status: { type: "string", enum: ["PENDING", "APPROVED", "REJECTED", "CANCELLED"] },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_leave",
+    description: "Delete a leave request.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+
+  // 34. PROJECTS CRUD
+  {
+    name: "get_project",
+    description: "Get project details with team leader and wallet balance by ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "update_project",
+    description: "Update project name, budget, status, or dates.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        name: { type: "string" },
+        description: { type: "string" },
+        budget: { type: "number" },
+        status: { type: "string" },
+        priority: { type: "string", enum: ["LOW", "MEDIUM", "HIGH", "URGENT"] },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_project",
+    description: "Delete a project and its associated wallet.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+
+  // 35. TASKS CRUD
+  {
+    name: "get_task",
+    description: "Get task details by ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_task",
+    description: "Delete a task.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+
+  // 36. WORKLOGS (TIMESHEETS) CRUD
+  {
+    name: "get_work_log",
+    description: "Get timesheet worklog details by ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "update_work_log",
+    description: "Update worklog duration, status (APPROVED/REJECTED), or comment.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        durationMinutes: { type: "number" },
+        comment: { type: "string" },
+        status: { type: "string", enum: ["PENDING", "APPROVED", "REJECTED"] },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_work_log",
+    description: "Delete a worklog entry.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+
+  // 37. PROJECT WALLETS & TRANSACTIONS
+  {
+    name: "get_project_wallet",
+    description: "Get project wallet details with budget balance and transaction logs.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "list_wallet_transactions",
+    description: "List project wallet transactions and approval statuses.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        walletId: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "update_wallet_transaction_status",
+    description: "Approve, reject, or complete a project wallet transfer.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        actionType: { type: "string", enum: ["LEADER_APPROVE", "ADMIN_APPROVE", "REJECT", "COMPLETE_TRANSFER"] },
+      },
+      required: ["id", "actionType"],
+    },
+  },
+
+  // 38. LICENSES & COMPLIANCE
+  {
+    name: "list_licenses",
+    description: "List software licenses and regulatory compliance certificates.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "get_license",
+    description: "Get license details by ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "create_license",
+    description: "Add a software license or compliance record.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        vendor: { type: "string" },
+        licenseKey: { type: "string" },
+        seats: { type: "number", default: 1 },
+        purchaseDate: { type: "string" },
+        expiryDate: { type: "string" },
+        renewalCost: { type: "number" },
+        notes: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    name: "update_license",
+    description: "Update license details, expiry date, or status.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        name: { type: "string" },
+        expiryDate: { type: "string" },
+        renewalCost: { type: "number" },
+        status: { type: "string", enum: ["ACTIVE", "EXPIRING", "EXPIRED", "CANCELLED"] },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_license",
+    description: "Delete a license record.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+
+  // 39. REMINDERS & ALERTS
+  {
+    name: "list_reminders",
+    description: "List scheduled reminders and alerts.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        status: { type: "string", enum: ["PENDING", "DONE", "DISMISSED"] },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "get_reminder",
+    description: "Get reminder details by ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "create_reminder",
+    description: "Create a scheduled reminder.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        title: { type: "string" },
+        dueAt: { type: "string", description: "YYYY-MM-DD" },
+        notes: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["title", "dueAt"],
+    },
+  },
+  {
+    name: "update_reminder",
+    description: "Update reminder title, due date, or status.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        title: { type: "string" },
+        dueAt: { type: "string" },
+        status: { type: "string", enum: ["PENDING", "DONE", "DISMISSED"] },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_reminder",
+    description: "Delete a reminder.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+
+  // 40. UNIVERSAL RECORD MANAGEMENT (HARD & SOFT DELETE)
+  {
+    name: "hard_delete_record",
+    description: "Permanently delete any record across the ERP (resource: purchase, sales, invoice, quote, expense, income, contact, lead, task, product, leave, reminder, license, loan, payroll, milk_log, project, employee).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        resource: {
+          type: "string",
+          enum: [
+            "purchase", "sales", "invoice", "quote", "expense", "recurring_expense",
+            "income", "contact", "lead", "task", "product", "leave", "reminder",
+            "license", "loan", "payroll", "bank_tx", "milk_log", "project", "employee",
+          ],
+        },
+        id: { type: "string", description: "Record ID to permanently delete" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["resource", "id"],
+    },
+  },
+  {
+    name: "soft_delete_record",
+    description: "Soft delete, cancel, or mark inactive any record across the ERP without permanently destroying data.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        resource: {
+          type: "string",
+          enum: [
+            "purchase", "sales", "invoice", "quote", "expense", "recurring_expense",
+            "income", "contact", "lead", "task", "product", "leave", "reminder",
+            "license", "loan", "payroll", "bank_tx", "milk_log", "project", "employee",
+          ],
+        },
+        id: { type: "string", description: "Record ID to soft delete" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["resource", "id"],
+    },
+  },
+  {
+    name: "create_organization",
+    description: "Create a new organization or workspace in the system.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        slug: { type: "string" },
+        kind: { type: "string", enum: ["COMPANY", "HOUSEHOLD", "PERSONAL"], default: "COMPANY" },
+        currency: { type: "string", default: "NPR" },
+        panVatNumber: { type: "string" },
+        address: { type: "string" },
+        phone: { type: "string" },
+        email: { type: "string" },
+      },
+      required: ["name"],
+    },
+  },
 ];
 
 /**
@@ -3840,6 +4722,1193 @@ async function handleSingleRpc(rpc: any, auth: McpAuthResult) {
                 },
               ],
             },
+          };
+        }
+
+        // ==========================================
+        // 19. EXPENSE CATEGORIES CRUD
+        // ==========================================
+        if (toolName === "get_expense_category") {
+          const cat = await db.expenseCategory.findUnique({
+            where: { id: args.id },
+            include: { _count: { select: { expenses: true } } },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(cat, null, 2) }] },
+          };
+        }
+
+        if (toolName === "update_expense_category") {
+          const updateData: any = {};
+          if (args.name) updateData.name = args.name;
+          if (args.budgetMonthly !== undefined) updateData.budgetMonthly = args.budgetMonthly;
+          if (args.icon) updateData.icon = args.icon;
+
+          const cat = await db.expenseCategory.update({
+            where: { id: args.id },
+            data: updateData,
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Updated category "${cat.name}".` }] },
+          };
+        }
+
+        if (toolName === "delete_expense_category") {
+          await db.expense.updateMany({
+            where: { categoryId: args.id },
+            data: { categoryId: null },
+          });
+          await db.expenseCategory.delete({ where: { id: args.id } });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Deleted category ${args.id}.` }] },
+          };
+        }
+
+        // ==========================================
+        // 20. INCOME CRUD
+        // ==========================================
+        if (toolName === "get_income") {
+          const inc = await db.income.findUnique({
+            where: { id: args.id },
+            include: { contact: true, bankAccount: true },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(inc, null, 2) }] },
+          };
+        }
+
+        // ==========================================
+        // 21. INVOICE PAYMENTS CRUD
+        // ==========================================
+        if (toolName === "delete_invoice_payment") {
+          const payment = await db.invoicePayment.findUnique({ where: { id: args.paymentId } });
+          if (!payment) throw new Error("Payment record not found");
+
+          await db.$transaction(async (tx) => {
+            await tx.invoicePayment.delete({ where: { id: payment.id } });
+            const invoice = await tx.invoice.findUnique({ where: { id: payment.invoiceId } });
+            if (invoice) {
+              const newPaid = Math.max(0, Number(invoice.paidAmount) - Number(payment.amount));
+              await tx.invoice.update({
+                where: { id: invoice.id },
+                data: {
+                  paidAmount: newPaid,
+                  status: newPaid <= 0 ? "SENT" : "PARTIAL",
+                },
+              });
+            }
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Deleted invoice payment ${args.paymentId}.` }] },
+          };
+        }
+
+        // ==========================================
+        // 22. PURCHASES / VENDOR ORDERS CRUD
+        // ==========================================
+        if (toolName === "get_purchase") {
+          const po = await db.purchaseOrder.findFirst({
+            where: { OR: [{ id: args.id }, { orderNumber: args.id }] },
+            include: { contact: true, items: true, payments: true },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(po, null, 2) }] },
+          };
+        }
+
+        if (toolName === "update_purchase") {
+          const updateData: any = {};
+          if (args.status) updateData.status = args.status;
+          if (args.notes !== undefined) updateData.notes = args.notes;
+
+          const po = await db.purchaseOrder.update({
+            where: { id: args.id },
+            data: updateData,
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Updated PO #${po.orderNumber} status to ${po.status}.` }] },
+          };
+        }
+
+        if (toolName === "delete_purchase") {
+          await db.$transaction([
+            db.purchasePayment.deleteMany({ where: { purchaseOrderId: args.id } }),
+            db.purchaseOrderItem.deleteMany({ where: { purchaseOrderId: args.id } }),
+            db.purchaseOrder.delete({ where: { id: args.id } }),
+          ]);
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Deleted purchase order ${args.id}.` }] },
+          };
+        }
+
+        if (toolName === "record_purchase_payment") {
+          const po = await db.purchaseOrder.findUnique({
+            where: { id: args.purchaseOrderId },
+            include: { contact: true },
+          });
+          if (!po) throw new Error("Purchase order not found");
+
+          const amount = Number(args.amount);
+          const payDate = args.paidAt ? new Date(args.paidAt) : new Date();
+
+          await db.$transaction(async (tx) => {
+            await tx.purchasePayment.create({
+              data: {
+                purchaseOrderId: po.id,
+                amount,
+                paidAt: payDate,
+                method: args.method || "Bank Transfer",
+                reference: args.reference || null,
+                notes: args.notes || null,
+              },
+            });
+
+            const newPaid = Number(po.paidAmount) + amount;
+            const isFullyPaid = newPaid >= Number(po.total);
+            await tx.purchaseOrder.update({
+              where: { id: po.id },
+              data: {
+                paidAmount: newPaid,
+                status: isFullyPaid ? "COMPLETED" : po.status,
+              },
+            });
+
+            await tx.expense.create({
+              data: {
+                organizationId: po.organizationId,
+                title: `Payment for PO #${po.orderNumber}`,
+                vendor: po.contact?.name || "Vendor",
+                type: "ONE_TIME",
+                amount,
+                occurredAt: payDate,
+                notes: `Vendor payment against PO #${po.orderNumber}`,
+              },
+            });
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Recorded payment of NPR ${amount} for PO #${po.orderNumber}.` }] },
+          };
+        }
+
+        // ==========================================
+        // 23. CONTACTS CRUD
+        // ==========================================
+        if (toolName === "get_contact") {
+          const contact = await db.contact.findUnique({
+            where: { id: args.id },
+            include: { invoices: { take: 5 }, purchaseOrders: { take: 5 } },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(contact, null, 2) }] },
+          };
+        }
+
+        if (toolName === "update_contact") {
+          const updateData: any = {};
+          if (args.name) updateData.name = args.name;
+          if (args.companyName !== undefined) updateData.companyName = args.companyName;
+          if (args.email !== undefined) updateData.email = args.email;
+          if (args.phone !== undefined) updateData.phone = args.phone;
+          if (args.address !== undefined) updateData.address = args.address;
+          if (args.taxNumber !== undefined) updateData.taxNumber = args.taxNumber;
+          if (args.notes !== undefined) updateData.notes = args.notes;
+
+          const contact = await db.contact.update({
+            where: { id: args.id },
+            data: updateData,
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Updated contact "${contact.name}".` }] },
+          };
+        }
+
+        if (toolName === "delete_contact") {
+          await db.contact.delete({ where: { id: args.id } });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Deleted contact ${args.id}.` }] },
+          };
+        }
+
+        // ==========================================
+        // 24. LEADS (CRM) CRUD
+        // ==========================================
+        if (toolName === "list_leads") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const where: any = { ...orgFilter };
+          if (args.status) where.status = args.status;
+
+          const leads = await db.lead.findMany({
+            where,
+            include: { contact: true },
+            orderBy: { createdAt: "desc" },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(leads, null, 2) }] },
+          };
+        }
+
+        if (toolName === "get_lead") {
+          const lead = await db.lead.findUnique({
+            where: { id: args.id },
+            include: { contact: true },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(lead, null, 2) }] },
+          };
+        }
+
+        if (toolName === "create_lead") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const lead = await db.lead.create({
+            data: {
+              organizationId: targetOrgId,
+              title: args.title,
+              contactId: args.contactId || null,
+              source: args.source || null,
+              status: args.status || "NEW",
+              value: Number(args.value) || 0,
+              nextFollowUpAt: args.nextFollowUpAt ? new Date(args.nextFollowUpAt) : null,
+              notes: args.notes || null,
+            },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Lead "${lead.title}" created with ID: ${lead.id}.` }] },
+          };
+        }
+
+        if (toolName === "update_lead") {
+          const updateData: any = {};
+          if (args.title) updateData.title = args.title;
+          if (args.status) updateData.status = args.status;
+          if (args.value !== undefined) updateData.value = Number(args.value);
+          if (args.nextFollowUpAt) updateData.nextFollowUpAt = new Date(args.nextFollowUpAt);
+          if (args.notes !== undefined) updateData.notes = args.notes;
+
+          const lead = await db.lead.update({
+            where: { id: args.id },
+            data: updateData,
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Updated lead "${lead.title}" (Status: ${lead.status}).` }] },
+          };
+        }
+
+        if (toolName === "delete_lead") {
+          await db.lead.delete({ where: { id: args.id } });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Deleted lead ${args.id}.` }] },
+          };
+        }
+
+        // ==========================================
+        // 25. PRODUCTS & INVENTORY CRUD
+        // ==========================================
+        if (toolName === "get_product") {
+          const product = await db.product.findFirst({
+            where: { OR: [{ id: args.id }, { sku: args.id }] },
+            include: { stockMovements: { take: 10, orderBy: { occurredAt: "desc" } } },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(product, null, 2) }] },
+          };
+        }
+
+        if (toolName === "update_product") {
+          const updateData: any = {};
+          if (args.name) updateData.name = args.name;
+          if (args.sku) updateData.sku = args.sku;
+          if (args.unit) updateData.unit = args.unit;
+          if (args.salePrice !== undefined) updateData.salePrice = Number(args.salePrice);
+          if (args.purchasePrice !== undefined) updateData.purchasePrice = Number(args.purchasePrice);
+          if (args.stockQty !== undefined) updateData.stockQty = Number(args.stockQty);
+          if (args.reorderLevel !== undefined) updateData.reorderLevel = Number(args.reorderLevel);
+          if (args.active !== undefined) updateData.active = Boolean(args.active);
+
+          const product = await db.product.update({
+            where: { id: args.id },
+            data: updateData,
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Updated product "${product.name}" (Stock: ${product.stockQty}).` }] },
+          };
+        }
+
+        if (toolName === "delete_product") {
+          await db.$transaction([
+            db.stockMovement.deleteMany({ where: { productId: args.id } }),
+            db.product.delete({ where: { id: args.id } }),
+          ]);
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Deleted product ${args.id}.` }] },
+          };
+        }
+
+        // ==========================================
+        // 26. SALES ORDERS CRUD
+        // ==========================================
+        if (toolName === "get_sales_order") {
+          const so = await db.salesOrder.findFirst({
+            where: { OR: [{ id: args.id }, { orderNumber: args.id }] },
+            include: { contact: true, items: true },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(so, null, 2) }] },
+          };
+        }
+
+        if (toolName === "update_sales_order") {
+          const updateData: any = {};
+          if (args.status) updateData.status = args.status;
+          if (args.notes !== undefined) updateData.notes = args.notes;
+
+          const so = await db.salesOrder.update({
+            where: { id: args.id },
+            data: updateData,
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Updated Sales Order #${so.orderNumber} to ${so.status}.` }] },
+          };
+        }
+
+        if (toolName === "delete_sales_order") {
+          await db.$transaction([
+            db.salesOrderItem.deleteMany({ where: { salesOrderId: args.id } }),
+            db.salesOrder.delete({ where: { id: args.id } }),
+          ]);
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Deleted sales order ${args.id}.` }] },
+          };
+        }
+
+        // ==========================================
+        // 27. QUOTES CRUD
+        // ==========================================
+        if (toolName === "get_quote") {
+          const quote = await db.quote.findFirst({
+            where: { OR: [{ id: args.id }, { quoteNumber: args.id }] },
+            include: { contact: true, items: true },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(quote, null, 2) }] },
+          };
+        }
+
+        if (toolName === "update_quote") {
+          const updateData: any = {};
+          if (args.status) updateData.status = args.status;
+          if (args.validUntil) updateData.validUntil = new Date(args.validUntil);
+          if (args.notes !== undefined) updateData.notes = args.notes;
+          if (args.terms !== undefined) updateData.terms = args.terms;
+
+          const quote = await db.quote.update({
+            where: { id: args.id },
+            data: updateData,
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Updated Quote #${quote.quoteNumber} (Status: ${quote.status}).` }] },
+          };
+        }
+
+        if (toolName === "delete_quote") {
+          await db.$transaction([
+            db.quoteItem.deleteMany({ where: { quoteId: args.id } }),
+            db.quote.delete({ where: { id: args.id } }),
+          ]);
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Deleted quote ${args.id}.` }] },
+          };
+        }
+
+        // ==========================================
+        // 28. LOANS CRUD
+        // ==========================================
+        if (toolName === "get_loan") {
+          const loan = await db.loan.findUnique({
+            where: { id: args.id },
+            include: { payments: { orderBy: { paymentDate: "desc" } } },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(loan, null, 2) }] },
+          };
+        }
+
+        if (toolName === "update_loan") {
+          const updateData: any = {};
+          if (args.partyName) updateData.partyName = args.partyName;
+          if (args.interestRate !== undefined) updateData.interestRate = Number(args.interestRate);
+          if (args.dueDate) updateData.dueDate = new Date(args.dueDate);
+          if (args.status) updateData.status = args.status;
+          if (args.notes !== undefined) updateData.notes = args.notes;
+
+          const loan = await db.loan.update({
+            where: { id: args.id },
+            data: updateData,
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Updated Loan #${loan.id.slice(-6)} (Status: ${loan.status}).` }] },
+          };
+        }
+
+        if (toolName === "delete_loan") {
+          await db.$transaction([
+            db.loanPayment.deleteMany({ where: { loanId: args.id } }),
+            db.loan.delete({ where: { id: args.id } }),
+          ]);
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Deleted loan ${args.id}.` }] },
+          };
+        }
+
+        // ==========================================
+        // 29. RENTAL HOUSE CRUD
+        // ==========================================
+        if (toolName === "get_rental_house") {
+          const house = await db.rentalHouse.findUnique({ where: { id: args.id } });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(house, null, 2) }] },
+          };
+        }
+
+        // ==========================================
+        // 30. UTILITIES CRUD
+        // ==========================================
+        if (toolName === "delete_electricity_reading") {
+          await db.electricityReadingLog.delete({ where: { id: args.id } });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Deleted electricity reading log ${args.id}.` }] },
+          };
+        }
+
+        if (toolName === "delete_milk_log") {
+          await db.milkMonthlyLog.delete({ where: { id: args.id } });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Deleted milk log ${args.id}.` }] },
+          };
+        }
+
+        // ==========================================
+        // 31. STAFF (HRM) CRUD
+        // ==========================================
+        if (toolName === "get_employee") {
+          const emp = await db.employee.findFirst({
+            where: { OR: [{ id: args.id }, { employeeCode: args.id }] },
+            include: { payrolls: { take: 5 }, leaveRequests: { take: 5 } },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(emp, null, 2) }] },
+          };
+        }
+
+        if (toolName === "update_employee") {
+          const updateData: any = {};
+          if (args.name) updateData.name = args.name;
+          if (args.email !== undefined) updateData.email = args.email;
+          if (args.phone !== undefined) updateData.phone = args.phone;
+          if (args.designation !== undefined) updateData.designation = args.designation;
+          if (args.department !== undefined) updateData.department = args.department;
+          if (args.basicSalary !== undefined) updateData.basicSalary = Number(args.basicSalary);
+          if (args.status) updateData.status = args.status;
+
+          const emp = await db.employee.update({
+            where: { id: args.id },
+            data: updateData,
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Updated employee "${emp.name}".` }] },
+          };
+        }
+
+        if (toolName === "delete_employee") {
+          await db.employee.delete({ where: { id: args.id } });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Deleted employee ${args.id}.` }] },
+          };
+        }
+
+        // ==========================================
+        // 32. PAYROLL CRUD
+        // ==========================================
+        if (toolName === "get_payroll") {
+          const p = await db.payroll.findUnique({
+            where: { id: args.id },
+            include: { employee: true },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(p, null, 2) }] },
+          };
+        }
+
+        if (toolName === "update_payroll") {
+          const updateData: any = {};
+          if (args.basic !== undefined) updateData.basic = Number(args.basic);
+          if (args.allowance !== undefined) updateData.allowance = Number(args.allowance);
+          if (args.overtime !== undefined) updateData.overtime = Number(args.overtime);
+          if (args.deduction !== undefined) updateData.deduction = Number(args.deduction);
+          if (args.tax !== undefined) updateData.tax = Number(args.tax);
+          if (args.netPay !== undefined) updateData.netPay = Number(args.netPay);
+          if (args.notes !== undefined) updateData.notes = args.notes;
+
+          const p = await db.payroll.update({
+            where: { id: args.id },
+            data: updateData,
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Updated payroll for ${p.id}.` }] },
+          };
+        }
+
+        if (toolName === "delete_payroll") {
+          await db.payroll.delete({ where: { id: args.id } });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Deleted payroll ${args.id}.` }] },
+          };
+        }
+
+        // ==========================================
+        // 33. LEAVES CRUD
+        // ==========================================
+        if (toolName === "get_leave") {
+          const leave = await db.leaveRequest.findUnique({
+            where: { id: args.id },
+            include: { employee: true },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(leave, null, 2) }] },
+          };
+        }
+
+        if (toolName === "update_leave") {
+          const leave = await db.leaveRequest.update({
+            where: { id: args.id },
+            data: { status: args.status },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Updated leave status to ${leave.status}.` }] },
+          };
+        }
+
+        if (toolName === "delete_leave") {
+          await db.leaveRequest.delete({ where: { id: args.id } });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Deleted leave request ${args.id}.` }] },
+          };
+        }
+
+        // ==========================================
+        // 34. PROJECTS CRUD
+        // ==========================================
+        if (toolName === "get_project") {
+          const p = await db.project.findUnique({
+            where: { id: args.id },
+            include: { teamLeader: true, contact: true, wallets: true, tasks: true },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(p, null, 2) }] },
+          };
+        }
+
+        if (toolName === "update_project") {
+          const updateData: any = {};
+          if (args.name) updateData.name = args.name;
+          if (args.description !== undefined) updateData.description = args.description;
+          if (args.budget !== undefined) updateData.budget = Number(args.budget);
+          if (args.status) updateData.status = args.status;
+          if (args.priority) updateData.priority = args.priority;
+
+          const p = await db.project.update({
+            where: { id: args.id },
+            data: updateData,
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Updated project "${p.name}".` }] },
+          };
+        }
+
+        if (toolName === "delete_project") {
+          await db.$transaction([
+            db.walletTransaction.deleteMany({ where: { wallet: { projectId: args.id } } }),
+            db.projectWallet.deleteMany({ where: { projectId: args.id } }),
+            db.workLog.deleteMany({ where: { projectId: args.id } }),
+            db.task.deleteMany({ where: { projectId: args.id } }),
+            db.project.delete({ where: { id: args.id } }),
+          ]);
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Deleted project ${args.id}.` }] },
+          };
+        }
+
+        // ==========================================
+        // 35. TASKS CRUD
+        // ==========================================
+        if (toolName === "get_task") {
+          const task = await db.task.findUnique({
+            where: { id: args.id },
+            include: { project: true, employee: true, worklogs: true },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(task, null, 2) }] },
+          };
+        }
+
+        if (toolName === "delete_task") {
+          await db.task.delete({ where: { id: args.id } });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Deleted task ${args.id}.` }] },
+          };
+        }
+
+        // ==========================================
+        // 36. WORKLOGS (TIMESHEETS) CRUD
+        // ==========================================
+        if (toolName === "get_work_log") {
+          const wl = await db.workLog.findUnique({
+            where: { id: args.id },
+            include: { project: true, employee: true, task: true },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(wl, null, 2) }] },
+          };
+        }
+
+        if (toolName === "update_work_log") {
+          const updateData: any = {};
+          if (args.durationMinutes !== undefined) updateData.durationMinutes = Number(args.durationMinutes);
+          if (args.comment !== undefined) updateData.comment = args.comment;
+          if (args.status) {
+            updateData.status = args.status;
+            if (args.status === "APPROVED") updateData.approvedAt = new Date();
+          }
+
+          const wl = await db.workLog.update({
+            where: { id: args.id },
+            data: updateData,
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Updated worklog ${wl.id} (Status: ${wl.status}).` }] },
+          };
+        }
+
+        if (toolName === "delete_work_log") {
+          await db.workLog.delete({ where: { id: args.id } });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Deleted worklog ${args.id}.` }] },
+          };
+        }
+
+        // ==========================================
+        // 37. PROJECT WALLETS & TRANSACTIONS
+        // ==========================================
+        if (toolName === "get_project_wallet") {
+          const wallet = await db.projectWallet.findUnique({
+            where: { id: args.id },
+            include: { project: true, transactions: { orderBy: { transactionDate: "desc" } } },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(wallet, null, 2) }] },
+          };
+        }
+
+        if (toolName === "list_wallet_transactions") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const where: any = { ...orgFilter };
+          if (args.walletId) where.walletId = args.walletId;
+
+          const txs = await db.walletTransaction.findMany({
+            where,
+            include: { requestedBy: true, transferTo: true, wallet: { select: { projectId: true } } },
+            orderBy: { transactionDate: "desc" },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(txs, null, 2) }] },
+          };
+        }
+
+        if (toolName === "update_wallet_transaction_status") {
+          const tx = await db.walletTransaction.findUnique({
+            where: { id: args.id },
+            include: { wallet: true },
+          });
+          if (!tx) throw new Error("Wallet transaction not found");
+
+          const actionType = args.actionType;
+          if (actionType === "LEADER_APPROVE") {
+            await db.walletTransaction.update({
+              where: { id: tx.id },
+              data: { leaderApproval: "APPROVED" },
+            });
+          } else if (actionType === "ADMIN_APPROVE") {
+            await db.walletTransaction.update({
+              where: { id: tx.id },
+              data: { adminApproval: "APPROVED" },
+            });
+          } else if (actionType === "REJECT") {
+            if (tx.wallet && tx.status === "PENDING") {
+              const newHold = Math.max(0, Number(tx.wallet.holdAmount) - Number(tx.amount));
+              await db.projectWallet.update({
+                where: { id: tx.walletId },
+                data: { holdAmount: newHold },
+              });
+            }
+            await db.walletTransaction.update({
+              where: { id: tx.id },
+              data: { status: "REJECTED", leaderApproval: "REJECTED", adminApproval: "REJECTED" },
+            });
+          } else if (actionType === "COMPLETE_TRANSFER") {
+            if (tx.wallet) {
+              const newHold = Math.max(0, Number(tx.wallet.holdAmount) - Number(tx.amount));
+              const newTransferred = Number(tx.wallet.transferredAmount) + Number(tx.amount);
+              const newBalance = Math.max(0, Number(tx.wallet.totalBudget) - newTransferred);
+              await db.projectWallet.update({
+                where: { id: tx.walletId },
+                data: {
+                  holdAmount: newHold,
+                  transferredAmount: newTransferred,
+                  balance: newBalance,
+                },
+              });
+            }
+            await db.walletTransaction.update({
+              where: { id: tx.id },
+              data: { status: "TRANSFERRED", leaderApproval: "APPROVED", adminApproval: "APPROVED" },
+            });
+          }
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Wallet transaction ${tx.id} updated with action ${actionType}.` }] },
+          };
+        }
+
+        // ==========================================
+        // 38. LICENSES & COMPLIANCE
+        // ==========================================
+        if (toolName === "list_licenses") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const licenses = await db.licenseRecord.findMany({
+            where: orgFilter,
+            orderBy: { expiryDate: "asc" },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(licenses, null, 2) }] },
+          };
+        }
+
+        if (toolName === "get_license") {
+          const lic = await db.licenseRecord.findUnique({ where: { id: args.id } });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(lic, null, 2) }] },
+          };
+        }
+
+        if (toolName === "create_license") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const lic = await db.licenseRecord.create({
+            data: {
+              organizationId: targetOrgId,
+              name: args.name,
+              vendor: args.vendor || null,
+              licenseKey: args.licenseKey || null,
+              seats: Number(args.seats) || 1,
+              purchaseDate: args.purchaseDate ? new Date(args.purchaseDate) : null,
+              expiryDate: args.expiryDate ? new Date(args.expiryDate) : null,
+              renewalCost: args.renewalCost ? Number(args.renewalCost) : null,
+              notes: args.notes || null,
+              status: "ACTIVE",
+            },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `License "${lic.name}" created with ID: ${lic.id}.` }] },
+          };
+        }
+
+        if (toolName === "update_license") {
+          const updateData: any = {};
+          if (args.name) updateData.name = args.name;
+          if (args.expiryDate) updateData.expiryDate = new Date(args.expiryDate);
+          if (args.renewalCost !== undefined) updateData.renewalCost = Number(args.renewalCost);
+          if (args.status) updateData.status = args.status;
+
+          const lic = await db.licenseRecord.update({
+            where: { id: args.id },
+            data: updateData,
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Updated license "${lic.name}" (Status: ${lic.status}).` }] },
+          };
+        }
+
+        if (toolName === "delete_license") {
+          await db.licenseRecord.delete({ where: { id: args.id } });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Deleted license ${args.id}.` }] },
+          };
+        }
+
+        // ==========================================
+        // 39. REMINDERS & ALERTS
+        // ==========================================
+        if (toolName === "list_reminders") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const where: any = { ...orgFilter };
+          if (args.status) where.status = args.status;
+
+          const reminders = await db.reminder.findMany({
+            where,
+            orderBy: { dueAt: "asc" },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(reminders, null, 2) }] },
+          };
+        }
+
+        if (toolName === "get_reminder") {
+          const r = await db.reminder.findUnique({ where: { id: args.id } });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(r, null, 2) }] },
+          };
+        }
+
+        if (toolName === "create_reminder") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const r = await db.reminder.create({
+            data: {
+              organizationId: targetOrgId,
+              title: args.title,
+              dueAt: new Date(args.dueAt),
+              notes: args.notes || null,
+              status: "PENDING",
+            },
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Reminder "${r.title}" scheduled for ${r.dueAt.toISOString().slice(0, 10)}.` }] },
+          };
+        }
+
+        if (toolName === "update_reminder") {
+          const updateData: any = {};
+          if (args.title) updateData.title = args.title;
+          if (args.dueAt) updateData.dueAt = new Date(args.dueAt);
+          if (args.status) updateData.status = args.status;
+
+          const r = await db.reminder.update({
+            where: { id: args.id },
+            data: updateData,
+          });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Updated reminder "${r.title}" (Status: ${r.status}).` }] },
+          };
+        }
+
+        if (toolName === "delete_reminder") {
+          await db.reminder.delete({ where: { id: args.id } });
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Deleted reminder ${args.id}.` }] },
+          };
+        }
+
+        // ==========================================
+        // 40. UNIVERSAL HARD & SOFT DELETION
+        // ==========================================
+        if (toolName === "hard_delete_record") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const { resource, id: recordId } = args;
+
+          await db.$transaction(async (tx) => {
+            switch (resource) {
+              case "purchase":
+                await tx.purchasePayment.deleteMany({ where: { purchaseOrderId: recordId } });
+                await tx.purchaseOrderItem.deleteMany({ where: { purchaseOrderId: recordId } });
+                await tx.purchaseOrder.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              case "sales":
+                await tx.salesOrderItem.deleteMany({ where: { salesOrderId: recordId } });
+                await tx.salesOrder.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              case "invoice":
+                await tx.invoicePayment.deleteMany({ where: { invoiceId: recordId } });
+                await tx.invoiceItem.deleteMany({ where: { invoiceId: recordId } });
+                await tx.invoice.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              case "quote":
+                await tx.quoteItem.deleteMany({ where: { quoteId: recordId } });
+                await tx.quote.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              case "expense":
+                await tx.bankTransaction.updateMany({ where: { expenseId: recordId }, data: { expenseId: null } });
+                await tx.expense.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              case "recurring_expense":
+                await tx.expense.updateMany({ where: { recurringExpenseId: recordId }, data: { recurringExpenseId: null } });
+                await tx.recurringExpense.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              case "income":
+                await tx.bankTransaction.updateMany({ where: { incomeId: recordId }, data: { incomeId: null } });
+                await tx.income.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              case "contact":
+                await tx.contact.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              case "lead":
+                await tx.lead.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              case "task":
+                await tx.workLog.updateMany({ where: { taskId: recordId }, data: { taskId: null } });
+                await tx.task.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              case "product":
+                await tx.stockMovement.deleteMany({ where: { productId: recordId } });
+                await tx.product.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              case "leave":
+                await tx.leaveRequest.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              case "reminder":
+                await tx.reminder.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              case "license":
+                await tx.licenseRecord.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              case "loan":
+                await tx.loanPayment.deleteMany({ where: { loanId: recordId } });
+                await tx.loan.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              case "payroll":
+                await tx.payroll.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              case "bank_tx":
+                await tx.bankTransaction.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              case "milk_log":
+                await tx.milkMonthlyLog.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              case "project":
+                await tx.project.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              case "employee":
+                await tx.employee.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+                break;
+              default:
+                break;
+            }
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Permanently deleted ${resource} record ${recordId}.` }] },
+          };
+        }
+
+        if (toolName === "soft_delete_record") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const { resource, id: recordId } = args;
+
+          switch (resource) {
+            case "purchase":
+              await db.purchaseOrder.updateMany({ where: { id: recordId, organizationId: targetOrgId }, data: { status: "CANCELLED" } });
+              break;
+            case "sales":
+              await db.salesOrder.updateMany({ where: { id: recordId, organizationId: targetOrgId }, data: { status: "CANCELLED" } });
+              break;
+            case "invoice":
+              await db.invoice.updateMany({ where: { id: recordId, organizationId: targetOrgId }, data: { status: "CANCELLED" } });
+              break;
+            case "quote":
+              await db.quote.updateMany({ where: { id: recordId, organizationId: targetOrgId }, data: { status: "CANCELLED" } });
+              break;
+            case "lead":
+              await db.lead.updateMany({ where: { id: recordId, organizationId: targetOrgId }, data: { status: "LOST" } });
+              break;
+            case "task":
+              await db.task.updateMany({ where: { id: recordId, organizationId: targetOrgId }, data: { status: "BLOCKED" } });
+              break;
+            case "leave":
+              await db.leaveRequest.updateMany({ where: { id: recordId, organizationId: targetOrgId }, data: { status: "CANCELLED" } });
+              break;
+            case "reminder":
+              await db.reminder.updateMany({ where: { id: recordId, organizationId: targetOrgId }, data: { status: "DISMISSED" } });
+              break;
+            case "license":
+              await db.licenseRecord.updateMany({ where: { id: recordId, organizationId: targetOrgId }, data: { status: "CANCELLED" } });
+              break;
+            case "product":
+              await db.product.updateMany({ where: { id: recordId, organizationId: targetOrgId }, data: { active: false } });
+              break;
+            case "loan":
+              await db.loan.updateMany({ where: { id: recordId, organizationId: targetOrgId }, data: { status: "SETTLED" } });
+              break;
+            case "employee":
+              await db.employee.updateMany({ where: { id: recordId, organizationId: targetOrgId }, data: { status: "INACTIVE" } });
+              break;
+            case "expense": {
+              const exp = await db.expense.findFirst({ where: { id: recordId, organizationId: targetOrgId } });
+              if (exp && !exp.notes?.includes("[CANCELLED]")) {
+                await db.expense.update({
+                  where: { id: recordId },
+                  data: { notes: `[CANCELLED] ${exp.notes || ""}`.trim() },
+                });
+              }
+              break;
+            }
+            default:
+              break;
+          }
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Soft-deleted / cancelled ${resource} record ${recordId}.` }] },
+          };
+        }
+
+        if (toolName === "create_organization") {
+          const slug = args.slug || args.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+          const ownerId = auth.userId || "master-admin";
+
+          const org = await db.organization.create({
+            data: {
+              name: args.name,
+              slug,
+              kind: args.kind || "COMPANY",
+              currency: args.currency || "NPR",
+              panVatNumber: args.panVatNumber || null,
+              taxNumber: args.panVatNumber || null,
+              address: args.address || null,
+              phone: args.phone || null,
+              email: args.email || null,
+              ownerId,
+            },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Created organization "${org.name}" (Slug: ${org.slug}, ID: ${org.id}).` }] },
           };
         }
 
