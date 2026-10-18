@@ -327,6 +327,85 @@ export async function GET(request: Request) {
           },
         },
       },
+      "/api/mcp/balance-sheet": {
+        get: {
+          operationId: "getBalanceSheet",
+          summary: "Get complete official Balance Sheet (Assets, Liabilities, Equity)",
+          description:
+            "Retrieve formal balance sheet for FY 2083/84 BS (or custom fiscal year) showing Total Current Assets (liquid bank balances, customer accounts receivable, loans given, stock inventory value), Fixed Assets, Total Current & Long-term Liabilities (vendor accounts payable, borrowings), Equity (capital, retained earnings), and total reconciliation.",
+          parameters: [
+            {
+              name: "company",
+              in: "query",
+              required: false,
+              schema: { type: "string" },
+              description: "Optional company or workspace filter: 'simulcast', 'house', 'office', or organization ID",
+            },
+            {
+              name: "fiscalYear",
+              in: "query",
+              required: false,
+              schema: { type: "string", default: "2083/84" },
+              description: "Fiscal year in Bikram Sambat (e.g. '2083/84' or '2082/83')",
+            },
+          ],
+          responses: {
+            "200": {
+              description: "Complete formal balance sheet with assets, liabilities, and equity totals",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      success: { type: "boolean" },
+                      company: { type: "string" },
+                      fiscalYear: { type: "string" },
+                      bikramSambatPeriod: { type: "string" },
+                      currency: { type: "string" },
+                      balanceSheet: {
+                        type: "object",
+                        properties: {
+                          assets: { type: "object" },
+                          liabilities: { type: "object" },
+                          equity: { type: "object" },
+                          totalLiabilitiesAndEquity: { type: "number" },
+                          isBalanced: { type: "boolean" },
+                        },
+                      },
+                      tabularSummary: { type: "array", items: { type: "object" } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        post: {
+          operationId: "postBalanceSheet",
+          summary: "Query Balance Sheet with JSON filters",
+          description: "Retrieve formal balance sheet with parameters in POST body.",
+          requestBody: {
+            required: false,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    company: { type: "string" },
+                    fiscalYear: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "200": {
+              description: "Balance sheet calculation",
+              content: { "application/json": { schema: { type: "object" } } },
+            },
+          },
+        },
+      },
       "/api/mcp/loans": {
         get: {
           operationId: "getLoans",

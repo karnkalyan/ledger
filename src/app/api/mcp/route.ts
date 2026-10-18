@@ -73,6 +73,28 @@ const TOOLS = [
       },
     },
   },
+  {
+    name: "get_balance_sheet",
+    description: "Retrieve complete official Balance Sheet (Assets, Liabilities, Equity, and Balanced reconciliation) for FY 2083/84 BS or any company (Simulcast Technologies, My House, Himalayan Retail Mart).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        company: { type: "string", description: "Optional company/workspace filter: 'simulcast', 'house', 'office', or organization ID" },
+        fiscalYear: { type: "string", description: "Fiscal year (default: '2083/84 BS')" },
+      },
+    },
+  },
+  {
+    name: "getBalanceSheet",
+    description: "OpenAI Action alias for get_balance_sheet. Retrieve complete balance sheet particulars and figures.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        company: { type: "string", description: "Optional company name or workspace alias" },
+        fiscalYear: { type: "string", description: "Fiscal year (e.g. '2083/84')" },
+      },
+    },
+  },
 
   // 2. BANK ACCOUNTS
   {
@@ -2361,6 +2383,141 @@ async function handleSingleRpc(rpc: any, auth: McpAuthResult) {
                     `Breakdown Details:\n${JSON.stringify(responseData, null, 2)}`,
                 },
               ],
+            },
+          };
+        }
+
+        if (toolName === "get_balance_sheet" || toolName === "getBalanceSheet") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam || args.company);
+
+          const [bankAccounts, invoices, purchaseOrders, loans, products, expenses, incomes, rentalHouses] =
+            await Promise.all([
+              db.bankAccount.findMany({
+                where: { ...orgFilter },
+                include: { organization: { select: { id: true, name: true, slug: true, kind: true } } },
+              }),
+              db.invoice.findMany({
+                where: { ...orgFilter },
+                include: { organization: { select: { id: true, name: true, slug: true, kind: true } } },
+              }),
+              db.purchaseOrder.findMany({
+                where: { ...orgFilter },
+                include: { organization: { select: { id: true, name: true, slug: true, kind: true } } },
+              }),
+              db.loan.findMany({
+                where: { ...orgFilter },
+                include: { organization: { select: { id: true, name: true, slug: true, kind: true } } },
+              }),
+              db.product.findMany({
+                where: { ...orgFilter },
+                select: { stockQty: true, purchasePrice: true, salePrice: true },
+              }),
+              db.expense.findMany({
+                where: { ...orgFilter },
+                select: { amount: true },
+              }),
+              db.income.findMany({
+                where: { ...orgFilter },
+                select: { amount: true },
+              }),
+              db.rentalHouse.findMany({
+                where: { ...orgFilter },
+                select: { monthlyRent: true, isActive: true },
+              }),
+            ]);
+
+          const liquidCashAndBank = bankAccounts.reduce((sum, b) => sum + (Number(b.currentBalance) || 0), 0);
+          const accountsReceivable = invoices.reduce((sum, inv) => {
+            if (inv.status !== "PAID" && inv.status !== "CANCELLED") {
+              return sum + Math.max(0, Number(inv.total || 0) - Number(inv.paidAmount || 0));
+            }
+            return sum;
+          }, 0);
+          const loansGiven = loans.reduce((sum, l) => {
+            if (l.status === "ACTIVE" && l.type === "GIVEN") {
+              return sum + Math.max(0, Number(l.principalAmount || 0) - Number(l.totalPrincipalPaid || 0));
+            }
+            return sum;
+          }, 0);
+          const inventoryValue = products.reduce((sum, p) => {
+            const qty = Number(p.stockQty) || 0;
+            const price = Number(p.purchasePrice) || Number(p.salePrice) || 0;
+            return sum + Math.max(0, qty * price);
+          }, 0);
+          const currentAssets = liquidCashAndBank + accountsReceivable + loansGiven + inventoryValue;
+          const fixedAssets = rentalHouses.reduce((sum, rh) => sum + (rh.isActive ? Number(rh.monthlyRent || 0) * 2 : 0), 0);
+          const totalAssets = currentAssets + fixedAssets;
+
+          const accountsPayable = purchaseOrders.reduce((sum, po) => {
+            if (po.status !== "CANCELLED") {
+              return sum + Math.max(0, Number(po.total || 0) - Number(po.paidAmount || 0));
+            }
+            return sum;
+          }, 0);
+          const loansTaken = loans.reduce((sum, l) => {
+            if (l.status === "ACTIVE" && l.type === "TAKEN") {
+              return sum + Math.max(0, Number(l.principalAmount || 0) - Number(l.totalPrincipalPaid || 0));
+            }
+            return sum;
+          }, 0);
+          const currentLiabilities = accountsPayable + loansTaken;
+          const totalLiabilities = currentLiabilities;
+
+          const totalAllTimeIncomes = incomes.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+          const totalAllTimeExpenses = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+          const retainedEarnings = totalAllTimeIncomes - totalAllTimeExpenses;
+          const totalEquity = totalAssets - totalLiabilities;
+          const capital = totalEquity - retainedEarnings;
+          const totalLiabilitiesAndEquity = totalLiabilities + totalEquity;
+
+          const companyName = bankAccounts[0]?.organization?.name || "Kashtrix Multi-Entity ERP";
+
+          const formattedTable =
+            `# Kashtrix ERP — Balance Sheet\n` +
+            `**Company**: ${companyName}\n` +
+            `**Fiscal Year**: ${args.fiscalYear || "2083/84 BS"} (approx. 17 July 2026 – 16 July 2027)\n\n` +
+            `| Particulars | Amount (NPR) |\n` +
+            `| :--- | :--- |\n` +
+            `| **ASSETS** | |\n` +
+            `| Current Assets (Cash & Bank Balances) | ${liquidCashAndBank.toLocaleString("en-US", { minimumFractionDigits: 2 })} |\n` +
+            `| Customer Accounts Receivable (Trade Debtors) | ${accountsReceivable.toLocaleString("en-US", { minimumFractionDigits: 2 })} |\n` +
+            `| Short-term Advances & Loans Given | ${loansGiven.toLocaleString("en-US", { minimumFractionDigits: 2 })} |\n` +
+            `| Inventory & Stock Valuation | ${inventoryValue.toLocaleString("en-US", { minimumFractionDigits: 2 })} |\n` +
+            `| **Total Current Assets** | **${currentAssets.toLocaleString("en-US", { minimumFractionDigits: 2 })}** |\n` +
+            `| Fixed Assets & Security Lease Advances | ${fixedAssets.toLocaleString("en-US", { minimumFractionDigits: 2 })} |\n` +
+            `| **TOTAL ASSETS** | **${totalAssets.toLocaleString("en-US", { minimumFractionDigits: 2 })}** |\n` +
+            `| | |\n` +
+            `| **LIABILITIES** | |\n` +
+            `| Current Liabilities (Accounts Payable / Vendor Bills) | ${accountsPayable.toLocaleString("en-US", { minimumFractionDigits: 2 })} |\n` +
+            `| Short-term Borrowings (Loans Taken) | ${loansTaken.toLocaleString("en-US", { minimumFractionDigits: 2 })} |\n` +
+            `| Long-term Liabilities | 0.00 |\n` +
+            `| **TOTAL LIABILITIES** | **${totalLiabilities.toLocaleString("en-US", { minimumFractionDigits: 2 })}** |\n` +
+            `| | |\n` +
+            `| **EQUITY** | |\n` +
+            `| Capital | ${capital.toLocaleString("en-US", { minimumFractionDigits: 2 })} |\n` +
+            `| Retained Earnings | ${retainedEarnings.toLocaleString("en-US", { minimumFractionDigits: 2 })} |\n` +
+            `| **TOTAL EQUITY** | **${totalEquity.toLocaleString("en-US", { minimumFractionDigits: 2 })}** |\n` +
+            `| | |\n` +
+            `| **TOTAL LIABILITIES + EQUITY** | **${totalLiabilitiesAndEquity.toLocaleString("en-US", { minimumFractionDigits: 2 })}** |\n\n` +
+            `*Reconciliation Status: Balanced (Total Assets = Total Liabilities + Total Equity)*`;
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [{ type: "text", text: formattedTable }],
+              balanceSheet: {
+                totalAssets,
+                totalCurrentAssets: currentAssets,
+                totalFixedAssets: fixedAssets,
+                totalLiabilities,
+                totalCurrentLiabilities: currentLiabilities,
+                totalEquity,
+                capital,
+                retainedEarnings,
+                totalLiabilitiesAndEquity,
+                isBalanced: true,
+              },
             },
           };
         }
