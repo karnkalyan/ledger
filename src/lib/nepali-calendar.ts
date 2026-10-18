@@ -460,6 +460,45 @@ export function resolveNepaliPeriodToAdRange(input?: string | null): {
     return { startDate: start, endDate: end, label: `Today (${now.toISOString().slice(0, 10)})` };
   }
 
+  const now = new Date();
+  if (s === "this month" || s === "current month") {
+    const startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    return {
+      startDate,
+      endDate,
+      label: startDate.toLocaleString("en-US", { month: "long", year: "numeric" }),
+    };
+  }
+
+  if (s === "last month" || s === "previous month") {
+    const startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+    const endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    return {
+      startDate,
+      endDate,
+      label: startDate.toLocaleString("en-US", { month: "long", year: "numeric" }),
+    };
+  }
+
+  // Resolve English/Gregorian month names, with an optional explicit year.
+  const gregorianMonths = [
+    "january", "february", "march", "april", "may", "june",
+    "july", "august", "september", "october", "november", "december",
+  ];
+  const gregorianMonth = gregorianMonths.findIndex((month) => s.includes(month));
+  if (gregorianMonth >= 0) {
+    const adYearMatch = s.match(/\b(20[2-9]\d)\b/);
+    const year = adYearMatch ? Number(adYearMatch[1]) : now.getFullYear();
+    const startDate = new Date(year, gregorianMonth, 1, 0, 0, 0, 0);
+    const endDate = new Date(year, gregorianMonth + 1, 0, 23, 59, 59, 999);
+    return {
+      startDate,
+      endDate,
+      label: `${gregorianMonths[gregorianMonth][0].toUpperCase()}${gregorianMonths[gregorianMonth].slice(1)} ${year}`,
+    };
+  }
+
   // Derive current BS year dynamically from today's date
   const currentBs = adToBs(new Date());
   let targetYear = currentBs.year;
@@ -542,4 +581,3 @@ export function resolveNepaliPeriodToAdRange(input?: string | null): {
 
   return { label: input };
 }
-

@@ -2,16 +2,20 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verifyMcpAuth, resolveOrgId, resolveOrgFilter, McpAuthResult } from "@/lib/mcp-auth";
 import { analyzeFinancialDocument } from "@/lib/gemini";
+import { resolveNepaliPeriodToAdRange } from "@/lib/nepali-calendar";
 import { Prisma } from "@/generated/client";
 
 export const dynamic = "force-dynamic";
 
-const MCP_PROTOCOL_VERSION = "2024-11-05";
+const MCP_PROTOCOL_VERSION = "2025-06-18";
+const MCP_SERVER_INSTRUCTIONS =
+  "Use list_financial_transactions for complete period-based transaction requests and list_invoices for billing requests. Dates may be Gregorian (for example September 2026 or 2026-09) or Nepali Bikram Sambat (for example Ashoj or 2083-06). Read tools never modify ledger data. Confirm the target workspace and important values before using write or destructive tools.";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-mcp-key, x-api-key",
+  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Accept, Authorization, Last-Event-ID, MCP-Protocol-Version, MCP-Session-Id, x-mcp-key, x-api-key",
+  "Access-Control-Expose-Headers": "MCP-Session-Id",
 };
 
 function jsonResponse(data: any, status = 200) {
@@ -21,8 +25,53 @@ function jsonResponse(data: any, status = 200) {
   });
 }
 
-// Tool Definitions Compliant with MCP 2024-11-05 & OpenAI Apps SDK
+function resolveBaseUrl(request: Request): string {
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const host = forwardedHost || request.headers.get("host") || "";
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  const proto = forwardedProto || (host.includes("localhost") || host.startsWith("127.") ? "http" : "https");
+  if (host) return `${proto}://${host}`;
+  return (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://ledger.simulcast.com.np").replace(/\/$/, "");
+}
+
+function authenticationRequiredResponse(request: Request, id: unknown, message: string) {
+  const challenge = `Bearer resource_metadata="${resolveBaseUrl(request)}/.well-known/oauth-protected-resource", error="invalid_token", error_description="Authentication is required to access Kashtrix ERP data"`;
+  return NextResponse.json(
+    {
+      jsonrpc: "2.0",
+      id: id ?? null,
+      result: {
+        content: [{ type: "text", text: message }],
+        _meta: { "mcp/www_authenticate": [challenge] },
+        isError: true,
+      },
+    },
+    {
+      status: 401,
+      headers: { ...CORS_HEADERS, "WWW-Authenticate": challenge },
+    }
+  );
+}
+
+// Tool definitions for the current Streamable HTTP MCP contract and OpenAI tool scanner.
 const TOOLS = [
+  {
+    name: "get_current_user",
+    description: "Return the authenticated Kashtrix profile and connected workspace identity. Use this to confirm which account is connected.",
+    inputSchema: { type: "object", properties: {} },
+    outputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        name: { type: "string" },
+        email: { type: "string" },
+        nickname: { type: "string" },
+      },
+      required: ["id", "name", "email", "nickname"],
+      additionalProperties: false,
+    },
+    _meta: { "openai/profile": true },
+  },
   // 1. ORGANIZATIONS / WORKSPACES
   {
     name: "list_organizations",
@@ -170,18 +219,39 @@ const TOOLS = [
   // 3. BANK TRANSACTIONS
   {
     name: "list_bank_transactions",
-    description: "List bank statement transactions with filtration by account, type (DEPOSIT/WITHDRAWAL), search query, or workspace.",
+    description: "List real bank statement transactions for a requested Gregorian or Nepali month/date range, with deposit, withdrawal, and net-cashflow totals. Use for requests such as last month, September 2026, Ashoj, or a specific workspace.",
     inputSchema: {
       type: "object",
       properties: {
         bankAccountId: { type: "string", description: "Optional bank account filter" },
         type: { type: "string", enum: ["DEPOSIT", "WITHDRAWAL"] },
         query: { type: "string", description: "Search query in narration or reference" },
+        period: { type: "string", description: "Period such as 'last month', 'September 2026', '2026-09', 'ashoj', '2083-06', 'today', or 'all'" },
+        startDate: { type: "string", description: "Optional inclusive start date in YYYY-MM-DD format" },
+        endDate: { type: "string", description: "Optional inclusive end date in YYYY-MM-DD format" },
         orgId: { type: "string", description: "Optional workspace filter ('house', 'office', or ID)" },
         workspace: { type: "string", description: "Optional workspace alias ('house' or 'office')" },
-        limit: { type: "integer", default: 50 },
+        limit: { type: "integer", minimum: 1, maximum: 500, default: 100 },
       },
     },
+    outputSchema: { type: "object", additionalProperties: true },
+  },
+  {
+    name: "list_financial_transactions",
+    description: "Return a unified transaction report across bank entries, expenses, income receipts, customer invoice payments, and vendor purchase payments for a requested period. Use when the user asks for all transaction details, a monthly ledger, or complete financial activity.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        period: { type: "string", description: "Period such as 'last month', 'September 2026', '2026-09', 'ashoj', '2083-06', 'today', or 'all'" },
+        startDate: { type: "string", description: "Optional inclusive start date in YYYY-MM-DD format; overrides the period start" },
+        endDate: { type: "string", description: "Optional inclusive end date in YYYY-MM-DD format; overrides the period end" },
+        orgId: { type: "string", description: "Optional organization ID, name, or slug" },
+        workspace: { type: "string", description: "Optional workspace alias such as 'house', 'office', or 'company'" },
+        query: { type: "string", description: "Optional text filter for descriptions, references, customers, or vendors" },
+        limit: { type: "integer", minimum: 1, maximum: 500, default: 100 },
+      },
+    },
+    outputSchema: { type: "object", additionalProperties: true },
   },
   {
     name: "create_bank_transaction",
@@ -387,16 +457,21 @@ const TOOLS = [
   // 6. INVOICES
   {
     name: "list_invoices",
-    description: "List customer invoices with statuses, due dates, and paid amounts across accounts or by workspace.",
+    description: "List actual customer billing and invoice records with customer details, line items, payments, billed totals, collected amounts, outstanding balances, status, and optional period filters. Use when the user asks for billings, invoices, receivables, paid bills, or unpaid bills.",
     inputSchema: {
       type: "object",
       properties: {
         status: { type: "string", enum: ["DRAFT", "SENT", "PARTIAL", "PAID", "OVERDUE", "CANCELLED"] },
+        customer: { type: "string", description: "Optional customer name search" },
+        period: { type: "string", description: "Issue period such as 'last month', 'September 2026', '2026-09', 'ashoj', or 'all'" },
+        startDate: { type: "string", description: "Optional inclusive issue-date start in YYYY-MM-DD format" },
+        endDate: { type: "string", description: "Optional inclusive issue-date end in YYYY-MM-DD format" },
         orgId: { type: "string", description: "Optional workspace filter ('house', 'office', or ID)" },
         workspace: { type: "string", description: "Optional workspace alias ('house' or 'office')" },
-        limit: { type: "integer", default: 50 },
+        limit: { type: "integer", minimum: 1, maximum: 500, default: 100 },
       },
     },
+    outputSchema: { type: "object", additionalProperties: true },
   },
   {
     name: "get_invoice",
@@ -2091,6 +2166,101 @@ const TOOLS = [
   },
 ];
 
+function humanizeToolName(name: string): string {
+  return name
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function isReadOnlyTool(name: string): boolean {
+  return (
+    name.startsWith("list_") ||
+    name.startsWith("get_") ||
+    name === "getBalanceSheet" ||
+    name === "analyze_financial_document_ai"
+  );
+}
+
+function isDestructiveTool(name: string): boolean {
+  return (
+    name.includes("delete") ||
+    name === "settle_loan" ||
+    name === "convert_quote_to_invoice" ||
+    name === "update_wallet_transaction_status"
+  );
+}
+
+// ChatGPT's tool scanner consumes these fields directly from tools/list. Keep
+// the underlying definitions compact while guaranteeing that every tool has
+// the current MCP/OpenAI metadata required for selection, auth, and safety.
+const DISCOVERABLE_TOOLS = TOOLS.map((tool: any) => {
+  const readOnly = isReadOnlyTool(tool.name);
+  const destructive = isDestructiveTool(tool.name);
+  const securitySchemes = [
+    {
+      type: "oauth2",
+      scopes: readOnly ? ["mcp:read"] : ["mcp:write"],
+    },
+  ];
+
+  return {
+    ...tool,
+    title: tool.title || humanizeToolName(tool.name),
+    annotations: {
+      title: tool.title || humanizeToolName(tool.name),
+      readOnlyHint: readOnly,
+      destructiveHint: destructive,
+      openWorldHint: tool.name === "analyze_financial_document_ai",
+      idempotentHint: readOnly,
+    },
+    securitySchemes,
+    _meta: {
+      ...(tool._meta || {}),
+      securitySchemes,
+      "openai/toolInvocation/invoking": readOnly ? "Loading Kashtrix data…" : "Updating Kashtrix…",
+      "openai/toolInvocation/invoked": readOnly ? "Kashtrix data ready" : "Kashtrix updated",
+    },
+  };
+});
+
+function parseDateRange(args: Record<string, any>): {
+  startDate?: Date;
+  endDate?: Date;
+  label: string;
+} {
+  const period = String(args.period || args.month || "").trim();
+  const resolved = resolveNepaliPeriodToAdRange(period);
+  let startDate = resolved.startDate;
+  let endDate = resolved.endDate;
+
+  if (args.startDate) {
+    startDate = new Date(`${String(args.startDate).slice(0, 10)}T00:00:00.000Z`);
+    if (Number.isNaN(startDate.getTime())) throw new Error("startDate must be a valid YYYY-MM-DD date");
+  }
+  if (args.endDate) {
+    endDate = new Date(`${String(args.endDate).slice(0, 10)}T23:59:59.999Z`);
+    if (Number.isNaN(endDate.getTime())) throw new Error("endDate must be a valid YYYY-MM-DD date");
+  }
+  if (startDate && endDate && startDate > endDate) {
+    throw new Error("startDate must be before or equal to endDate");
+  }
+
+  return {
+    startDate,
+    endDate,
+    label: period ? resolved.label : startDate || endDate ? "Custom date range" : "All Transactions",
+  };
+}
+
+function dateWhere(startDate?: Date, endDate?: Date) {
+  if (!startDate && !endDate) return undefined;
+  return {
+    ...(startDate ? { gte: startDate } : {}),
+    ...(endDate ? { lte: endDate } : {}),
+  };
+}
+
 /**
  * Executes a single MCP JSON-RPC call
  */
@@ -2105,12 +2275,11 @@ async function handleSingleRpc(rpc: any, auth: McpAuthResult) {
 
   switch (method) {
     case "initialize": {
-      const clientVersion = params?.protocolVersion;
       return {
         jsonrpc,
         id,
         result: {
-          protocolVersion: clientVersion || MCP_PROTOCOL_VERSION,
+          protocolVersion: MCP_PROTOCOL_VERSION,
           capabilities: {
             tools: { listChanged: false },
             resources: { subscribe: false, listChanged: false },
@@ -2121,6 +2290,7 @@ async function handleSingleRpc(rpc: any, auth: McpAuthResult) {
             version: "1.0.0",
             description: "Kashtrix ERP Model Context Protocol Server with Full Multi-Workspace Support",
           },
+          instructions: MCP_SERVER_INSTRUCTIONS,
         },
       };
     }
@@ -2133,14 +2303,20 @@ async function handleSingleRpc(rpc: any, auth: McpAuthResult) {
       return {
         jsonrpc,
         id,
-        result: { tools: TOOLS },
+        result: { tools: DISCOVERABLE_TOOLS },
       };
 
     case "resources/list":
       return { jsonrpc, id, result: { resources: [] } };
 
+    case "resources/templates/list":
+      return { jsonrpc, id, result: { resourceTemplates: [] } };
+
     case "prompts/list":
       return { jsonrpc, id, result: { prompts: [] } };
+
+    case "logging/setLevel":
+      return { jsonrpc, id, result: {} };
 
     case "tools/call":
     case "call_tool":
@@ -2162,6 +2338,24 @@ async function handleSingleRpc(rpc: any, auth: McpAuthResult) {
       const targetOrgParam = args.orgId || args.organizationId || args.workspace;
 
       try {
+        if (toolName === "get_current_user") {
+          const profile = {
+            id: auth.userId || "",
+            name: auth.name || "Kashtrix User",
+            email: auth.email || "",
+            nickname: `${auth.name || "Kashtrix User"} — ${auth.organizations?.length || 0} workspace(s)`,
+          };
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [{ type: "text", text: JSON.stringify(profile) }],
+              structuredContent: profile,
+              isError: false,
+            },
+          };
+        }
+
         // ==========================================
         // 1. ORGANIZATIONS / WORKSPACES
         // ==========================================
@@ -2742,29 +2936,231 @@ async function handleSingleRpc(rpc: any, auth: McpAuthResult) {
         if (toolName === "list_bank_transactions") {
           const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
           const where: any = { ...orgFilter };
+          const { startDate, endDate, label } = parseDateRange(args);
           if (args.bankAccountId) where.bankAccountId = args.bankAccountId;
           if (args.type) where.type = args.type;
+          const transactionDate = dateWhere(startDate, endDate);
+          if (transactionDate) where.transactionDate = transactionDate;
           if (args.query) {
             where.OR = [
               { description: { contains: args.query } },
               { reference: { contains: args.query } },
+              { chequeNumber: { contains: args.query } },
+              { category: { contains: args.query } },
             ];
           }
+
+          const limit = Math.min(500, Math.max(1, Number(args.limit) || 100));
 
           const txs = await db.bankTransaction.findMany({
             where,
             include: {
-              bankAccount: { select: { bankName: true, accountNumber: true } },
+              bankAccount: { select: { bankName: true, accountName: true, accountNumber: true } },
               organization: { select: { id: true, name: true, slug: true, kind: true } },
             },
-            take: args.limit || 50,
+            take: limit,
             orderBy: { transactionDate: "desc" },
           });
+
+          const transactions = txs.map((tx) => ({
+            ...tx,
+            amount: Number(tx.amount),
+            balance: tx.balance === null ? null : Number(tx.balance),
+          }));
+          const summary = transactions.reduce(
+            (totals, tx) => {
+              if (tx.type === "DEPOSIT") totals.totalDeposits += tx.amount;
+              if (tx.type === "WITHDRAWAL") totals.totalWithdrawals += tx.amount;
+              return totals;
+            },
+            { totalRecords: transactions.length, totalDeposits: 0, totalWithdrawals: 0, netCashflow: 0 }
+          );
+          summary.netCashflow = summary.totalDeposits - summary.totalWithdrawals;
+          const report = { period: label, summary, transactions };
 
           return {
             jsonrpc,
             id,
-            result: { content: [{ type: "text", text: JSON.stringify(txs, null, 2) }] },
+            result: {
+              content: [{ type: "text", text: JSON.stringify(report, null, 2) }],
+              structuredContent: report,
+            },
+          };
+        }
+
+        if (toolName === "list_financial_transactions") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const { startDate, endDate, label } = parseDateRange(args);
+          const range = dateWhere(startDate, endDate);
+          const limit = Math.min(500, Math.max(1, Number(args.limit) || 100));
+
+          const [bankEntries, expenses, incomes, invoicePayments, purchasePayments] = await Promise.all([
+            db.bankTransaction.findMany({
+              where: { ...orgFilter, ...(range ? { transactionDate: range } : {}) },
+              include: {
+                bankAccount: { select: { bankName: true, accountName: true, accountNumber: true } },
+                organization: { select: { id: true, name: true, slug: true, kind: true } },
+              },
+              orderBy: { transactionDate: "desc" },
+              take: limit,
+            }),
+            db.expense.findMany({
+              where: { ...orgFilter, isEstimated: false, ...(range ? { occurredAt: range } : {}) },
+              include: {
+                category: { select: { name: true } },
+                organization: { select: { id: true, name: true, slug: true, kind: true } },
+              },
+              orderBy: { occurredAt: "desc" },
+              take: limit,
+            }),
+            db.income.findMany({
+              where: { ...orgFilter, ...(range ? { receivedAt: range } : {}) },
+              include: {
+                organization: { select: { id: true, name: true, slug: true, kind: true } },
+              },
+              orderBy: { receivedAt: "desc" },
+              take: limit,
+            }),
+            db.invoicePayment.findMany({
+              where: {
+                ...(range ? { paidAt: range } : {}),
+                invoice: { ...orgFilter },
+              },
+              include: {
+                invoice: {
+                  include: {
+                    contact: { select: { name: true } },
+                    organization: { select: { id: true, name: true, slug: true, kind: true } },
+                  },
+                },
+              },
+              orderBy: { paidAt: "desc" },
+              take: limit,
+            }),
+            db.purchasePayment.findMany({
+              where: {
+                ...(range ? { paidAt: range } : {}),
+                purchaseOrder: { ...orgFilter },
+              },
+              include: {
+                purchaseOrder: {
+                  include: {
+                    contact: { select: { name: true } },
+                    organization: { select: { id: true, name: true, slug: true, kind: true } },
+                  },
+                },
+              },
+              orderBy: { paidAt: "desc" },
+              take: limit,
+            }),
+          ]);
+
+          const entries = [
+            ...bankEntries.map((entry) => ({
+              id: entry.id,
+              source: "bank_transaction",
+              date: entry.transactionDate.toISOString(),
+              direction: entry.type === "DEPOSIT" ? "IN" : "OUT",
+              amount: Number(entry.amount),
+              description: entry.description,
+              reference: entry.reference || entry.chequeNumber || "",
+              category: entry.category || "Bank",
+              party: entry.bankAccount.accountName || "",
+              account: `${entry.bankAccount.bankName} ${entry.bankAccount.accountNumber}`.trim(),
+              organization: entry.organization,
+            })),
+            ...expenses.map((entry) => ({
+              id: entry.id,
+              source: "expense",
+              date: entry.occurredAt.toISOString(),
+              direction: "OUT",
+              amount: Number(entry.amount),
+              description: entry.title,
+              reference: "",
+              category: entry.category?.name || "Expense",
+              party: entry.vendor || "",
+              account: "",
+              organization: entry.organization,
+            })),
+            ...incomes.map((entry) => ({
+              id: entry.id,
+              source: "income",
+              date: entry.receivedAt.toISOString(),
+              direction: "IN",
+              amount: Number(entry.amount),
+              description: entry.title,
+              reference: "",
+              category: "Income",
+              party: entry.source || "",
+              account: entry.paymentMethod || "",
+              organization: entry.organization,
+            })),
+            ...invoicePayments.map((entry) => ({
+              id: entry.id,
+              source: "invoice_payment",
+              date: entry.paidAt.toISOString(),
+              direction: "IN",
+              amount: Number(entry.amount),
+              description: `Payment for invoice ${entry.invoice.invoiceNumber}`,
+              reference: entry.reference || "",
+              category: "Customer payment",
+              party: entry.invoice.contact?.name || "",
+              account: entry.method || "",
+              organization: entry.invoice.organization,
+            })),
+            ...purchasePayments.map((entry) => ({
+              id: entry.id,
+              source: "purchase_payment",
+              date: entry.paidAt.toISOString(),
+              direction: "OUT",
+              amount: Number(entry.amount),
+              description: `Payment for purchase ${entry.purchaseOrder.orderNumber}`,
+              reference: entry.reference || "",
+              category: "Vendor payment",
+              party: entry.purchaseOrder.contact?.name || "",
+              account: entry.method || "",
+              organization: entry.purchaseOrder.organization,
+            })),
+          ];
+
+          const query = String(args.query || "").trim().toLowerCase();
+          const filtered = (query
+            ? entries.filter((entry) =>
+                [entry.description, entry.reference, entry.category, entry.party, entry.account, entry.organization.name]
+                  .join(" ")
+                  .toLowerCase()
+                  .includes(query)
+              )
+            : entries
+          )
+            .sort((a, b) => b.date.localeCompare(a.date))
+            .slice(0, limit);
+
+          const totalsBySource = filtered.reduce<Record<string, { count: number; amount: number }>>((totals, entry) => {
+            totals[entry.source] ||= { count: 0, amount: 0 };
+            totals[entry.source].count += 1;
+            totals[entry.source].amount += entry.amount;
+            return totals;
+          }, {});
+          const report = {
+            period: label,
+            dateRange: {
+              startDate: startDate?.toISOString() || null,
+              endDate: endDate?.toISOString() || null,
+            },
+            totalRecords: filtered.length,
+            totalsBySource,
+            note: "Linked bank, expense, income, and payment records can describe the same cash movement; source totals are kept separate to avoid implying a deduplicated cashflow total.",
+            transactions: filtered,
+          };
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [{ type: "text", text: JSON.stringify(report, null, 2) }],
+              structuredContent: report,
+            },
           };
         }
 
@@ -3159,22 +3555,63 @@ async function handleSingleRpc(rpc: any, auth: McpAuthResult) {
         if (toolName === "list_invoices") {
           const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
           const where: any = { ...orgFilter };
+          const { startDate, endDate, label } = parseDateRange(args);
           if (args.status) where.status = args.status;
+          if (args.customer) where.contact = { name: { contains: args.customer } };
+          const issueDate = dateWhere(startDate, endDate);
+          if (issueDate) where.issueDate = issueDate;
+          const limit = Math.min(500, Math.max(1, Number(args.limit) || 100));
 
           const invoices = await db.invoice.findMany({
             where,
             include: {
               contact: true,
               items: true,
+              payments: true,
               organization: { select: { id: true, name: true, slug: true, kind: true } },
             },
-            take: args.limit || 50,
+            take: limit,
             orderBy: { issueDate: "desc" },
           });
+          const normalizedInvoices = invoices.map((invoice) => ({
+            ...invoice,
+            subtotal: Number(invoice.subtotal),
+            tax: Number(invoice.tax),
+            discount: Number(invoice.discount),
+            total: Number(invoice.total),
+            paidAmount: Number(invoice.paidAmount),
+            outstandingAmount: Math.max(0, Number(invoice.total) - Number(invoice.paidAmount)),
+            items: invoice.items.map((item) => ({
+              ...item,
+              quantity: Number(item.quantity),
+              unitPrice: Number(item.unitPrice),
+              taxRate: Number(item.taxRate),
+              amount: Number(item.amount),
+            })),
+            payments: invoice.payments.map((payment) => ({ ...payment, amount: Number(payment.amount) })),
+          }));
+          const summary = normalizedInvoices.reduce(
+            (totals, invoice) => {
+              totals.totalBilled += invoice.total;
+              totals.totalCollected += invoice.paidAmount;
+              totals.totalOutstanding += invoice.outstandingAmount;
+              return totals;
+            },
+            {
+              totalInvoices: normalizedInvoices.length,
+              totalBilled: 0,
+              totalCollected: 0,
+              totalOutstanding: 0,
+            }
+          );
+          const billingReport = { period: label, summary, invoices: normalizedInvoices };
           return {
             jsonrpc,
             id,
-            result: { content: [{ type: "text", text: JSON.stringify(invoices, null, 2) }] },
+            result: {
+              content: [{ type: "text", text: JSON.stringify(billingReport, null, 2) }],
+              structuredContent: billingReport,
+            },
           };
         }
 
@@ -6104,46 +6541,61 @@ export async function POST(request: Request) {
     );
   }
 
-  // Handle batch or single RPC
-  const firstItem = Array.isArray(body) ? body[0] : body;
-  let method = firstItem?.method || "";
-
-  // Auto-adapt non-JSON-RPC direct tool calls from ChatGPT Actions or REST clients
-  if (!method && firstItem && typeof firstItem === "object") {
-    const detectedTool =
-      firstItem.tool ||
-      firstItem.name ||
-      firstItem.action;
-    if (detectedTool) {
-      method = "tools/call";
-      firstItem.method = "tools/call";
-      firstItem.params = {
-        name: detectedTool,
-        arguments: firstItem.arguments || firstItem.params || firstItem,
-      };
-    }
+  if (Array.isArray(body) && body.length === 0) {
+    return jsonResponse(
+      { jsonrpc: "2.0", id: null, error: { code: -32600, message: "Invalid Request: empty JSON-RPC batch" } },
+      400
+    );
   }
 
-  // MCP discovery, handshake, and telemetry methods MUST NEVER REQUIRE AUTHENTICATION
-  const isDiscoveryMethod =
-    method === "initialize" ||
-    method === "notifications/initialized" ||
-    method === "initialized" ||
-    method === "tools/list" ||
-    method === "list_tools" ||
-    method === "resources/list" ||
-    method === "resources/templates/list" ||
-    method === "prompts/list" ||
-    method === "ping" ||
-    method === "logging/setLevel";
+  const normalizeRpc = (item: any) => {
+    if (!item?.method && item && typeof item === "object") {
+      const detectedTool = item.tool || item.name || item.action;
+      if (detectedTool) {
+        return {
+          ...item,
+          jsonrpc: item.jsonrpc || "2.0",
+          method: "tools/call",
+          params: {
+            name: detectedTool,
+            arguments: item.arguments || item.params || item,
+          },
+        };
+      }
+    }
+    return item;
+  };
 
-  const auth = await verifyMcpAuth(request);
+  body = Array.isArray(body) ? body.map(normalizeRpc) : normalizeRpc(body);
+  const items = Array.isArray(body) ? body : [body];
+  const discoveryMethods = new Set([
+    "initialize",
+    "notifications/initialized",
+    "initialized",
+    "tools/list",
+    "list_tools",
+    "resources/list",
+    "resources/templates/list",
+    "prompts/list",
+    "ping",
+    "logging/setLevel",
+  ]);
+  const protectedItem = items.find(
+    (item: any) =>
+      !discoveryMethods.has(item?.method || "") &&
+      !String(item?.method || "").startsWith("notifications/")
+  );
 
-  if (!isDiscoveryMethod && !auth.authenticated) {
-    return jsonResponse(
-      { jsonrpc: "2.0", id: firstItem?.id ?? null, error: { code: -32002, message: auth.error || "Authentication required" } },
-      401
-    );
+  let auth: McpAuthResult = { authenticated: false };
+  if (protectedItem) {
+    auth = await verifyMcpAuth(request);
+    if (!auth.authenticated) {
+      return authenticationRequiredResponse(
+        request,
+        protectedItem?.id,
+        auth.error || "Authentication required"
+      );
+    }
   }
 
   // Handle JSON-RPC Batch Requests
@@ -6185,7 +6637,7 @@ export async function GET(request: Request) {
     primaryOrgId: auth.orgId || "",
     authorizedOrganizations: auth.organizations || [],
     toolsCount: TOOLS.length,
-    tools: TOOLS,
+    tools: DISCOVERABLE_TOOLS,
     endpoints: {
       jsonRpc: "/api/mcp",
       sse: "/api/mcp/sse",
@@ -6203,6 +6655,16 @@ export async function GET(request: Request) {
 }
 
 export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: CORS_HEADERS,
+  });
+}
+
+// This server uses stateless Streamable HTTP sessions, so there is no server-
+// side session state to release. Accepting DELETE keeps MCP clients that always
+// send a transport shutdown request from reporting a false failure.
+export async function DELETE() {
   return new NextResponse(null, {
     status: 204,
     headers: CORS_HEADERS,

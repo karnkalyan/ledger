@@ -23,11 +23,11 @@ export async function GET(request: Request) {
     authorization_endpoint: `${serverUrl}/api/oauth/authorize`,
     token_endpoint: `${serverUrl}/api/oauth/token`,
     registration_endpoint: `${serverUrl}/api/oauth/register`,
-    scopes_supported: ["mcp:all", "mcp:read", "mcp:write", "admin", "openid", "profile", "email"],
+    scopes_supported: ["mcp:all", "mcp:read", "mcp:write", "admin", "openid", "profile", "email", "offline_access"],
     response_types_supported: ["code"],
-    grant_types_supported: ["authorization_code", "client_credentials", "refresh_token"],
+    grant_types_supported: ["authorization_code", "refresh_token"],
     token_endpoint_auth_methods_supported: ["client_secret_post", "client_secret_basic", "none"],
-    code_challenge_methods_supported: ["S256", "plain"],
+    code_challenge_methods_supported: ["S256"],
   };
 
   return NextResponse.json(authServerMetadata, {

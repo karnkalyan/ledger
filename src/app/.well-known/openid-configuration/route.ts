@@ -25,10 +25,10 @@ export async function GET(request: Request) {
     userinfo_endpoint: `${serverUrl}/api/oauth/userinfo`,
     jwks_uri: `${serverUrl}/api/oauth/jwks`,
     response_types_supported: ["code"],
-    grant_types_supported: ["authorization_code", "client_credentials", "refresh_token"],
+    grant_types_supported: ["authorization_code", "refresh_token"],
     token_endpoint_auth_methods_supported: ["client_secret_post", "client_secret_basic", "none"],
-    scopes_supported: ["mcp:all", "mcp:read", "mcp:write", "admin", "openid", "profile", "email"],
-    code_challenge_methods_supported: ["S256", "plain"],
+    scopes_supported: ["mcp:all", "mcp:read", "mcp:write", "admin", "openid", "profile", "email", "offline_access"],
+    code_challenge_methods_supported: ["S256"],
   };
 
   return NextResponse.json(discoveryDoc, {

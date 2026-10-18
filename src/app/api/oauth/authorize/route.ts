@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
-import { isMasterApiKey } from "@/lib/mcp-auth";
+import { createMcpToken, isMasterApiKey } from "@/lib/mcp-auth";
 import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
@@ -14,32 +14,10 @@ export async function GET(request: Request) {
   const redirectUri = searchParams.get("redirect_uri") || "";
   const state = searchParams.get("state") || "";
   const codeChallenge = searchParams.get("code_challenge") || "";
+  const codeChallengeMethod = searchParams.get("code_challenge_method") || "S256";
   const clientId = searchParams.get("client_id") || "chatgpt";
   const scope = searchParams.get("scope") || "mcp:all";
-  const auto = searchParams.get("auto") === "true";
-
-  // If auto-approval is explicitly requested (e.g. headless tests)
-  if (auto && redirectUri) {
-    const firstOrg = await db.organization.findFirst({ select: { id: true, slug: true, name: true } });
-    const codePayload = Buffer.from(
-      JSON.stringify({
-        issuedAt: Date.now(),
-        userId: "auto-approved",
-        orgId: firstOrg?.id || "",
-        orgSlug: firstOrg?.slug || "",
-        user: "ChatGPT Auto-Approved Client",
-        role: "OWNER",
-        state,
-        codeChallenge,
-        scope,
-      })
-    ).toString("base64url");
-
-    const target = new URL(redirectUri);
-    target.searchParams.set("code", codePayload);
-    if (state) target.searchParams.set("state", state);
-    return NextResponse.redirect(target.toString(), 302);
-  }
+  const resource = searchParams.get("resource") || "";
 
   // Redirect user's browser to the branded interactive login & consent dialog
   const envUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://ledger.simulcast.com.np").replace(/\/$/, "");
@@ -72,6 +50,8 @@ export async function GET(request: Request) {
   if (clientId) dialogUrl.searchParams.set("client_id", clientId);
   if (scope) dialogUrl.searchParams.set("scope", scope);
   if (codeChallenge) dialogUrl.searchParams.set("code_challenge", codeChallenge);
+  if (codeChallengeMethod) dialogUrl.searchParams.set("code_challenge_method", codeChallengeMethod);
+  if (resource) dialogUrl.searchParams.set("resource", resource);
 
   return NextResponse.redirect(dialogUrl.toString(), 302);
 }
@@ -87,7 +67,19 @@ export async function POST(request: Request) {
     body = {};
   }
 
-  const { email, password, apiKey, orgId, redirectUri, state, codeChallenge, scope } = body;
+  const {
+    email,
+    password,
+    apiKey,
+    orgId,
+    redirectUri,
+    state,
+    codeChallenge,
+    codeChallengeMethod,
+    clientId,
+    resource,
+    scope,
+  } = body;
 
   if (!redirectUri) {
     return NextResponse.json({ error: "Missing redirect_uri" }, { status: 400 });
@@ -210,23 +202,27 @@ export async function POST(request: Request) {
     targetOrgSlug = allAuthorizedOrgs[0].slug;
   }
 
-  // Create signed authorization code with full multi-organization authorization
-  const codePayload = Buffer.from(
-    JSON.stringify({
-      issuedAt: Date.now(),
-      userId: authenticatedUser.id,
-      name: authenticatedUser.name,
-      email: authenticatedUser.email,
-      role: authenticatedUser.role,
-      orgId: targetOrgId,
-      orgIds,
-      organizations: allAuthorizedOrgs,
-      orgSlug: targetOrgSlug,
-      state: state || "",
+  // Short-lived, signed, single-purpose authorization code. The token endpoint
+  // verifies the redirect URI and PKCE challenge before issuing access tokens.
+  const codePayload = await createMcpToken({
+    userId: authenticatedUser.id,
+    name: authenticatedUser.name,
+    email: authenticatedUser.email,
+    role: authenticatedUser.role,
+    orgId: targetOrgId,
+    orgIds,
+    orgSlug: targetOrgSlug,
+    expiresIn: "5m",
+    tokenUse: "authorization_code",
+    scope: scope || "mcp:read mcp:write offline_access",
+    resource: resource || "",
+    extraClaims: {
+      redirectUri,
+      clientId: clientId || "",
       codeChallenge: codeChallenge || "",
-      scope: scope || "mcp:all",
-    })
-  ).toString("base64url");
+      codeChallengeMethod: codeChallengeMethod || "S256",
+    },
+  });
 
   const target = new URL(redirectUri);
   target.searchParams.set("code", codePayload);

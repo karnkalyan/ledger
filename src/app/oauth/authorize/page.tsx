@@ -42,6 +42,8 @@ function OAuthAuthorizeContent() {
   const clientId = searchParams.get("client_id") || "ChatGPT";
   const scope = searchParams.get("scope") || "mcp:all";
   const codeChallenge = searchParams.get("code_challenge") || "";
+  const codeChallengeMethod = searchParams.get("code_challenge_method") || "S256";
+  const resource = searchParams.get("resource") || "";
 
   const [authMode, setAuthMode] = useState<"login" | "key">("login");
   const [email, setEmail] = useState("");
@@ -85,6 +87,9 @@ function OAuthAuthorizeContent() {
         redirectUri,
         state,
         codeChallenge,
+        codeChallengeMethod,
+        clientId,
+        resource,
         scope,
       };
       if (selectedOrgId) {

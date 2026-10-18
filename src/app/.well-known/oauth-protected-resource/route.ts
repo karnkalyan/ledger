@@ -19,9 +19,9 @@ export async function GET(request: Request) {
   const serverUrl = resolveBaseUrl(request);
 
   const protectedResourceMetadata = {
-    resource: serverUrl,
+    resource: `${serverUrl}/api/mcp`,
     authorization_servers: [serverUrl],
-    scopes_supported: ["mcp:all", "mcp:read", "mcp:write", "admin", "openid", "profile", "email"],
+    scopes_supported: ["mcp:all", "mcp:read", "mcp:write", "admin", "openid", "profile", "email", "offline_access"],
     bearer_methods_supported: ["header"],
     resource_documentation: `${serverUrl}/api/mcp`,
   };

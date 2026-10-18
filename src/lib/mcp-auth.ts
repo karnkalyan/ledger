@@ -51,6 +51,9 @@ export interface McpTokenPayload {
   name: string;
   email: string;
   role: string;
+  tokenUse?: "access_token" | "refresh_token" | "authorization_code";
+  scope?: string;
+  resource?: string;
   iat?: number;
   exp?: number;
 }
@@ -82,6 +85,10 @@ export async function createMcpToken(payload: {
   email: string;
   role?: string;
   expiresIn?: string;
+  tokenUse?: "access_token" | "refresh_token" | "authorization_code";
+  scope?: string;
+  resource?: string;
+  extraClaims?: Record<string, unknown>;
 }): Promise<string> {
   const primaryOrgId = payload.orgId || (payload.orgIds && payload.orgIds[0]) || "";
   const allOrgIds = payload.orgIds && payload.orgIds.length > 0 ? payload.orgIds : primaryOrgId ? [primaryOrgId] : [];
@@ -94,6 +101,10 @@ export async function createMcpToken(payload: {
     name: payload.name,
     email: payload.email,
     role: payload.role || "OWNER",
+    tokenUse: payload.tokenUse || "access_token",
+    scope: payload.scope || "mcp:read mcp:write",
+    resource: payload.resource || "",
+    ...(payload.extraClaims || {}),
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(payload.userId)
@@ -234,29 +245,37 @@ export async function verifyMcpAuth(req: Request): Promise<McpAuthResult> {
     const payload = await verifyMcpToken(token);
     if (payload) {
       const userId = String(payload.userId || payload.sub || "");
+      if (payload.tokenUse && payload.tokenUse !== "access_token") {
+        return {
+          authenticated: false,
+          error: "The supplied token is not an MCP access token.",
+        };
+      }
       const role = String(payload.role || "OWNER");
-      const isSuperAdmin = role === "SUPER_ADMIN" || role === "MCP_ADMIN" || role === "MCP_CLIENT";
+      const isSuperAdmin = role === "SUPER_ADMIN" || role === "MCP_ADMIN";
       const name = String(payload.name || "MCP User");
       const email = String(payload.email || "");
 
-      let userOrgs = await fetchUserOrganizations(userId, isSuperAdmin);
+      const userOrgs = await fetchUserOrganizations(userId, isSuperAdmin);
       if (userOrgs.length === 0) {
-        userOrgs = await fetchUserOrganizations("master-admin", true);
+        return {
+          authenticated: false,
+          error: "This account has no authorized Kashtrix workspaces.",
+        };
       }
       const userOrgIds = userOrgs.map((o) => o.id);
 
-      // Merge orgIds from token payload if provided
-      const payloadOrgIds = Array.isArray(payload.orgIds) ? (payload.orgIds as string[]) : [];
-      const combinedOrgIds = Array.from(new Set([...userOrgIds, ...payloadOrgIds]));
-
-      const primaryOrgId = String(payload.orgId || combinedOrgIds[0] || "");
+      // Organization access is always re-derived from the database. Token claims
+      // are hints only and never expand a user's current permissions.
+      const requestedPrimaryOrgId = String(payload.orgId || "");
+      const primaryOrgId = userOrgIds.includes(requestedPrimaryOrgId) ? requestedPrimaryOrgId : userOrgIds[0];
       const primaryOrg = userOrgs.find((o) => o.id === primaryOrgId) || userOrgs[0];
 
       return {
         authenticated: true,
         userId,
         orgId: primaryOrg?.id || primaryOrgId,
-        orgIds: combinedOrgIds,
+        orgIds: userOrgIds,
         organizations: userOrgs,
         orgSlug: primaryOrg?.slug || String(payload.orgSlug || ""),
         role,

@@ -16,20 +16,17 @@ export async function POST(request: Request) {
     : ["https://chatgpt.com/aip/oauth/callback"];
 
   const clientId = `chatgpt-mcp_${Date.now().toString(36)}`;
-  const clientSecret = process.env.MCP_API_KEY || "simulcast_master_mcp_api_key_2026_sec";
 
   return NextResponse.json(
     {
       client_id: clientId,
-      client_secret: clientSecret,
       client_id_issued_at: Math.floor(Date.now() / 1000),
-      client_secret_expires_at: 0, // Never expires
       client_name: clientName,
       redirect_uris: redirectUris,
-      grant_types: ["authorization_code", "client_credentials", "refresh_token"],
+      grant_types: ["authorization_code", "refresh_token"],
       response_types: ["code"],
-      token_endpoint_auth_method: "client_secret_post",
-      scope: "mcp:all mcp:read mcp:write admin",
+      token_endpoint_auth_method: "none",
+      scope: "mcp:all mcp:read mcp:write admin offline_access",
     },
     {
       status: 201,

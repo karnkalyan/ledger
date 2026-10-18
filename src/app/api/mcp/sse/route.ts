@@ -6,8 +6,9 @@ export const dynamic = "force-dynamic";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-mcp-key, x-api-key",
+  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Accept, Authorization, Last-Event-ID, MCP-Protocol-Version, MCP-Session-Id, x-mcp-key, x-api-key",
+  "Access-Control-Expose-Headers": "MCP-Session-Id",
 };
 
 function resolveBaseUrl(request: Request): string {

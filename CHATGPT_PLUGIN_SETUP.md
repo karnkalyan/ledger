@@ -2,6 +2,18 @@
 
 This guide provides the exact configuration details to connect **Kashtrix ERP** with ChatGPT using either **OAuth 2.0 (Plugins / Apps SDK)** or **API Key / Bearer (Custom GPT Actions)**.
 
+## Current ChatGPT Plugins setup (recommended)
+
+When ChatGPT asks for a **custom MCP server URL**, enter this exact endpoint:
+
+```text
+https://ledger.simulcast.com.np/api/mcp
+```
+
+Select **OAuth** authentication and let ChatGPT discover the authorization server. Do not enter the site root, `/api/mcp/sse`, `/.well-known/ai-plugin.json`, or the OpenAPI URL in the MCP server field; those endpoints serve different or legacy connection modes.
+
+After deployment, use **Refresh tools / Scan tools** in the plugin settings. ChatGPT keeps a snapshot of discovered tools, so an existing plugin will not automatically receive new or corrected definitions. The MCP scan should show every Kashtrix tool, including `list_invoices`, `list_bank_transactions`, and `list_financial_transactions`.
+
 ---
 
 ## ⚡ Method 1: ChatGPT Plugin with OAuth 2.0 (Developer Mode)
