@@ -546,6 +546,645 @@ const TOOLS = [
       },
     },
   },
+
+  // 10. LOANS & DEBT (LENDING & BORROWING)
+  {
+    name: "list_loans",
+    description: "List loans taken or given with principal, interest rates, paid balances, and settlement statuses across all accounts or by workspace.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        type: { type: "string", enum: ["TAKEN", "GIVEN", "ALL"], description: "TAKEN (borrowed) or GIVEN (lent out)" },
+        status: { type: "string", enum: ["ACTIVE", "SETTLED", "DEFAULTED", "ALL"] },
+        orgId: { type: "string", description: "Optional workspace filter ('house', 'office', or ID)" },
+        workspace: { type: "string", description: "Optional workspace alias ('house' or 'office')" },
+      },
+    },
+  },
+  {
+    name: "create_loan",
+    description: "Create a new loan record (borrowed or lent out) in the ledger.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        partyName: { type: "string", description: "Counterparty or lender/borrower name" },
+        type: { type: "string", enum: ["TAKEN", "GIVEN"], default: "TAKEN" },
+        principalAmount: { type: "number", description: "Principal loan amount" },
+        startDate: { type: "string", description: "YYYY-MM-DD" },
+        dueDate: { type: "string", description: "Optional due date YYYY-MM-DD" },
+        hasInterest: { type: "boolean", default: false },
+        interestRate: { type: "number", description: "Annual or monthly interest percent" },
+        interestFrequency: { type: "string", enum: ["DAILY", "MONTHLY", "YEARLY"], default: "MONTHLY" },
+        notes: { type: "string" },
+        orgId: { type: "string", description: "Target workspace ID or slug" },
+        workspace: { type: "string", description: "Target workspace alias ('house' or 'office')" },
+      },
+      required: ["partyName", "principalAmount"],
+    },
+  },
+  {
+    name: "settle_loan",
+    description: "Record a principal and/or interest repayment against a loan, automatically syncing with income or expense.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        loanId: { type: "string", description: "Loan ID to settle or repay" },
+        principalAmount: { type: "number", description: "Principal repayment amount" },
+        interestAmount: { type: "number", default: 0, description: "Interest portion paid" },
+        paymentDate: { type: "string", description: "Payment date YYYY-MM-DD" },
+        notes: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["loanId", "principalAmount"],
+    },
+  },
+
+  // 11. RENTAL RESIDENCE & TENANCY
+  {
+    name: "list_rental_houses",
+    description: "List rental residences and office premises with monthly rent, NEA electricity rate, water/garbage fees, and active status.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        orgId: { type: "string", description: "Optional workspace filter ('house', 'office', or ID)" },
+        workspace: { type: "string", description: "Optional workspace alias ('house' or 'office')" },
+      },
+    },
+  },
+  {
+    name: "get_active_rental_house",
+    description: "Get the currently active primary rental house or office lease with rent commitments and latest meter reading.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        orgId: { type: "string", description: "Optional workspace filter ('house', 'office', or ID)" },
+        workspace: { type: "string", description: "Optional workspace alias ('house' or 'office')" },
+      },
+    },
+  },
+  {
+    name: "save_rental_house",
+    description: "Create or update a rental residence / premises lease record and sync recurring commitments.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Optional rental house ID to update" },
+        title: { type: "string", description: "e.g. 'Shantinagar House (Current)', 'Corporate Office'" },
+        ownerName: { type: "string", description: "Landlord / House owner name" },
+        ownerPhone: { type: "string" },
+        address: { type: "string" },
+        monthlyRent: { type: "number", description: "Monthly rent in NPR" },
+        electricityRate: { type: "number", description: "Rate per NEA electricity unit" },
+        waterGarbageFee: { type: "number", description: "Monthly water & waste management fee" },
+        isActive: { type: "boolean", default: true },
+        notes: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["title", "ownerName"],
+    },
+  },
+  {
+    name: "set_active_rental_house",
+    description: "Set a specific rental house as active and automatically synchronize recurring lease commitments.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        houseId: { type: "string", description: "Rental House ID" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["houseId"],
+    },
+  },
+  {
+    name: "delete_rental_house",
+    description: "Delete a rental house record.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Rental House ID to delete" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+
+  // 12. UTILITIES (ELECTRICITY & MILK CONSUMPTION)
+  {
+    name: "get_electricity_readings",
+    description: "Get electricity meter readings, consumed units, rates, and computed bills across Nepali (BS) or English (AD) billing months.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        month: { type: "string", description: "Billing month: '2083-06' / 'ashoj', '2083-07' / 'kartik', '2026-10', or 'all'" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "save_electricity_reading",
+    description: "Record electricity meter reading. Automatically calculates units consumed from previous reading, computes total NEA bill at unit rate, and syncs directly into expenses.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        month: { type: "string", description: "Billing month (e.g. '2083-06', 'ashoj', '2026-10')" },
+        currentUnit: { type: "number", description: "Current electricity meter reading (e.g. 6632)" },
+        previousUnit: { type: "number", description: "Previous meter reading (auto-detected from last reading if omitted)" },
+        meterNumber: { type: "string", default: "MAIN" },
+        ratePerUnit: { type: "number", default: 15, description: "NPR rate per electricity unit" },
+        readingDate: { type: "string", description: "Date of reading YYYY-MM-DD" },
+        paid: { type: "boolean", default: true, description: "Whether bill has been paid or remains estimated" },
+        notes: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["currentUnit"],
+    },
+  },
+  {
+    name: "get_milk_logs",
+    description: "Get monthly dairy milk consumption logs, regular and alternate day quantities, rates, and total costs.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        month: { type: "string", description: "Billing month (e.g. '2083-06', 'ashoj', '2026-10')" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "save_milk_log",
+    description: "Save monthly milk consumption log and synchronize with household or office expenses.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        month: { type: "string", description: "Month in BS or AD (e.g. '2083-06', '2026-10')" },
+        ratePerLiter: { type: "number", default: 115 },
+        regularDays: { type: "number", default: 30 },
+        regularQty: { type: "number", default: 1.5, description: "Liters consumed per regular day" },
+        alternateDays: { type: "number", default: 0 },
+        alternateQty: { type: "number", default: 0 },
+        paid: { type: "boolean", default: false },
+        notes: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
+
+  // 13. PRODUCTS & INVENTORY
+  {
+    name: "list_products",
+    description: "List inventory products, SKU codes, sale prices, cost prices, and current stock balances.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        active: { type: "boolean", default: true },
+        query: { type: "string", description: "Search by product name or SKU" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "create_product",
+    description: "Create a new product or inventory item in the catalog.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Product name" },
+        sku: { type: "string", description: "Unique stock keeping unit code" },
+        unit: { type: "string", default: "pcs" },
+        salePrice: { type: "number", default: 0 },
+        purchasePrice: { type: "number", default: 0 },
+        stockQty: { type: "number", default: 0 },
+        reorderLevel: { type: "number", default: 0 },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["name", "sku"],
+    },
+  },
+  {
+    name: "list_stock_movements",
+    description: "List stock movements (IN, OUT, ADJUSTMENT, RETURN) with quantities and timestamps.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        productId: { type: "string", description: "Optional product ID filter" },
+        limit: { type: "integer", default: 50 },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "create_stock_movement",
+    description: "Record an inventory stock movement (IN/OUT/ADJUSTMENT) and update product stock balance.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        productId: { type: "string", description: "Product ID" },
+        type: { type: "string", enum: ["IN", "OUT", "ADJUSTMENT", "RETURN"] },
+        quantity: { type: "number", description: "Quantity moved" },
+        reference: { type: "string", description: "Invoice #, PO #, or adjustment reason" },
+        note: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["productId", "type", "quantity"],
+    },
+  },
+
+  // 14. STAFF, PAYROLL & LEAVES (HRM)
+  {
+    name: "list_employees",
+    description: "List company employees with employee codes, designations, departments, basic salaries, and employment statuses.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        status: { type: "string", enum: ["ACTIVE", "ON_LEAVE", "INACTIVE", "TERMINATED"] },
+        department: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "create_employee",
+    description: "Register a new employee/staff member in the company roster.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        employeeCode: { type: "string", description: "Optional code (auto-generated if omitted)" },
+        email: { type: "string" },
+        phone: { type: "string" },
+        designation: { type: "string" },
+        department: { type: "string" },
+        basicSalary: { type: "number", default: 0 },
+        joinDate: { type: "string", description: "YYYY-MM-DD" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    name: "list_payrolls",
+    description: "List employee payroll disbursements with salary breakdowns, allowances, and taxes.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        employeeId: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "create_payroll",
+    description: "Record a monthly payroll disbursement for an employee.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        employeeId: { type: "string" },
+        month: { type: "string", description: "Payroll month YYYY-MM-DD" },
+        basic: { type: "number" },
+        allowance: { type: "number", default: 0 },
+        overtime: { type: "number", default: 0 },
+        deduction: { type: "number", default: 0 },
+        tax: { type: "number", default: 0 },
+        netPay: { type: "number" },
+        paidAt: { type: "string" },
+        notes: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["employeeId", "month", "basic", "netPay"],
+    },
+  },
+  {
+    name: "list_leaves",
+    description: "List staff leave requests and approval statuses.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        employeeId: { type: "string" },
+        status: { type: "string", enum: ["PENDING", "APPROVED", "REJECTED", "CANCELLED"] },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "create_leave",
+    description: "Submit a staff leave request.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        employeeId: { type: "string" },
+        leaveType: { type: "string", description: "Casual, Sick, Annual, Maternity" },
+        fromDate: { type: "string", description: "YYYY-MM-DD" },
+        toDate: { type: "string", description: "YYYY-MM-DD" },
+        days: { type: "number" },
+        reason: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["employeeId", "leaveType", "fromDate", "toDate", "days"],
+    },
+  },
+
+  // 15. PROJECTS, TASKS & WORKLOGS
+  {
+    name: "list_projects",
+    description: "List business and engineering projects with budgets, team leaders, client contacts, and statuses.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        status: { type: "string", description: "ACTIVE, COMPLETED, ON_HOLD" },
+        fiscalYear: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "create_project",
+    description: "Create or update a business project with dedicated budget and project wallet.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Optional project ID to update" },
+        name: { type: "string" },
+        description: { type: "string" },
+        contactId: { type: "string", description: "Client contact ID" },
+        teamLeaderId: { type: "string", description: "Team leader employee ID" },
+        budget: { type: "number", default: 0 },
+        startDate: { type: "string" },
+        endDate: { type: "string" },
+        status: { type: "string", default: "ACTIVE" },
+        priority: { type: "string", enum: ["LOW", "MEDIUM", "HIGH", "URGENT"], default: "MEDIUM" },
+        workNature: { type: "string" },
+        fiscalYear: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    name: "list_tasks",
+    description: "List tasks and assignments by project, assignee employee, or status.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectId: { type: "string" },
+        employeeId: { type: "string" },
+        status: { type: "string", enum: ["TODO", "IN_PROGRESS", "BLOCKED", "DONE"] },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "create_task",
+    description: "Create a new task under a project or assigned to an employee.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        title: { type: "string" },
+        description: { type: "string" },
+        projectId: { type: "string" },
+        employeeId: { type: "string" },
+        priority: { type: "string", enum: ["LOW", "MEDIUM", "HIGH", "URGENT"], default: "MEDIUM" },
+        dueAt: { type: "string" },
+        allocatedHours: { type: "number", default: 0 },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["title"],
+    },
+  },
+  {
+    name: "update_task",
+    description: "Update task status, priority, or details.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        title: { type: "string" },
+        description: { type: "string" },
+        status: { type: "string", enum: ["TODO", "IN_PROGRESS", "BLOCKED", "DONE"] },
+        priority: { type: "string", enum: ["LOW", "MEDIUM", "HIGH", "URGENT"] },
+        dueAt: { type: "string" },
+        allocatedHours: { type: "number" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "list_work_logs",
+    description: "List employee timesheets and work logs with duration and approval status.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectId: { type: "string" },
+        employeeId: { type: "string" },
+        status: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "create_work_log",
+    description: "Record work time log / timesheet entry against a project or task.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectId: { type: "string" },
+        taskId: { type: "string" },
+        employeeId: { type: "string" },
+        logDate: { type: "string" },
+        nepaliDate: { type: "string" },
+        startTime: { type: "string" },
+        endTime: { type: "string" },
+        durationMinutes: { type: "number" },
+        comment: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
+
+  // 16. QUOTES & SALES ORDERS
+  {
+    name: "list_quotes",
+    description: "List price quotations / estimates with statuses, validities, and line items.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        status: { type: "string", enum: ["DRAFT", "SENT", "ACCEPTED", "REJECTED", "CANCELLED"] },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "create_quote",
+    description: "Create a customer quotation / estimate with line items.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        contactId: { type: "string" },
+        quoteNumber: { type: "string" },
+        issueDate: { type: "string" },
+        validUntil: { type: "string" },
+        notes: { type: "string" },
+        items: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              description: { type: "string" },
+              quantity: { type: "number", default: 1 },
+              unitPrice: { type: "number" },
+              taxRate: { type: "number", default: 13 },
+            },
+            required: ["description", "unitPrice"],
+          },
+        },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["items"],
+    },
+  },
+  {
+    name: "convert_quote_to_invoice",
+    description: "Convert an accepted customer quotation directly into an official tax invoice.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        quoteId: { type: "string", description: "Quote ID to convert" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["quoteId"],
+    },
+  },
+  {
+    name: "list_sales_orders",
+    description: "List customer sales orders and fulfillment statuses.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        status: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "create_sales_order",
+    description: "Create a sales order with line items.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        contactId: { type: "string" },
+        orderNumber: { type: "string" },
+        orderDate: { type: "string" },
+        notes: { type: "string" },
+        items: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              description: { type: "string" },
+              quantity: { type: "number", default: 1 },
+              unitPrice: { type: "number" },
+            },
+            required: ["description", "unitPrice"],
+          },
+        },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["items"],
+    },
+  },
+
+  // 17. PROJECT WALLETS
+  {
+    name: "list_project_wallets",
+    description: "List project financial wallets showing total budgets, transferred amounts, hold balances, and remaining balances.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectId: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "record_wallet_transfer",
+    description: "Record a project wallet fund transfer or budget disbursement.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        walletId: { type: "string", description: "Project Wallet ID" },
+        amount: { type: "number", description: "Transfer amount" },
+        type: { type: "string", enum: ["TRANSFER", "REQUEST"], default: "TRANSFER" },
+        paymentMode: { type: "string", default: "Fonepay" },
+        requestedById: { type: "string" },
+        transferToId: { type: "string" },
+        description: { type: "string" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+      required: ["walletId", "amount"],
+    },
+  },
+
+  // 18. COMPANY & WORKSPACE SETTINGS
+  {
+    name: "get_company_settings",
+    description: "Get legal company details, PAN/VAT registration, official address, email, phone, fiscal year, and default tax rate.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        orgId: { type: "string", description: "Optional workspace ID or slug" },
+        workspace: { type: "string", description: "Optional workspace alias ('house' or 'office')" },
+      },
+    },
+  },
+  {
+    name: "update_company_settings",
+    description: "Update company profile, legal name, PAN/VAT number, registered address, contact info, fiscal year, or default VAT rate.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        taxNumber: { type: "string", description: "PAN / VAT number" },
+        email: { type: "string" },
+        phone: { type: "string" },
+        address: { type: "string" },
+        currency: { type: "string" },
+        defaultTaxPercent: { type: "number" },
+        fiscalYearStart: { type: "number", description: "Month index of fiscal year start (default 4 = Shrawan)" },
+        orgId: { type: "string" },
+        workspace: { type: "string" },
+      },
+    },
+  },
 ];
 
 /**
@@ -1803,6 +2442,1404 @@ async function handleSingleRpc(rpc: any, auth: McpAuthResult) {
             jsonrpc,
             id,
             result: { content: [{ type: "text", text: JSON.stringify(extracted, null, 2) }] },
+          };
+        }
+
+        // ==========================================
+        // 10. LOANS & DEBT
+        // ==========================================
+        if (toolName === "list_loans") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const where: any = { ...orgFilter };
+          if (args.type && args.type !== "ALL") where.type = args.type;
+          if (args.status && args.status !== "ALL") where.status = args.status;
+
+          const loans = await db.loan.findMany({
+            where,
+            include: {
+              payments: { orderBy: { paymentDate: "desc" } },
+              organization: { select: { id: true, name: true, slug: true, kind: true } },
+            },
+            orderBy: { startDate: "desc" },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(loans, null, 2) }] },
+          };
+        }
+
+        if (toolName === "create_loan") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const loan = await db.loan.create({
+            data: {
+              organizationId: targetOrgId,
+              partyName: args.partyName,
+              type: args.type || "TAKEN",
+              principalAmount: args.principalAmount,
+              startDate: args.startDate ? new Date(args.startDate) : new Date(),
+              dueDate: args.dueDate ? new Date(args.dueDate) : null,
+              hasInterest: Boolean(args.hasInterest),
+              interestRate: args.interestRate || 0,
+              interestFrequency: args.interestFrequency || "MONTHLY",
+              notes: args.notes || null,
+            },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: `Loan #${loan.id.slice(-6)} of NPR ${loan.principalAmount} (${loan.type}) with ${loan.partyName} successfully created.`,
+                },
+              ],
+            },
+          };
+        }
+
+        if (toolName === "settle_loan") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const loan = await db.loan.findFirst({
+            where: { id: args.loanId, organizationId: targetOrgId },
+          });
+
+          if (!loan) {
+            throw new Error(`Loan ${args.loanId} not found in authorized workspace.`);
+          }
+
+          const principalAmount = Number(args.principalAmount) || 0;
+          const interestAmount = Number(args.interestAmount) || 0;
+          const totalAmount = principalAmount + interestAmount;
+          const paymentDate = args.paymentDate ? new Date(args.paymentDate) : new Date();
+
+          const result = await db.$transaction(async (tx) => {
+            const payment = await tx.loanPayment.create({
+              data: {
+                loanId: loan.id,
+                paymentDate,
+                principalAmount,
+                interestAmount,
+                totalAmount,
+                notes: args.notes || null,
+              },
+            });
+
+            const newPrincipalPaid = Number(loan.totalPrincipalPaid) + principalAmount;
+            const newInterestPaid = Number(loan.totalInterestPaid) + interestAmount;
+            const isFullySettled = newPrincipalPaid >= Number(loan.principalAmount);
+
+            const updatedLoan = await tx.loan.update({
+              where: { id: loan.id },
+              data: {
+                totalPrincipalPaid: newPrincipalPaid,
+                totalInterestPaid: newInterestPaid,
+                status: isFullySettled ? "SETTLED" : "ACTIVE",
+                settledAt: isFullySettled ? paymentDate : loan.settledAt,
+              },
+            });
+
+            if (loan.type === "TAKEN") {
+              await tx.expense.create({
+                data: {
+                  organizationId: targetOrgId,
+                  title: `Loan Repayment to ${loan.partyName}`,
+                  vendor: loan.partyName,
+                  type: "ONE_TIME",
+                  amount: totalAmount,
+                  occurredAt: paymentDate,
+                  notes: `Settlement payment for Loan #${loan.id.slice(-6)}. Principal: ${principalAmount}, Interest: ${interestAmount}`,
+                },
+              });
+            } else {
+              await tx.income.create({
+                data: {
+                  organizationId: targetOrgId,
+                  title: `Loan Collection from ${loan.partyName}`,
+                  source: loan.partyName,
+                  amount: totalAmount,
+                  receivedAt: paymentDate,
+                  notes: `Settlement collection for Loan #${loan.id.slice(-6)}. Principal: ${principalAmount}, Interest: ${interestAmount}`,
+                },
+              });
+            }
+
+            return { payment, updatedLoan, isFullySettled };
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: `Recorded repayment of NPR ${totalAmount} for Loan #${loan.id.slice(-6)}. Status: ${result.isFullySettled ? "FULLY SETTLED" : "ACTIVE (Remaining: NPR " + (Number(loan.principalAmount) - Number(result.updatedLoan.totalPrincipalPaid)) + ")"}.`,
+                },
+              ],
+            },
+          };
+        }
+
+        // ==========================================
+        // 11. RENTAL RESIDENCE & TENANCY
+        // ==========================================
+        if (toolName === "list_rental_houses") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const houses = await db.rentalHouse.findMany({
+            where: orgFilter,
+            include: {
+              organization: { select: { id: true, name: true, slug: true } },
+            },
+            orderBy: [{ isActive: "desc" }, { createdAt: "desc" }],
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(houses, null, 2) }] },
+          };
+        }
+
+        if (toolName === "get_active_rental_house") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const activeHouse = await db.rentalHouse.findFirst({
+            where: { ...orgFilter, isActive: true },
+            include: { organization: { select: { id: true, name: true, slug: true } } },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: activeHouse
+                    ? JSON.stringify(activeHouse, null, 2)
+                    : JSON.stringify({ message: "No active rental house found." }),
+                },
+              ],
+            },
+          };
+        }
+
+        if (toolName === "save_rental_house") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const houseId = args.id;
+          const makeActive = args.isActive !== false;
+
+          let house;
+          if (houseId) {
+            house = await db.rentalHouse.update({
+              where: { id: houseId },
+              data: {
+                title: args.title,
+                ownerName: args.ownerName,
+                ownerPhone: args.ownerPhone || null,
+                address: args.address || null,
+                monthlyRent: args.monthlyRent !== undefined ? args.monthlyRent : undefined,
+                electricityRate: args.electricityRate !== undefined ? args.electricityRate : undefined,
+                waterGarbageFee: args.waterGarbageFee !== undefined ? args.waterGarbageFee : undefined,
+                isActive: makeActive,
+                notes: args.notes || null,
+              },
+            });
+          } else {
+            const count = await db.rentalHouse.count({ where: { organizationId: targetOrgId } });
+            house = await db.rentalHouse.create({
+              data: {
+                organizationId: targetOrgId,
+                title: args.title,
+                ownerName: args.ownerName,
+                ownerPhone: args.ownerPhone || null,
+                address: args.address || null,
+                monthlyRent: args.monthlyRent !== undefined ? args.monthlyRent : 16800,
+                electricityRate: args.electricityRate !== undefined ? args.electricityRate : 15,
+                waterGarbageFee: args.waterGarbageFee !== undefined ? args.waterGarbageFee : 300,
+                isActive: makeActive || count === 0,
+                notes: args.notes || null,
+              },
+            });
+          }
+
+          if (makeActive) {
+            await db.rentalHouse.updateMany({
+              where: { organizationId: targetOrgId, id: { not: house.id } },
+              data: { isActive: false },
+            });
+          }
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: `Rental house "${house.title}" (Owner: ${house.ownerName}, Rent: NPR ${house.monthlyRent}/mo) successfully saved.`,
+                },
+              ],
+            },
+          };
+        }
+
+        if (toolName === "set_active_rental_house") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          await db.rentalHouse.updateMany({
+            where: { organizationId: targetOrgId },
+            data: { isActive: false },
+          });
+
+          const house = await db.rentalHouse.update({
+            where: { id: args.houseId },
+            data: { isActive: true },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [{ type: "text", text: `Set "${house.title}" as active rental residence.` }],
+            },
+          };
+        }
+
+        if (toolName === "delete_rental_house") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          await db.rentalHouse.deleteMany({
+            where: { id: args.id, organizationId: targetOrgId },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: `Rental house ${args.id} deleted.` }] },
+          };
+        }
+
+        // ==========================================
+        // 12. UTILITIES (ELECTRICITY & MILK LOGS)
+        // ==========================================
+        if (toolName === "get_electricity_readings") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const where: any = { ...orgFilter };
+          if (args.month && args.month !== "all") {
+            where.month = args.month;
+          }
+
+          const logs = await db.electricityReadingLog.findMany({
+            where,
+            include: { organization: { select: { id: true, name: true, slug: true } } },
+            orderBy: { readingDate: "desc" },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(logs, null, 2) }] },
+          };
+        }
+
+        if (toolName === "save_electricity_reading") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const currentUnit = Number(args.currentUnit);
+          const month = args.month || new Date().toISOString().slice(0, 7);
+          const ratePerUnit = Number(args.ratePerUnit) || 15;
+          const meterNumber = args.meterNumber || "MAIN";
+          const readingDate = args.readingDate ? new Date(args.readingDate) : new Date();
+          const paid = args.paid !== false;
+
+          let previousUnit = args.previousUnit !== undefined ? Number(args.previousUnit) : null;
+          if (previousUnit === null) {
+            const lastLog = await db.electricityReadingLog.findFirst({
+              where: { organizationId: targetOrgId },
+              orderBy: { readingDate: "desc" },
+            });
+            if (lastLog) {
+              previousUnit = Number(lastLog.currentUnit);
+            } else {
+              const activeHouse = await db.rentalHouse.findFirst({
+                where: { organizationId: targetOrgId, isActive: true },
+              });
+              previousUnit = Number(activeHouse?.lastElectricityUnit || 0);
+            }
+          }
+
+          const unitsConsumed = Math.max(0, currentUnit - previousUnit);
+          const totalCost = unitsConsumed * ratePerUnit;
+
+          let elecCat = await db.expenseCategory.findFirst({
+            where: {
+              organizationId: targetOrgId,
+              OR: [{ name: { contains: "Electricity" } }, { name: { contains: "Utilities" } }],
+            },
+          });
+          if (!elecCat) {
+            elecCat = await db.expenseCategory.create({
+              data: {
+                organizationId: targetOrgId,
+                name: "Electricity & Utilities",
+                icon: "zap",
+              },
+            });
+          }
+
+          const expenseTitle = `Electricity bill (${month}): ${unitsConsumed.toFixed(1)} units (${previousUnit} -> ${currentUnit}) @ NPR ${ratePerUnit}/unit`;
+          const expenseNotes = `Electricity meter reading: Previous = ${previousUnit}, Current = ${currentUnit}. Consumed = ${unitsConsumed} units @ NPR ${ratePerUnit}/unit. ${args.notes || ""}`.trim();
+
+          const result = await db.$transaction(async (tx) => {
+            const existingExp = await tx.expense.findFirst({
+              where: {
+                organizationId: targetOrgId,
+                title: { contains: `Electricity bill (${month})` },
+              },
+            });
+
+            let expenseId: string;
+            if (existingExp) {
+              const updated = await tx.expense.update({
+                where: { id: existingExp.id },
+                data: {
+                  title: expenseTitle,
+                  amount: totalCost,
+                  unitRate: ratePerUnit,
+                  quantity: unitsConsumed,
+                  unit: "units",
+                  occurredAt: readingDate,
+                  isEstimated: !paid,
+                  notes: expenseNotes,
+                },
+              });
+              expenseId = updated.id;
+            } else {
+              const created = await tx.expense.create({
+                data: {
+                  organizationId: targetOrgId,
+                  categoryId: elecCat.id,
+                  title: expenseTitle,
+                  vendor: "Nepal Electricity Authority (NEA)",
+                  type: "ONE_TIME",
+                  amount: totalCost,
+                  unitRate: ratePerUnit,
+                  quantity: unitsConsumed,
+                  unit: "units",
+                  occurredAt: readingDate,
+                  isEstimated: !paid,
+                  notes: expenseNotes,
+                },
+              });
+              expenseId = created.id;
+            }
+
+            const readingLog = await tx.electricityReadingLog.upsert({
+              where: { organizationId_month: { organizationId: targetOrgId, month } },
+              update: {
+                meterNumber,
+                previousUnit,
+                currentUnit,
+                unitsConsumed,
+                ratePerUnit,
+                totalCost,
+                readingDate,
+                expenseId,
+                paid,
+                notes: args.notes || null,
+              },
+              create: {
+                organizationId: targetOrgId,
+                month,
+                meterNumber,
+                previousUnit,
+                currentUnit,
+                unitsConsumed,
+                ratePerUnit,
+                totalCost,
+                readingDate,
+                expenseId,
+                paid,
+                notes: args.notes || null,
+              },
+            });
+
+            await tx.rentalHouse.updateMany({
+              where: { organizationId: targetOrgId, isActive: true },
+              data: { lastElectricityUnit: currentUnit },
+            });
+
+            return { readingLog, unitsConsumed, totalCost };
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: `Saved Electricity Log for ${month}: ${result.unitsConsumed.toFixed(1)} units consumed (${previousUnit} -> ${currentUnit}) = NPR ${result.totalCost.toFixed(2)} at NPR ${ratePerUnit}/unit. Synced to expenses.`,
+                },
+              ],
+            },
+          };
+        }
+
+        if (toolName === "get_milk_logs") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const where: any = { ...orgFilter };
+          if (args.month && args.month !== "all") {
+            where.month = args.month;
+          }
+
+          const logs = await db.milkMonthlyLog.findMany({
+            where,
+            include: { organization: { select: { id: true, name: true, slug: true } } },
+            orderBy: { month: "desc" },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(logs, null, 2) }] },
+          };
+        }
+
+        if (toolName === "save_milk_log") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const month = args.month || new Date().toISOString().slice(0, 7);
+          const ratePerLiter = Number(args.ratePerLiter) || 115;
+          const regularDays = Number(args.regularDays) || 30;
+          const regularQty = Number(args.regularQty) || 1.5;
+          const alternateDays = Number(args.alternateDays) || 0;
+          const alternateQty = Number(args.alternateQty) || 0;
+          const paid = Boolean(args.paid);
+
+          const totalLiters = regularDays * regularQty + alternateDays * alternateQty;
+          const totalCost = totalLiters * ratePerLiter;
+
+          const milkLog = await db.milkMonthlyLog.upsert({
+            where: { organizationId_month: { organizationId: targetOrgId, month } },
+            update: {
+              ratePerLiter,
+              regularDays,
+              regularQty,
+              alternateDays,
+              alternateQty,
+              totalLiters,
+              totalCost,
+              paid,
+              notes: args.notes || null,
+            },
+            create: {
+              organizationId: targetOrgId,
+              month,
+              ratePerLiter,
+              regularDays,
+              regularQty,
+              alternateDays,
+              alternateQty,
+              totalLiters,
+              totalCost,
+              paid,
+              notes: args.notes || null,
+            },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: `Saved Milk Log for ${month}: ${totalLiters.toFixed(1)}L total @ NPR ${ratePerLiter}/L = NPR ${totalCost.toFixed(2)}. Status: ${paid ? "PAID" : "UNPAID"}.`,
+                },
+              ],
+            },
+          };
+        }
+
+        // ==========================================
+        // 13. PRODUCTS & INVENTORY
+        // ==========================================
+        if (toolName === "list_products") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const where: any = { ...orgFilter };
+          if (args.active !== undefined) where.active = args.active;
+          if (args.query) {
+            where.OR = [
+              { name: { contains: args.query } },
+              { sku: { contains: args.query } },
+            ];
+          }
+
+          const products = await db.product.findMany({
+            where,
+            include: {
+              organization: { select: { id: true, name: true, slug: true } },
+              _count: { select: { stockMovements: true } },
+            },
+            orderBy: { name: "asc" },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(products, null, 2) }] },
+          };
+        }
+
+        if (toolName === "create_product") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const product = await db.product.create({
+            data: {
+              organizationId: targetOrgId,
+              name: args.name,
+              sku: args.sku,
+              unit: args.unit || "pcs",
+              salePrice: args.salePrice || 0,
+              purchasePrice: args.purchasePrice || 0,
+              stockQty: args.stockQty || 0,
+              reorderLevel: args.reorderLevel || 0,
+            },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: `Product "${product.name}" (SKU: ${product.sku}, Stock: ${product.stockQty} ${product.unit}, Price: NPR ${product.salePrice}) created successfully.`,
+                },
+              ],
+            },
+          };
+        }
+
+        if (toolName === "list_stock_movements") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const where: any = { ...orgFilter };
+          if (args.productId) where.productId = args.productId;
+
+          const movements = await db.stockMovement.findMany({
+            where,
+            include: { product: { select: { id: true, name: true, sku: true, unit: true } } },
+            take: args.limit || 50,
+            orderBy: { occurredAt: "desc" },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(movements, null, 2) }] },
+          };
+        }
+
+        if (toolName === "create_stock_movement") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const qty = Number(args.quantity) || 0;
+          const movementType = args.type as "IN" | "OUT" | "ADJUSTMENT" | "RETURN";
+
+          const product = await db.product.findFirst({
+            where: { id: args.productId, organizationId: targetOrgId },
+          });
+          if (!product) {
+            throw new Error(`Product ${args.productId} not found in workspace.`);
+          }
+
+          let newStock = Number(product.stockQty);
+          if (movementType === "IN" || movementType === "RETURN") {
+            newStock += qty;
+          } else if (movementType === "OUT") {
+            newStock = Math.max(0, newStock - qty);
+          } else if (movementType === "ADJUSTMENT") {
+            newStock = qty;
+          }
+
+          await db.$transaction([
+            db.stockMovement.create({
+              data: {
+                organizationId: targetOrgId,
+                productId: product.id,
+                type: movementType,
+                quantity: qty,
+                reference: args.reference || null,
+                note: args.note || null,
+              },
+            }),
+            db.product.update({
+              where: { id: product.id },
+              data: { stockQty: newStock },
+            }),
+          ]);
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: `Stock movement ${movementType} of ${qty} units recorded for "${product.name}". New Stock: ${newStock} ${product.unit}.`,
+                },
+              ],
+            },
+          };
+        }
+
+        // ==========================================
+        // 14. STAFF, PAYROLL & LEAVES (HRM)
+        // ==========================================
+        if (toolName === "list_employees") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const where: any = { ...orgFilter };
+          if (args.status) where.status = args.status;
+          if (args.department) where.department = args.department;
+
+          const employees = await db.employee.findMany({
+            where,
+            include: { organization: { select: { id: true, name: true, slug: true } } },
+            orderBy: { name: "asc" },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(employees, null, 2) }] },
+          };
+        }
+
+        if (toolName === "create_employee") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const employeeCode = args.employeeCode || `EMP-${Date.now().toString().slice(-4)}`;
+
+          const employee = await db.employee.create({
+            data: {
+              organizationId: targetOrgId,
+              name: args.name,
+              employeeCode,
+              email: args.email || null,
+              phone: args.phone || null,
+              designation: args.designation || null,
+              department: args.department || null,
+              basicSalary: args.basicSalary || 0,
+              joinDate: args.joinDate ? new Date(args.joinDate) : new Date(),
+            },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: `Employee "${employee.name}" (${employee.employeeCode}, ${employee.designation || "Staff"}) registered. Basic Salary: NPR ${employee.basicSalary}.`,
+                },
+              ],
+            },
+          };
+        }
+
+        if (toolName === "list_payrolls") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const where: any = { ...orgFilter };
+          if (args.employeeId) where.employeeId = args.employeeId;
+
+          const payrolls = await db.payroll.findMany({
+            where,
+            include: { employee: true },
+            orderBy: { month: "desc" },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(payrolls, null, 2) }] },
+          };
+        }
+
+        if (toolName === "create_payroll") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const monthDate = args.month ? new Date(args.month) : new Date();
+
+          const payroll = await db.payroll.create({
+            data: {
+              organizationId: targetOrgId,
+              employeeId: args.employeeId,
+              month: monthDate,
+              basic: args.basic,
+              allowance: args.allowance || 0,
+              overtime: args.overtime || 0,
+              deduction: args.deduction || 0,
+              tax: args.tax || 0,
+              netPay: args.netPay,
+              paidAt: args.paidAt ? new Date(args.paidAt) : new Date(),
+              notes: args.notes || null,
+            },
+            include: { employee: true },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: `Payroll disbursement of NPR ${payroll.netPay} created for ${payroll.employee.name}.`,
+                },
+              ],
+            },
+          };
+        }
+
+        if (toolName === "list_leaves") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const where: any = { ...orgFilter };
+          if (args.employeeId) where.employeeId = args.employeeId;
+          if (args.status) where.status = args.status;
+
+          const leaves = await db.leaveRequest.findMany({
+            where,
+            include: { employee: true },
+            orderBy: { fromDate: "desc" },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(leaves, null, 2) }] },
+          };
+        }
+
+        if (toolName === "create_leave") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const leave = await db.leaveRequest.create({
+            data: {
+              organizationId: targetOrgId,
+              employeeId: args.employeeId,
+              leaveType: args.leaveType,
+              fromDate: new Date(args.fromDate),
+              toDate: new Date(args.toDate),
+              days: args.days,
+              reason: args.reason || null,
+              status: "PENDING",
+            },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: `Leave request for ${leave.days} days (${leave.leaveType}) created with ID: ${leave.id}.`,
+                },
+              ],
+            },
+          };
+        }
+
+        // ==========================================
+        // 15. PROJECTS, TASKS & WORKLOGS
+        // ==========================================
+        if (toolName === "list_projects") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const where: any = { ...orgFilter };
+          if (args.status) where.status = args.status;
+          if (args.fiscalYear) where.fiscalYear = args.fiscalYear;
+
+          const projects = await db.project.findMany({
+            where,
+            include: {
+              teamLeader: true,
+              contact: true,
+              wallets: true,
+              _count: { select: { tasks: true, worklogs: true } },
+            },
+            orderBy: { createdAt: "desc" },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(projects, null, 2) }] },
+          };
+        }
+
+        if (toolName === "create_project") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const budget = Number(args.budget) || 0;
+
+          let project;
+          if (args.id) {
+            project = await db.project.update({
+              where: { id: args.id, organizationId: targetOrgId },
+              data: {
+                name: args.name,
+                description: args.description || null,
+                contactId: args.contactId || null,
+                teamLeaderId: args.teamLeaderId || null,
+                budget,
+                startDate: args.startDate ? new Date(args.startDate) : undefined,
+                endDate: args.endDate ? new Date(args.endDate) : undefined,
+                status: args.status || "ACTIVE",
+                priority: args.priority || "MEDIUM",
+                workNature: args.workNature || null,
+                fiscalYear: args.fiscalYear || null,
+              },
+            });
+          } else {
+            project = await db.project.create({
+              data: {
+                organizationId: targetOrgId,
+                name: args.name,
+                description: args.description || null,
+                contactId: args.contactId || null,
+                teamLeaderId: args.teamLeaderId || null,
+                budget,
+                startDate: args.startDate ? new Date(args.startDate) : null,
+                endDate: args.endDate ? new Date(args.endDate) : null,
+                status: args.status || "ACTIVE",
+                priority: args.priority || "MEDIUM",
+                workNature: args.workNature || null,
+                fiscalYear: args.fiscalYear || null,
+              },
+            });
+          }
+
+          await db.projectWallet.upsert({
+            where: { organizationId_projectId: { organizationId: targetOrgId, projectId: project.id } },
+            update: { totalBudget: budget },
+            create: {
+              organizationId: targetOrgId,
+              projectId: project.id,
+              totalBudget: budget,
+              transferredAmount: 0,
+              holdAmount: 0,
+              leaderHoldAmount: 0,
+              balance: budget,
+            },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: `Project "${project.name}" (Budget: NPR ${project.budget}, Status: ${project.status}) saved with dedicated wallet.`,
+                },
+              ],
+            },
+          };
+        }
+
+        if (toolName === "list_tasks") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const where: any = { ...orgFilter };
+          if (args.projectId) where.projectId = args.projectId;
+          if (args.employeeId) where.employeeId = args.employeeId;
+          if (args.status) where.status = args.status;
+
+          const tasks = await db.task.findMany({
+            where,
+            include: {
+              project: { select: { id: true, name: true } },
+              employee: { select: { id: true, name: true, designation: true } },
+            },
+            orderBy: { createdAt: "desc" },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(tasks, null, 2) }] },
+          };
+        }
+
+        if (toolName === "create_task") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const task = await db.task.create({
+            data: {
+              organizationId: targetOrgId,
+              title: args.title,
+              description: args.description || null,
+              projectId: args.projectId || null,
+              employeeId: args.employeeId || null,
+              priority: args.priority || "MEDIUM",
+              dueAt: args.dueAt ? new Date(args.dueAt) : null,
+              allocatedHours: args.allocatedHours || 0,
+            },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: `Task "${task.title}" (Priority: ${task.priority}) created successfully with ID: ${task.id}.`,
+                },
+              ],
+            },
+          };
+        }
+
+        if (toolName === "update_task") {
+          const task = await db.task.update({
+            where: { id: args.id },
+            data: {
+              ...(args.title ? { title: args.title } : {}),
+              ...(args.description !== undefined ? { description: args.description } : {}),
+              ...(args.status ? { status: args.status } : {}),
+              ...(args.priority ? { priority: args.priority } : {}),
+              ...(args.dueAt ? { dueAt: new Date(args.dueAt) } : {}),
+              ...(args.allocatedHours !== undefined ? { allocatedHours: args.allocatedHours } : {}),
+            },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [{ type: "text", text: `Task "${task.title}" updated to status ${task.status}.` }],
+            },
+          };
+        }
+
+        if (toolName === "list_work_logs") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const where: any = { ...orgFilter };
+          if (args.projectId) where.projectId = args.projectId;
+          if (args.employeeId) where.employeeId = args.employeeId;
+          if (args.status) where.status = args.status;
+
+          const worklogs = await db.workLog.findMany({
+            where,
+            include: {
+              project: { select: { id: true, name: true } },
+              employee: { select: { id: true, name: true } },
+              task: { select: { id: true, title: true } },
+            },
+            take: 100,
+            orderBy: { logDate: "desc" },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(worklogs, null, 2) }] },
+          };
+        }
+
+        if (toolName === "create_work_log") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const worklog = await db.workLog.create({
+            data: {
+              organizationId: targetOrgId,
+              projectId: args.projectId || null,
+              taskId: args.taskId || null,
+              employeeId: args.employeeId || null,
+              logDate: args.logDate ? new Date(args.logDate) : new Date(),
+              nepaliDate: args.nepaliDate || null,
+              startTime: args.startTime || null,
+              endTime: args.endTime || null,
+              durationMinutes: args.durationMinutes || 0,
+              comment: args.comment || null,
+              status: "PENDING",
+            },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: `Worklog of ${worklog.durationMinutes} mins logged for ID: ${worklog.id}.`,
+                },
+              ],
+            },
+          };
+        }
+
+        // ==========================================
+        // 16. QUOTES & SALES ORDERS
+        // ==========================================
+        if (toolName === "list_quotes") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const where: any = { ...orgFilter };
+          if (args.status) where.status = args.status;
+
+          const quotes = await db.quote.findMany({
+            where,
+            include: {
+              contact: true,
+              items: true,
+              organization: { select: { id: true, name: true, slug: true } },
+            },
+            orderBy: { issueDate: "desc" },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(quotes, null, 2) }] },
+          };
+        }
+
+        if (toolName === "create_quote") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const quoteNumber = args.quoteNumber || `QT-${Date.now().toString().slice(-6)}`;
+          const items = Array.isArray(args.items) ? args.items : [];
+
+          let subtotal = 0;
+          let taxTotal = 0;
+          const lineItems = items.map((item: any) => {
+            const qty = Number(item.quantity) || 1;
+            const price = Number(item.unitPrice) || 0;
+            const amount = qty * price;
+            const rate = Number(item.taxRate) || 0;
+            const tax = amount * (rate / 100);
+            subtotal += amount;
+            taxTotal += tax;
+            return {
+              description: item.description,
+              quantity: qty,
+              unitPrice: price,
+              taxRate: rate,
+              amount,
+            };
+          });
+
+          const total = subtotal + taxTotal;
+
+          const quote = await db.quote.create({
+            data: {
+              organizationId: targetOrgId,
+              quoteNumber,
+              contactId: args.contactId || null,
+              issueDate: args.issueDate ? new Date(args.issueDate) : new Date(),
+              validUntil: args.validUntil ? new Date(args.validUntil) : null,
+              subtotal,
+              tax: taxTotal,
+              total,
+              notes: args.notes || null,
+              items: { create: lineItems },
+            },
+            include: { items: true },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: `Quotation #${quote.quoteNumber} of total NPR ${quote.total} created with ${quote.items.length} items.`,
+                },
+              ],
+            },
+          };
+        }
+
+        if (toolName === "convert_quote_to_invoice") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const quote = await db.quote.findFirst({
+            where: { id: args.quoteId, organizationId: targetOrgId },
+            include: { items: true },
+          });
+
+          if (!quote) {
+            throw new Error(`Quote ${args.quoteId} not found.`);
+          }
+
+          const invoiceNumber = `INV-${Date.now().toString().slice(-6)}`;
+          const invoice = await db.$transaction(async (tx) => {
+            const inv = await tx.invoice.create({
+              data: {
+                organizationId: targetOrgId,
+                invoiceNumber,
+                contactId: quote.contactId,
+                status: "SENT",
+                issueDate: new Date(),
+                subtotal: quote.subtotal,
+                tax: quote.tax,
+                total: quote.total,
+                sourceQuoteId: quote.id,
+                items: {
+                  create: quote.items.map((i) => ({
+                    description: i.description,
+                    quantity: i.quantity,
+                    unitPrice: i.unitPrice,
+                    taxRate: i.taxRate,
+                    amount: i.amount,
+                  })),
+                },
+              },
+            });
+
+            await tx.quote.update({
+              where: { id: quote.id },
+              data: { status: "ACCEPTED" },
+            });
+
+            return inv;
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: `Converted Quote #${quote.quoteNumber} to Tax Invoice #${invoice.invoiceNumber} (Total: NPR ${invoice.total}).`,
+                },
+              ],
+            },
+          };
+        }
+
+        if (toolName === "list_sales_orders") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const where: any = { ...orgFilter };
+          if (args.status) where.status = args.status;
+
+          const orders = await db.salesOrder.findMany({
+            where,
+            include: { contact: true, items: true },
+            orderBy: { orderDate: "desc" },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(orders, null, 2) }] },
+          };
+        }
+
+        if (toolName === "create_sales_order") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const orderNumber = args.orderNumber || `SO-${Date.now().toString().slice(-6)}`;
+          const items = Array.isArray(args.items) ? args.items : [];
+
+          let subtotal = 0;
+          const lineItems = items.map((item: any) => {
+            const qty = Number(item.quantity) || 1;
+            const price = Number(item.unitPrice) || 0;
+            const amount = qty * price;
+            subtotal += amount;
+            return {
+              description: item.description,
+              quantity: qty,
+              unitPrice: price,
+              amount,
+            };
+          });
+
+          const order = await db.salesOrder.create({
+            data: {
+              organizationId: targetOrgId,
+              orderNumber,
+              contactId: args.contactId || null,
+              orderDate: args.orderDate ? new Date(args.orderDate) : new Date(),
+              subtotal,
+              total: subtotal,
+              notes: args.notes || null,
+              items: { create: lineItems },
+            },
+            include: { items: true },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: `Sales Order #${order.orderNumber} (Total: NPR ${order.total}) created successfully.`,
+                },
+              ],
+            },
+          };
+        }
+
+        // ==========================================
+        // 17. PROJECT WALLETS
+        // ==========================================
+        if (toolName === "list_project_wallets") {
+          const orgFilter = await resolveOrgFilter(auth, targetOrgParam);
+          const where: any = { ...orgFilter };
+          if (args.projectId) where.projectId = args.projectId;
+
+          const wallets = await db.projectWallet.findMany({
+            where,
+            include: {
+              project: { select: { id: true, name: true, budget: true, status: true } },
+              transactions: { take: 10, orderBy: { transactionDate: "desc" } },
+            },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(wallets, null, 2) }] },
+          };
+        }
+
+        if (toolName === "record_wallet_transfer") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const amount = Number(args.amount) || 0;
+          const type = args.type || "TRANSFER";
+
+          const wallet = await db.projectWallet.findFirst({
+            where: { id: args.walletId, organizationId: targetOrgId },
+          });
+          if (!wallet) {
+            throw new Error(`Project wallet ${args.walletId} not found.`);
+          }
+
+          if (type === "TRANSFER") {
+            const newTransferred = Number(wallet.transferredAmount) + amount;
+            const newBalance = Math.max(0, Number(wallet.totalBudget) - newTransferred);
+
+            await db.walletTransaction.create({
+              data: {
+                organizationId: targetOrgId,
+                walletId: wallet.id,
+                type: "TRANSFER",
+                amount,
+                paymentMode: args.paymentMode || "Fonepay",
+                requestedById: args.requestedById || null,
+                transferToId: args.transferToId || null,
+                leaderApproval: "APPROVED",
+                adminApproval: "APPROVED",
+                status: "TRANSFERRED",
+                description: args.description || null,
+              },
+            });
+
+            await db.projectWallet.update({
+              where: { id: wallet.id },
+              data: { transferredAmount: newTransferred, balance: newBalance },
+            });
+          } else {
+            const newHold = Number(wallet.holdAmount) + amount;
+            await db.walletTransaction.create({
+              data: {
+                organizationId: targetOrgId,
+                walletId: wallet.id,
+                type: "REQUEST",
+                amount,
+                paymentMode: args.paymentMode || "Fonepay",
+                requestedById: args.requestedById || null,
+                transferToId: args.transferToId || null,
+                leaderApproval: "PENDING",
+                adminApproval: "PENDING",
+                status: "PENDING",
+                description: args.description || null,
+              },
+            });
+
+            await db.projectWallet.update({
+              where: { id: wallet.id },
+              data: { holdAmount: newHold },
+            });
+          }
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: `Recorded wallet ${type} of NPR ${amount} for project wallet ${wallet.id}.`,
+                },
+              ],
+            },
+          };
+        }
+
+        // ==========================================
+        // 18. COMPANY & WORKSPACE SETTINGS
+        // ==========================================
+        if (toolName === "get_company_settings") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const org = await db.organization.findUnique({
+            where: { id: targetOrgId },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              kind: true,
+              panVatNumber: true,
+              taxNumber: true,
+              email: true,
+              phone: true,
+              address: true,
+              currency: true,
+              defaultTaxPercent: true,
+              fiscalYearStart: true,
+              vendorCategory: true,
+              officeOpenTime: true,
+              officeCloseTime: true,
+              status: true,
+            },
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(org, null, 2) }] },
+          };
+        }
+
+        if (toolName === "update_company_settings") {
+          const targetOrgId = await resolveOrgId(auth, targetOrgParam);
+          const updateData: any = {};
+          if (args.name) updateData.name = args.name;
+          if (args.taxNumber) {
+            updateData.taxNumber = args.taxNumber;
+            updateData.panVatNumber = args.taxNumber;
+          }
+          if (args.email) updateData.email = args.email;
+          if (args.phone) updateData.phone = args.phone;
+          if (args.address) updateData.address = args.address;
+          if (args.currency) updateData.currency = args.currency;
+          if (args.defaultTaxPercent !== undefined) updateData.defaultTaxPercent = args.defaultTaxPercent;
+          if (args.fiscalYearStart !== undefined) updateData.fiscalYearStart = args.fiscalYearStart;
+
+          const updated = await db.organization.update({
+            where: { id: targetOrgId },
+            data: updateData,
+          });
+
+          return {
+            jsonrpc,
+            id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: `Updated settings for "${updated.name}" (PAN/VAT: ${updated.taxNumber || updated.panVatNumber || "N/A"}).`,
+                },
+              ],
+            },
           };
         }
 

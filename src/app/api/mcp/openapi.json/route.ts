@@ -321,21 +321,357 @@ export async function GET(request: Request) {
           },
           responses: {
             "200": {
-              description: "Live financial balance overview",
-              content: {
-                "application/json": {
-                  schema: {
-                    type: "object",
-                    properties: {
-                      success: { type: "boolean" },
-                      summary: { type: "object" },
-                      workspaceBreakdown: { type: "array", items: { type: "object" } },
-                      bankAccounts: { type: "array", items: { type: "object" } },
-                    },
+              description: "Live balance result",
+              content: { "application/json": { schema: { type: "object" } } },
+            },
+          },
+        },
+      },
+      "/api/mcp/loans": {
+        get: {
+          operationId: "getLoans",
+          summary: "List all loans and debt records",
+          description: "Retrieve borrowed loans (TAKEN) and lent loans (GIVEN) with principal, interest, and payment history.",
+          parameters: [
+            { name: "workspace", in: "query", schema: { type: "string" }, description: "Optional workspace alias or orgId" },
+            { name: "type", in: "query", schema: { type: "string", enum: ["TAKEN", "GIVEN", "ALL"] } },
+            { name: "status", in: "query", schema: { type: "string", enum: ["ACTIVE", "SETTLED", "DEFAULTED", "ALL"] } },
+          ],
+          responses: {
+            "200": {
+              description: "Loans overview and list",
+              content: { "application/json": { schema: { type: "object" } } },
+            },
+          },
+        },
+        post: {
+          operationId: "createOrSettleLoan",
+          summary: "Create a loan or record repayment",
+          description: "Create a new loan record or record a principal/interest repayment against an existing loan.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    action: { type: "string", enum: ["create", "settle"] },
+                    loanId: { type: "string", description: "Loan ID if settling repayment" },
+                    partyName: { type: "string" },
+                    type: { type: "string", enum: ["TAKEN", "GIVEN"] },
+                    principalAmount: { type: "number" },
+                    interestAmount: { type: "number" },
+                    interestRate: { type: "number" },
+                    workspace: { type: "string" },
                   },
                 },
               },
             },
+          },
+          responses: {
+            "200": { description: "Loan operation result", content: { "application/json": { schema: { type: "object" } } } },
+          },
+        },
+      },
+      "/api/mcp/rental-house": {
+        get: {
+          operationId: "getRentalHouses",
+          summary: "Get rental house and tenancy lease details",
+          description: "Get active rental residence or office lease details including monthly rent, electricity rate, and water/garbage fee.",
+          parameters: [
+            { name: "workspace", in: "query", schema: { type: "string" } },
+            { name: "active", in: "query", schema: { type: "string" } },
+          ],
+          responses: {
+            "200": {
+              description: "Rental house details",
+              content: { "application/json": { schema: { type: "object" } } },
+            },
+          },
+        },
+        post: {
+          operationId: "saveRentalHouse",
+          summary: "Create or update rental house commitments",
+          description: "Save rental house details and automatically synchronize recurring lease commitments.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string" },
+                    title: { type: "string" },
+                    ownerName: { type: "string" },
+                    monthlyRent: { type: "number" },
+                    electricityRate: { type: "number" },
+                    waterGarbageFee: { type: "number" },
+                    isActive: { type: "boolean" },
+                    workspace: { type: "string" },
+                  },
+                  required: ["title", "ownerName"],
+                },
+              },
+            },
+          },
+          responses: {
+            "200": { description: "Saved rental house", content: { "application/json": { schema: { type: "object" } } } },
+          },
+        },
+      },
+      "/api/mcp/utilities": {
+        get: {
+          operationId: "getUtilitiesLogs",
+          summary: "Get electricity meter readings and milk logs",
+          description: "Retrieve electricity reading logs (previous/current units, consumed units, total bill) and milk monthly logs.",
+          parameters: [
+            { name: "month", in: "query", schema: { type: "string" }, description: "e.g. '2083-06', 'ashoj', '2026-10'" },
+            { name: "type", in: "query", schema: { type: "string", enum: ["electricity", "milk", "all"] } },
+            { name: "workspace", in: "query", schema: { type: "string" } },
+          ],
+          responses: {
+            "200": { description: "Utility consumption and bills", content: { "application/json": { schema: { type: "object" } } } },
+          },
+        },
+        post: {
+          operationId: "saveUtilityLog",
+          summary: "Record electricity reading or milk log",
+          description: "Record electricity meter reading (auto-computes units consumed and NEA bill) or monthly milk log.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    kind: { type: "string", enum: ["electricity", "milk"] },
+                    month: { type: "string" },
+                    currentUnit: { type: "number" },
+                    previousUnit: { type: "number" },
+                    ratePerUnit: { type: "number" },
+                    regularDays: { type: "number" },
+                    regularQty: { type: "number" },
+                    ratePerLiter: { type: "number" },
+                    workspace: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "200": { description: "Saved utility log", content: { "application/json": { schema: { type: "object" } } } },
+          },
+        },
+      },
+      "/api/mcp/products": {
+        get: {
+          operationId: "getProducts",
+          summary: "List inventory products and stock balances",
+          description: "List catalog products, SKU numbers, sale prices, cost prices, and current stock quantities.",
+          parameters: [
+            { name: "query", in: "query", schema: { type: "string" } },
+            { name: "active", in: "query", schema: { type: "string" } },
+            { name: "workspace", in: "query", schema: { type: "string" } },
+          ],
+          responses: {
+            "200": { description: "Product inventory list", content: { "application/json": { schema: { type: "object" } } } },
+          },
+        },
+        post: {
+          operationId: "createProductOrStockMovement",
+          summary: "Create product or record stock movement",
+          description: "Create a new product or record stock movement (IN, OUT, ADJUSTMENT).",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    action: { type: "string", enum: ["create", "movement"] },
+                    name: { type: "string" },
+                    sku: { type: "string" },
+                    salePrice: { type: "number" },
+                    stockQty: { type: "number" },
+                    productId: { type: "string" },
+                    movementType: { type: "string", enum: ["IN", "OUT", "ADJUSTMENT"] },
+                    quantity: { type: "number" },
+                    workspace: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "200": { description: "Product or movement result", content: { "application/json": { schema: { type: "object" } } } },
+          },
+        },
+      },
+      "/api/mcp/employees": {
+        get: {
+          operationId: "getEmployees",
+          summary: "List company employees and payroll commitments",
+          description: "Retrieve staff members with employee codes, departments, designations, and basic salaries.",
+          parameters: [
+            { name: "status", in: "query", schema: { type: "string" } },
+            { name: "department", in: "query", schema: { type: "string" } },
+            { name: "workspace", in: "query", schema: { type: "string" } },
+          ],
+          responses: {
+            "200": { description: "Employee roster", content: { "application/json": { schema: { type: "object" } } } },
+          },
+        },
+        post: {
+          operationId: "createEmployeeOrPayroll",
+          summary: "Register employee or disburse payroll",
+          description: "Register a new staff member or record monthly payroll disbursement.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    action: { type: "string", enum: ["employee", "payroll"] },
+                    name: { type: "string" },
+                    employeeCode: { type: "string" },
+                    designation: { type: "string" },
+                    basicSalary: { type: "number" },
+                    employeeId: { type: "string" },
+                    month: { type: "string" },
+                    netPay: { type: "number" },
+                    workspace: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "200": { description: "Employee or payroll result", content: { "application/json": { schema: { type: "object" } } } },
+          },
+        },
+      },
+      "/api/mcp/projects": {
+        get: {
+          operationId: "getProjects",
+          summary: "List projects and budget wallets",
+          description: "Retrieve business projects with budgets, team leaders, and client details.",
+          parameters: [
+            { name: "status", in: "query", schema: { type: "string" } },
+            { name: "workspace", in: "query", schema: { type: "string" } },
+          ],
+          responses: {
+            "200": { description: "Projects list", content: { "application/json": { schema: { type: "object" } } } },
+          },
+        },
+        post: {
+          operationId: "createProjectOrTask",
+          summary: "Create project or assign task",
+          description: "Create a new project with dedicated wallet or add an assigned task.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    action: { type: "string", enum: ["project", "task"] },
+                    name: { type: "string" },
+                    budget: { type: "number" },
+                    title: { type: "string" },
+                    projectId: { type: "string" },
+                    employeeId: { type: "string" },
+                    allocatedHours: { type: "number" },
+                    workspace: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "200": { description: "Project or task result", content: { "application/json": { schema: { type: "object" } } } },
+          },
+        },
+      },
+      "/api/mcp/expenses": {
+        get: {
+          operationId: "getExpenses",
+          summary: "List company expenses",
+          description: "Retrieve recorded expenses with category and payee filters.",
+          parameters: [
+            { name: "vendor", in: "query", schema: { type: "string" } },
+            { name: "limit", in: "query", schema: { type: "integer", default: 100 } },
+            { name: "workspace", in: "query", schema: { type: "string" } },
+          ],
+          responses: {
+            "200": { description: "Expenses list", content: { "application/json": { schema: { type: "object" } } } },
+          },
+        },
+        post: {
+          operationId: "createExpense",
+          summary: "Record a new expense",
+          description: "Record an operational or household expense in the ledger.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string" },
+                    amount: { type: "number" },
+                    vendor: { type: "string" },
+                    categoryName: { type: "string" },
+                    occurredAt: { type: "string" },
+                    workspace: { type: "string" },
+                  },
+                  required: ["title", "amount"],
+                },
+              },
+            },
+          },
+          responses: {
+            "200": { description: "Created expense", content: { "application/json": { schema: { type: "object" } } } },
+          },
+        },
+      },
+      "/api/mcp/invoices": {
+        get: {
+          operationId: "getInvoices",
+          summary: "List customer invoices and billing totals",
+          description: "Retrieve tax invoices with outstanding dues, statuses, and payment records.",
+          parameters: [
+            { name: "status", in: "query", schema: { type: "string" } },
+            { name: "workspace", in: "query", schema: { type: "string" } },
+          ],
+          responses: {
+            "200": { description: "Invoices list and summary", content: { "application/json": { schema: { type: "object" } } } },
+          },
+        },
+        post: {
+          operationId: "createInvoiceOrPayment",
+          summary: "Create customer invoice or record payment",
+          description: "Create a customer invoice with line items or record payment against an existing invoice.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    action: { type: "string", enum: ["create", "payment"] },
+                    customerName: { type: "string" },
+                    invoiceId: { type: "string" },
+                    paymentAmount: { type: "number" },
+                    items: { type: "array", items: { type: "object" } },
+                    workspace: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "200": { description: "Invoice or payment result", content: { "application/json": { schema: { type: "object" } } } },
           },
         },
       },
