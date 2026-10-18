@@ -24,7 +24,82 @@ export function PrintButton({
       styleEl.id = "dynamic-print-page-style";
       document.head.appendChild(styleEl);
     }
-    styleEl.textContent = `@media print { @page { size: A4 ${orient} !important; margin: 8mm !important; } }`;
+    styleEl.textContent = `
+      @media print {
+        @page { size: A4 ${orient} !important; margin: 8mm !important; }
+        .no-print,
+        .no-print *,
+        .mobile-app-bottom-bar,
+        nav.mobile-app-bottom-bar,
+        .mobile-app-bottom-bar *,
+        .mobile-tab-btn,
+        .mobile-center-add-btn,
+        .mobile-quick-menu-backdrop,
+        .page-header,
+        .page-actions,
+        .page-actions *,
+        .print-btn-group,
+        .print-btn,
+        .print-btn-wrap,
+        .table-actions,
+        .table-pagination,
+        .pagination-buttons,
+        .table-search-toolbar,
+        .operation-modal-backdrop,
+        .row-action-menu-wrap,
+        .row-action-trigger-btn,
+        .row-action-dropdown-panel,
+        .print-hide,
+        .print-hide-col,
+        th.print-hide-col,
+        td.print-hide-col,
+        [data-label="Actions"],
+        [data-label="Sync"],
+        .filter-tab,
+        .filter-preset-chip,
+        .active-filter-pill,
+        .report-type-nav-bar,
+        .report-filter-bar,
+        .theme-toggle-btn,
+        .mobile-menu-btn,
+        .user-pill,
+        .ai-chat-assistant,
+        .ai-chat-assistant *,
+        [aria-label*="AI Financial Copilot"],
+        [title*="AI Financial Copilot"],
+        nav:not(.print-include),
+        footer:not(.print-include),
+        form:not(.print-include),
+        button:not(.print-include),
+        input[type="button"],
+        input[type="submit"],
+        a.primary-btn,
+        a.secondary-btn,
+        a.success-btn,
+        a.warning-btn,
+        a.danger-btn,
+        a.ghost-btn,
+        a.mobile-tab-btn,
+        a.filter-preset-chip,
+        a.filter-tab,
+        a.panel-link,
+        .grid-kpis:not(.print-visible),
+        .kpi-card,
+        .table-card.no-print,
+        .table-card.no-print * {
+          display: none !important;
+          visibility: hidden !important;
+          height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          opacity: 0 !important;
+          overflow: hidden !important;
+          position: absolute !important;
+          left: -9999px !important;
+          bottom: -9999px !important;
+        }
+      }
+    `;
     document.body.dataset.printOrientation = orient;
 
     // 2. Await full web font resolution (Poppins & Inter)

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 import { Prisma } from "@/generated/client";
@@ -48,18 +49,57 @@ export async function POST(request: Request) {
       // Group by bank account to compute balance deltas
       const bankBalanceDelta: Record<string, number> = {};
 
+      const orgBankAccounts = await db.bankAccount.findMany({
+        where: { organizationId: orgId },
+        orderBy: { createdAt: "asc" },
+      });
+      const defaultBankAccountId = orgBankAccounts[0]?.id;
+
       for (const tx of bankTransactions) {
-        if (!tx.bankAccountId || !tx.amount) continue;
+        const targetAccountId = tx.bankAccountId || defaultBankAccountId;
+        if (!targetAccountId || !tx.amount) continue;
 
         const txDate = tx.transactionDate ? new Date(tx.transactionDate) : new Date();
         const valDate = tx.valueDate ? new Date(tx.valueDate) : null;
         const txAmount = Math.abs(Number(tx.amount));
         const txType = tx.type === "DEPOSIT" ? "DEPOSIT" : "WITHDRAWAL";
 
+        let incomeId: string | null = null;
+        let expenseId: string | null = null;
+
+        if (txType === "DEPOSIT") {
+          const inc = await db.income.create({
+            data: {
+              organizationId: orgId,
+              title: tx.description || "Bank Statement Deposit",
+              source: tx.reference || "Bank Deposit",
+              amount: new Prisma.Decimal(txAmount),
+              receivedAt: isNaN(txDate.getTime()) ? new Date() : txDate,
+              paymentMethod: "BANK",
+              bankAccountId: targetAccountId,
+              notes: tx.reference ? `Ref: ${tx.reference}` : null,
+            },
+          });
+          incomeId = inc.id;
+        } else {
+          const exp = await db.expense.create({
+            data: {
+              organizationId: orgId,
+              title: tx.description || "Bank Statement Withdrawal",
+              vendor: tx.reference || "Bank Outflow",
+              type: "ONE_TIME",
+              amount: new Prisma.Decimal(txAmount),
+              occurredAt: isNaN(txDate.getTime()) ? new Date() : txDate,
+              notes: tx.reference ? `Ref: ${tx.reference}` : null,
+            },
+          });
+          expenseId = exp.id;
+        }
+
         await db.bankTransaction.create({
           data: {
             organizationId: orgId,
-            bankAccountId: tx.bankAccountId,
+            bankAccountId: targetAccountId,
             transactionDate: isNaN(txDate.getTime()) ? new Date() : txDate,
             valueDate: valDate && !isNaN(valDate.getTime()) ? valDate : null,
             type: txType,
@@ -69,16 +109,18 @@ export async function POST(request: Request) {
             reference: tx.reference || null,
             chequeNumber: tx.chequeNumber || null,
             category: tx.category || null,
+            incomeId,
+            expenseId,
           },
         });
 
         insertedCounts.bankTransactions++;
 
         const delta = txType === "DEPOSIT" ? txAmount : -txAmount;
-        bankBalanceDelta[tx.bankAccountId] = (bankBalanceDelta[tx.bankAccountId] || 0) + delta;
+        bankBalanceDelta[targetAccountId] = (bankBalanceDelta[targetAccountId] || 0) + delta;
       }
 
-      // Optionally update current balance on the bank account
+      // Update current balance on the bank account
       if (updateBankBalances) {
         for (const [accountId, delta] of Object.entries(bankBalanceDelta)) {
           const bank = await db.bankAccount.findUnique({
@@ -306,6 +348,14 @@ export async function POST(request: Request) {
         insertedCounts.incomes++;
       }
     }
+
+    try {
+      revalidatePath(`/${orgId}/banking`);
+      revalidatePath(`/${orgId}/expenses`);
+      revalidatePath(`/${orgId}/income`);
+      revalidatePath(`/${orgId}/reports`);
+      revalidatePath(`/${orgId}`);
+    } catch {}
 
     return NextResponse.json({
       success: true,

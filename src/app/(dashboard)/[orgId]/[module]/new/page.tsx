@@ -138,6 +138,10 @@ export default async function NewEntryPage({params, searchParams}: {
                   Opening Balance
                   <input name="openingBalance" type="number" step="0.01" defaultValue="0" />
                 </label>
+                <label className="field">
+                  Hold / Lien Amount (Account Opening Charge / Minimum Lien)
+                  <input name="holdAmount" type="number" step="0.01" defaultValue="0" placeholder="2500" />
+                </label>
                 <label className="field full">
                   Notes / Remarks
                   <textarea name="notes" placeholder="Optional notes about this bank account" />

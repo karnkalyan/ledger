@@ -279,7 +279,7 @@ export function RowActionMenu({
   const canHardDelete = showHardDelete && (resource || deleteResource);
 
   return (
-    <div className="row-action-menu-wrap" style={{ position: "relative", display: "inline-block" }}>
+    <div className="row-action-menu-wrap no-print" style={{ position: "relative", display: "inline-block" }}>
       <button
         ref={buttonRef}
         type="button"

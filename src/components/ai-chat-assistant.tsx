@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   MessageSquare,
   Sparkles,
@@ -416,6 +417,7 @@ export function AiChatAssistant({
   orgName: string;
   currency?: string;
 }) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showQuickTools, setShowQuickTools] = useState(true);
@@ -423,6 +425,7 @@ export function AiChatAssistant({
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [insertingId, setInsertingId] = useState<string | null>(null);
+  const [availableBankAccounts, setAvailableBankAccounts] = useState<any[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -487,6 +490,10 @@ export function AiChatAssistant({
         throw new Error(data.error || "Failed to reach AI Assistant");
       }
 
+      if (Array.isArray(data.bankAccounts) && data.bankAccounts.length > 0) {
+        setAvailableBankAccounts(data.bankAccounts);
+      }
+
       const assistantMsg: ChatMessage = {
         id: `assistant-${Date.now()}`,
         role: "assistant",
@@ -522,10 +529,12 @@ export function AiChatAssistant({
     const purchasesToInsert: any[] = [];
     const incomesToInsert: any[] = [];
 
+    const fallbackBankId = extraction.matchedBankAccountId || availableBankAccounts[0]?.id;
+
     if (extraction.documentType === "BANK_STATEMENT" && extraction.bankStatement) {
       (extraction.bankStatement.transactions || []).forEach((tx: any) => {
         bankTransactionsToInsert.push({
-          bankAccountId: extraction.matchedBankAccountId,
+          bankAccountId: tx.bankAccountId || fallbackBankId,
           transactionDate: tx.transactionDate,
           valueDate: tx.valueDate,
           type: tx.type,
@@ -544,6 +553,9 @@ export function AiChatAssistant({
     } else if (extraction.documentType === "PURCHASE_ORDER" && extraction.purchase) {
       purchasesToInsert.push(extraction.purchase);
     } else if (extraction.documentType === "INCOME" && extraction.income) {
+      if (!extraction.income.bankAccountId && fallbackBankId) {
+        extraction.income.bankAccountId = fallbackBankId;
+      }
       incomesToInsert.push(extraction.income);
     }
 
@@ -573,6 +585,9 @@ export function AiChatAssistant({
       setMessages((prev) =>
         prev.map((m) => (m.id === msgId ? { ...m, inserted: true } : m))
       );
+
+      // Immediately refresh the current page to update banking totals and ledgers
+      router.refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to insert records");
     } finally {
@@ -588,6 +603,7 @@ export function AiChatAssistant({
         onClick={() => setIsOpen((prev) => !prev)}
         aria-label="Open AI Financial Copilot"
         title="Open AI Financial Copilot"
+        className="ai-chat-assistant no-print"
         style={{
           position: "fixed",
           bottom: 24,
@@ -627,6 +643,7 @@ export function AiChatAssistant({
       {/* Floating Chat Panel */}
       {isOpen && (
         <div
+          className="ai-chat-assistant no-print"
           style={{
             position: "fixed",
             bottom: 84,

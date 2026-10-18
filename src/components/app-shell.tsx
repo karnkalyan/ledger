@@ -128,14 +128,18 @@ export function AppShell({
       </div>
 
       {/* MOBILE APPLICATION APP-LIKE BOTTOM NAVIGATION BAR */}
-      <MobileAppBottomNav
-        orgId={org.id}
-        kind={org.kind}
-        onOpenSidebar={() => setSidebarOpen(true)}
-      />
+      <div className="no-print">
+        <MobileAppBottomNav
+          orgId={org.id}
+          kind={org.kind}
+          onOpenSidebar={() => setSidebarOpen(true)}
+        />
+      </div>
 
       {/* FLOATING AI FINANCIAL COPILOT & DOCUMENT ATTACHMENT ASSISTANT */}
-      <AiChatAssistant orgId={org.id} orgName={org.name} />
+      <div className="no-print">
+        <AiChatAssistant orgId={org.id} orgName={org.name} />
+      </div>
     </div>
   );
 }

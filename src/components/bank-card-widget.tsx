@@ -26,6 +26,7 @@ export interface BankAccountItem {
   branch?: string | null;
   currency?: string | null;
   currentBalance: string | number;
+  holdAmount?: string | number | null;
   _count?: {
     transactions: number;
   };
@@ -61,6 +62,9 @@ export function BankCardWidget({
   const [copied, setCopied] = useState(false);
 
   const balanceNum = Number(account.currentBalance || 0);
+  const holdNum = Number(account.holdAmount || 0);
+  const availableNum = balanceNum - holdNum;
+
   const formattedBalance = moneyFormatter
     ? moneyFormatter(account.currentBalance, account.currency || currency)
     : `${account.currency || currency} ${balanceNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
@@ -157,6 +161,11 @@ export function BankCardWidget({
             >
               {formattedBalance}
             </div>
+            {holdNum > 0 && (
+              <div style={{ fontSize: 10, color: "#ea580c", fontWeight: 700, marginTop: 2 }}>
+                Hold: {account.currency || currency} {holdNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </div>
+            )}
           </div>
         </div>
 
@@ -206,6 +215,47 @@ export function BankCardWidget({
             </button>
           </div>
         </div>
+
+        {/* Hold Amount (Account Opening Charge / Minimum Lien) Display */}
+        {holdNum > 0 && (
+          <div
+            style={{
+              margin: "10px 0 12px 0",
+              padding: "9px 12px",
+              borderRadius: 8,
+              background: "rgba(234, 88, 12, 0.08)",
+              border: "1px solid rgba(234, 88, 12, 0.28)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 8,
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span
+                style={{
+                  fontSize: 9.5,
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  padding: "2px 6px",
+                  borderRadius: 4,
+                  background: "#ea580c",
+                  color: "#ffffff",
+                  letterSpacing: 0.5,
+                }}
+              >
+                HOLD
+              </span>
+              <span style={{ fontSize: 11.5, color: "var(--text)", fontWeight: 650 }}>
+                Account Opening Charge: <strong>{account.currency || currency} {holdNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
+              </span>
+            </div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+              Available Liquidity: <strong style={{ color: "var(--success)" }}>{account.currency || currency} {availableNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Bottom Row: Branch Info, Quick Actions & Ledger Filter Toggle */}

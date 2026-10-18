@@ -40,7 +40,7 @@ export function MobileAppBottomNav({
       {/* QUICK ADD MODAL POPUP */}
       {quickMenuOpen && (
         <div
-          className="mobile-quick-menu-backdrop"
+          className="mobile-quick-menu-backdrop no-print"
           onClick={() => setQuickMenuOpen(false)}
           style={{
             position: "fixed",
@@ -238,8 +238,28 @@ export function MobileAppBottomNav({
       )}
 
       {/* MOBILE BOTTOM NAVIGATION BAR (EXACTLY 5 SYMMETRIC SLOTS: 2 LEFT, CENTER +, 2 RIGHT) */}
+      <style>{`
+        @media print {
+          .mobile-app-bottom-bar,
+          nav.mobile-app-bottom-bar,
+          .mobile-quick-menu-backdrop,
+          .mobile-tab-btn,
+          .mobile-center-add-btn {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            max-height: 0 !important;
+            opacity: 0 !important;
+            position: absolute !important;
+            bottom: -9999px !important;
+            left: -9999px !important;
+            pointer-events: none !important;
+          }
+        }
+      `}</style>
       <nav
-        className="mobile-app-bottom-bar"
+        className="mobile-app-bottom-bar no-print"
         aria-label="Mobile Navigation"
       >
         <Link

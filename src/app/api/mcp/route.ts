@@ -3233,12 +3233,28 @@ async function handleSingleRpc(rpc: any, auth: McpAuthResult) {
             };
           }
 
+          const oldType = existing.type;
+          const oldAmt = Number(existing.amount);
+          const newType = args.type ? (args.type === "DEPOSIT" ? "DEPOSIT" : "WITHDRAWAL") : oldType;
+          const newAmt = args.amount !== undefined ? Math.abs(Number(args.amount)) : oldAmt;
+
           const data: any = {};
           if (args.description) data.description = args.description;
-          if (args.amount) data.amount = new Prisma.Decimal(Math.abs(Number(args.amount)));
-          if (args.type) data.type = args.type;
+          if (args.amount !== undefined) data.amount = new Prisma.Decimal(newAmt);
+          if (args.type) data.type = newType;
           if (args.category) data.category = args.category;
-          if (args.reference) data.reference = args.reference;
+          if (args.reference !== undefined) data.reference = args.reference;
+
+          const oldRevert = oldType === "DEPOSIT" ? -oldAmt : oldAmt;
+          const newApply = newType === "DEPOSIT" ? newAmt : -newAmt;
+          const delta = oldRevert + newApply;
+
+          if (delta !== 0) {
+            await db.bankAccount.update({
+              where: { id: existing.bankAccountId },
+              data: { currentBalance: { increment: delta } },
+            });
+          }
 
           const updated = await db.bankTransaction.update({
             where: { id: args.id },
@@ -3247,7 +3263,7 @@ async function handleSingleRpc(rpc: any, auth: McpAuthResult) {
           return {
             jsonrpc,
             id,
-            result: { content: [{ type: "text", text: `Bank Transaction updated:\n${JSON.stringify(updated, null, 2)}` }] },
+            result: { content: [{ type: "text", text: `Bank Transaction updated and balance adjusted:\n${JSON.stringify(updated, null, 2)}` }] },
           };
         }
 
@@ -3265,11 +3281,27 @@ async function handleSingleRpc(rpc: any, auth: McpAuthResult) {
               result: { content: [{ type: "text", text: `Transaction ${args.id} not found or unauthorized.` }], isError: true },
             };
           }
-          await db.bankTransaction.delete({ where: { id: args.id } });
+          const amt = Number(existing.amount);
+          const delta = existing.type === "DEPOSIT" ? -amt : amt;
+
+          await db.$transaction(async (tx) => {
+            await tx.bankAccount.update({
+              where: { id: existing.bankAccountId },
+              data: { currentBalance: { increment: delta } },
+            });
+            if (existing.incomeId) {
+              await tx.income.deleteMany({ where: { id: existing.incomeId } });
+            }
+            if (existing.expenseId) {
+              await tx.expense.deleteMany({ where: { id: existing.expenseId } });
+            }
+            await tx.bankTransaction.delete({ where: { id: args.id } });
+          });
+
           return {
             jsonrpc,
             id,
-            result: { content: [{ type: "text", text: `Bank Transaction ${args.id} deleted.` }] },
+            result: { content: [{ type: "text", text: `Bank Transaction ${args.id} deleted and account balance updated.` }] },
           };
         }
 
@@ -6352,18 +6384,38 @@ async function handleSingleRpc(rpc: any, auth: McpAuthResult) {
                 await tx.quoteItem.deleteMany({ where: { quoteId: recordId } });
                 await tx.quote.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
                 break;
-              case "expense":
-                await tx.bankTransaction.updateMany({ where: { expenseId: recordId }, data: { expenseId: null } });
+              case "expense": {
+                const linkedBankTxs = await tx.bankTransaction.findMany({
+                  where: { expenseId: recordId, organizationId: targetOrgId },
+                });
+                for (const btx of linkedBankTxs) {
+                  await tx.bankAccount.update({
+                    where: { id: btx.bankAccountId },
+                    data: { currentBalance: { increment: Number(btx.amount) } },
+                  });
+                }
+                await tx.bankTransaction.deleteMany({ where: { expenseId: recordId } });
                 await tx.expense.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
                 break;
+              }
               case "recurring_expense":
                 await tx.expense.updateMany({ where: { recurringExpenseId: recordId }, data: { recurringExpenseId: null } });
                 await tx.recurringExpense.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
                 break;
-              case "income":
-                await tx.bankTransaction.updateMany({ where: { incomeId: recordId }, data: { incomeId: null } });
+              case "income": {
+                const linkedBankTxs = await tx.bankTransaction.findMany({
+                  where: { incomeId: recordId, organizationId: targetOrgId },
+                });
+                for (const btx of linkedBankTxs) {
+                  await tx.bankAccount.update({
+                    where: { id: btx.bankAccountId },
+                    data: { currentBalance: { decrement: Number(btx.amount) } },
+                  });
+                }
+                await tx.bankTransaction.deleteMany({ where: { incomeId: recordId } });
                 await tx.income.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
                 break;
+              }
               case "contact":
                 await tx.contact.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
                 break;
@@ -6394,9 +6446,27 @@ async function handleSingleRpc(rpc: any, auth: McpAuthResult) {
               case "payroll":
                 await tx.payroll.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
                 break;
-              case "bank_tx":
-                await tx.bankTransaction.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
+              case "bank_tx": {
+                const existingTx = await tx.bankTransaction.findFirst({
+                  where: { id: recordId, organizationId: targetOrgId },
+                });
+                if (existingTx) {
+                  const amt = Number(existingTx.amount);
+                  const delta = existingTx.type === "DEPOSIT" ? -amt : amt;
+                  await tx.bankAccount.update({
+                    where: { id: existingTx.bankAccountId },
+                    data: { currentBalance: { increment: delta } },
+                  });
+                  if (existingTx.incomeId) {
+                    await tx.income.deleteMany({ where: { id: existingTx.incomeId, organizationId: targetOrgId } });
+                  }
+                  if (existingTx.expenseId) {
+                    await tx.expense.deleteMany({ where: { id: existingTx.expenseId, organizationId: targetOrgId } });
+                  }
+                  await tx.bankTransaction.delete({ where: { id: recordId } });
+                }
                 break;
+              }
               case "milk_log":
                 await tx.milkMonthlyLog.deleteMany({ where: { id: recordId, organizationId: targetOrgId } });
                 break;

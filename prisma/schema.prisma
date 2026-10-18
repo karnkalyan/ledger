@@ -680,6 +680,7 @@ model BankAccount {
   currency       String            @default("NPR")
   openingBalance Decimal           @default(0) @db.Decimal(14,2)
   currentBalance Decimal           @default(0) @db.Decimal(14,2)
+  holdAmount     Decimal           @default(0) @db.Decimal(14,2)
   isActive       Boolean           @default(true)
   notes          String?           @db.Text
   createdAt      DateTime          @default(now())

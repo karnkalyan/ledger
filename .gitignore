@@ -8,3 +8,4 @@ node_modules
 src/generated/client
 *.node
 *.tmp*
+scratch/

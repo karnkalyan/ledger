@@ -87,7 +87,7 @@ export async function POST(request: Request) {
         }),
         db.bankAccount.findMany({
           where: { organizationId: orgId },
-          select: { id: true, bankName: true, accountNumber: true, currentBalance: true },
+          select: { id: true, bankName: true, accountNumber: true, currentBalance: true, holdAmount: true },
         }),
         db.expense.findMany({
           where: { organizationId: orgId, isEstimated: false },
@@ -140,6 +140,95 @@ export async function POST(request: Request) {
       }
     }
 
+    // Match bank statement to registered bank accounts
+    if (extraction) {
+      let matchedBankAccountId = bankAccounts[0]?.id;
+      if (extraction.bankStatement?.accountNumber) {
+        const cleanExt = extraction.bankStatement.accountNumber.replace(/\D/g, "");
+        const found = bankAccounts.find((b) => {
+          const cleanB = b.accountNumber.replace(/\D/g, "");
+          return cleanB && (cleanB.includes(cleanExt) || cleanExt.includes(cleanB));
+        });
+        if (found) matchedBankAccountId = found.id;
+      } else if (extraction.bankStatement?.bankName) {
+        const found = bankAccounts.find(
+          (b) =>
+            b.bankName.toLowerCase().includes(extraction!.bankStatement!.bankName.toLowerCase()) ||
+            extraction!.bankStatement!.bankName.toLowerCase().includes(b.bankName.toLowerCase())
+        );
+        if (found) matchedBankAccountId = found.id;
+      }
+      (extraction as any).matchedBankAccountId = matchedBankAccountId;
+    }
+
+    // Conversational text intent extraction (e.g. user asks "record deposit 75000" without attaching a file)
+    if (!extraction && message) {
+      const lower = message.toLowerCase();
+      const hasAction = /\b(record|insert|add|create|save|deposit|withdrawal|withdraw|expense|income|paid|received)\b/i.test(lower);
+      const amountMatch = message.match(/(?:(?:npr|rs\.?|amount|\$)\s*)?([\d,]+(?:\.\d+)?)/i);
+      if (hasAction && amountMatch) {
+        const rawAmt = parseFloat(amountMatch[1].replace(/,/g, ""));
+        if (!isNaN(rawAmt) && rawAmt > 0) {
+          const isDeposit = /\b(deposit|deposited|inflow|received|credit|cr)\b/i.test(lower) && !/\b(withdraw|withdrawal|debit|expense)\b/i.test(lower);
+          const isWithdrawal = /\b(withdraw|withdrawal|debit|outflow|dr)\b/i.test(lower);
+          const isExpense = /\b(expense|spent|bill|paid for)\b/i.test(lower);
+          const isIncome = /\b(income|revenue|sales)\b/i.test(lower);
+
+          const matchedBank = bankAccounts.find((b) => lower.includes(b.bankName.toLowerCase())) || bankAccounts[0];
+
+          if (isDeposit || isWithdrawal) {
+            const txType = isDeposit ? "DEPOSIT" : "WITHDRAWAL";
+            extraction = {
+              documentType: "BANK_STATEMENT",
+              confidence: 0.95,
+              summary: `${isDeposit ? "Deposit" : "Withdrawal"} of ${org?.currency || "NPR"} ${rawAmt.toLocaleString()} for ${matchedBank ? matchedBank.bankName : "Corporate Bank"}`,
+              bankStatement: {
+                bankName: matchedBank?.bankName || "Corporate Bank",
+                accountNumber: matchedBank?.accountNumber || "",
+                transactions: [
+                  {
+                    transactionDate: new Date().toISOString().slice(0, 10),
+                    type: txType,
+                    amount: rawAmt,
+                    description: message.replace(/^(please\s+)?(can\s+you\s+)?(record|insert|add|create)\s+/i, "").slice(0, 120),
+                  },
+                ],
+              },
+              suggestedAction: `Click "Approve & Insert into DB" to commit this ${isDeposit ? "deposit" : "withdrawal"} to your verified database.`,
+            } as any;
+            (extraction as any).matchedBankAccountId = matchedBank?.id;
+          } else if (isExpense) {
+            extraction = {
+              documentType: "EXPENSE",
+              confidence: 0.95,
+              summary: `Expense of ${org?.currency || "NPR"} ${rawAmt.toLocaleString()}`,
+              expense: {
+                title: message.replace(/^(please\s+)?(can\s+you\s+)?(record|insert|add|create)\s+/i, "").slice(0, 80),
+                amount: rawAmt,
+                occurredAt: new Date().toISOString().slice(0, 10),
+                categoryName: categories[0]?.name || "General Expense",
+              },
+              suggestedAction: `Click "Approve & Insert into DB" to insert this expense into your verified database.`,
+            } as any;
+          } else if (isIncome) {
+            extraction = {
+              documentType: "INCOME",
+              confidence: 0.95,
+              summary: `Income receipt of ${org?.currency || "NPR"} ${rawAmt.toLocaleString()}`,
+              income: {
+                title: message.replace(/^(please\s+)?(can\s+you\s+)?(record|insert|add|create)\s+/i, "").slice(0, 80),
+                amount: rawAmt,
+                receivedAt: new Date().toISOString().slice(0, 10),
+                source: "Direct Revenue",
+                bankAccountId: matchedBank?.id,
+              },
+              suggestedAction: `Click "Approve & Insert into DB" to insert this income receipt into your verified database.`,
+            } as any;
+          }
+        }
+      }
+    }
+
     // Build user message prompt
     let assistantPrompt = message;
     if (extraction) {
@@ -159,6 +248,8 @@ export async function POST(request: Request) {
           name: b.bankName,
           number: b.accountNumber,
           balance: Number(b.currentBalance || 0),
+          holdAmount: Number(b.holdAmount || 0),
+          availableBalance: Number(b.currentBalance || 0) - Number(b.holdAmount || 0),
         })),
         recentExpenses: recentExpenses.map((e) => ({
           title: e.title,

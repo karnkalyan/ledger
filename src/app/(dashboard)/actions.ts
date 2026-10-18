@@ -901,6 +901,7 @@ export async function createBankAccountAction(formData: FormData) {
   if (!bankName || !accountNumber) return;
 
   const openingBalance = n(formData, "openingBalance", 0);
+  const holdAmount = n(formData, "holdAmount", 0);
   await db.bankAccount.create({
     data: {
       organizationId: orgId,
@@ -912,6 +913,7 @@ export async function createBankAccountAction(formData: FormData) {
       currency: s(formData, "currency") || "NPR",
       openingBalance,
       currentBalance: openingBalance,
+      holdAmount,
       notes: s(formData, "notes") || null,
     },
   });
@@ -2141,20 +2143,42 @@ export async function hardDeleteRecordAction(formData: FormData) {
         await tx.quote.deleteMany({ where: { id, organizationId: orgId } });
         break;
 
-      case "expense":
-        await tx.bankTransaction.updateMany({ where: { expenseId: id }, data: { expenseId: null } });
+      case "expense": {
+        const linkedBankTxs = await tx.bankTransaction.findMany({
+          where: { expenseId: id, organizationId: orgId },
+        });
+        for (const btx of linkedBankTxs) {
+          // Deleting expense outlay restores money back to the bank account
+          await tx.bankAccount.update({
+            where: { id: btx.bankAccountId },
+            data: { currentBalance: { increment: Number(btx.amount) } },
+          });
+        }
+        await tx.bankTransaction.deleteMany({ where: { expenseId: id } });
         await tx.expense.deleteMany({ where: { id, organizationId: orgId } });
         break;
+      }
 
       case "recurring_expense":
         await tx.expense.updateMany({ where: { recurringExpenseId: id }, data: { recurringExpenseId: null } });
         await tx.recurringExpense.deleteMany({ where: { id, organizationId: orgId } });
         break;
 
-      case "income":
-        await tx.bankTransaction.updateMany({ where: { incomeId: id }, data: { incomeId: null } });
+      case "income": {
+        const linkedBankTxs = await tx.bankTransaction.findMany({
+          where: { incomeId: id, organizationId: orgId },
+        });
+        for (const btx of linkedBankTxs) {
+          // Deleting income inflow removes money from the bank account
+          await tx.bankAccount.update({
+            where: { id: btx.bankAccountId },
+            data: { currentBalance: { decrement: Number(btx.amount) } },
+          });
+        }
+        await tx.bankTransaction.deleteMany({ where: { incomeId: id } });
         await tx.income.deleteMany({ where: { id, organizationId: orgId } });
         break;
+      }
 
       case "contact":
         await tx.contact.deleteMany({ where: { id, organizationId: orgId } });
@@ -2195,9 +2219,31 @@ export async function hardDeleteRecordAction(formData: FormData) {
         await tx.payroll.deleteMany({ where: { id, organizationId: orgId } });
         break;
 
-      case "bank_tx":
-        await tx.bankTransaction.deleteMany({ where: { id, organizationId: orgId } });
+      case "bank_tx": {
+        const existingTx = await tx.bankTransaction.findFirst({
+          where: { id, organizationId: orgId },
+        });
+        if (existingTx) {
+          const amt = Number(existingTx.amount);
+          // Reverting effect: DEPOSIT deletion reduces balance, WITHDRAWAL deletion increases balance
+          const delta = existingTx.type === "DEPOSIT" ? -amt : amt;
+          await tx.bankAccount.update({
+            where: { id: existingTx.bankAccountId },
+            data: { currentBalance: { increment: delta } },
+          });
+
+          // Delete coupled income or expense if present
+          if (existingTx.incomeId) {
+            await tx.income.deleteMany({ where: { id: existingTx.incomeId, organizationId: orgId } });
+          }
+          if (existingTx.expenseId) {
+            await tx.expense.deleteMany({ where: { id: existingTx.expenseId, organizationId: orgId } });
+          }
+
+          await tx.bankTransaction.delete({ where: { id } });
+        }
         break;
+      }
 
       case "milk_log":
         await tx.milkMonthlyLog.deleteMany({ where: { id, organizationId: orgId } });
@@ -2222,6 +2268,13 @@ export async function hardDeleteRecordAction(formData: FormData) {
   revalidatePath(`/${orgId}`);
   if (resource === "purchase" || resource === "sales" || resource === "product") {
     revalidatePath(`/${orgId}/stock`);
+  }
+  if (resource === "bank_tx" || resource === "expense" || resource === "income") {
+    refreshModules(orgId, "banking", "expenses", "income");
+    revalidatePath(`/${orgId}/banking`);
+    revalidatePath(`/${orgId}/expenses`);
+    revalidatePath(`/${orgId}/income`);
+    revalidatePath(`/${orgId}/reports`);
   }
 }
 
@@ -2341,6 +2394,26 @@ export async function softDeleteRecordAction(formData: FormData) {
       break;
     }
 
+    case "bank_tx": {
+      const btx = await db.bankTransaction.findFirst({ where: { id, organizationId: orgId } });
+      if (btx && !btx.description.includes("[CANCELLED]")) {
+        const amt = Number(btx.amount);
+        const delta = btx.type === "DEPOSIT" ? -amt : amt;
+        await db.bankAccount.update({
+          where: { id: btx.bankAccountId },
+          data: { currentBalance: { increment: delta } },
+        });
+        await db.bankTransaction.update({
+          where: { id },
+          data: {
+            description: `[CANCELLED] ${btx.description}`.trim(),
+            category: "Cancelled Transaction",
+          },
+        });
+      }
+      break;
+    }
+
     default:
       break;
   }
@@ -2349,6 +2422,13 @@ export async function softDeleteRecordAction(formData: FormData) {
   refresh(orgId, targetModule);
   if (targetModule) revalidatePath(`/${orgId}/${targetModule}`);
   revalidatePath(`/${orgId}`);
+  if (resource === "bank_tx" || resource === "expense" || resource === "income") {
+    refreshModules(orgId, "banking", "expenses", "income");
+    revalidatePath(`/${orgId}/banking`);
+    revalidatePath(`/${orgId}/expenses`);
+    revalidatePath(`/${orgId}/income`);
+    revalidatePath(`/${orgId}/reports`);
+  }
 }
 
 export async function updateTaskAction(formData: FormData) {

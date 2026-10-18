@@ -206,7 +206,7 @@ function Header({
           </div>
         </div>
       )}
-      <div className="page-header">
+      <div className="page-header no-print">
         <div>
           <h1>{title}</h1>
           <p>{description}</p>
@@ -258,7 +258,7 @@ function StatusForm({ orgId, resource, id, current, options }: { orgId: string; 
 
 function Kpis({ items }: { items: { label: string; value: string; meta?: string }[] }) {
   return (
-    <section className="grid-kpis">
+    <section className="grid-kpis no-print">
       {items.map((x) => (
         <div className="kpi-card" key={x.label}>
           <div className="kpi-top">
@@ -1368,6 +1368,10 @@ export default async function ModulePage({
     const totalLiquidity = activeAccount
       ? Number(activeAccount.currentBalance)
       : accounts.reduce((sum, a) => sum + Number(a.currentBalance), 0);
+    const totalHold = activeAccount
+      ? Number(activeAccount.holdAmount || 0)
+      : accounts.reduce((sum, a) => sum + Number(a.holdAmount || 0), 0);
+    const availableLiquidity = totalLiquidity - totalHold;
 
     const depositStats = transactionStats.find((stat) => stat.type === "DEPOSIT");
     const withdrawalStats = transactionStats.find((stat) => stat.type === "WITHDRAWAL");
@@ -1444,7 +1448,9 @@ export default async function ModulePage({
             {
               label: activeAccount ? `${activeAccount.bankName} Balance` : "Total Bank Liquidity",
               value: money(totalLiquidity, currency),
-              meta: activeAccount ? `A/C: ${activeAccount.accountNumber}` : `${accounts.length} active account${accounts.length === 1 ? "" : "s"}`,
+              meta: totalHold > 0
+                ? `Available: ${money(availableLiquidity, currency)} · Hold: ${money(totalHold, currency)}`
+                : (activeAccount ? `A/C: ${activeAccount.accountNumber}` : `${accounts.length} active account${accounts.length === 1 ? "" : "s"}`),
             },
             {
               label: isFiltered ? "Filtered Inflows" : "Total Deposits (Inflows)",
@@ -1477,6 +1483,7 @@ export default async function ModulePage({
               branch: a.branch,
               currency: a.currency,
               currentBalance: Number(a.currentBalance),
+              holdAmount: Number(a.holdAmount || 0),
               _count: a._count,
               filterHref: filterHref({ accountId: isSelected ? null : a.id }),
             };
@@ -1748,7 +1755,13 @@ export default async function ModulePage({
             <div><span>Total Inflows (Credits):</span> <strong>+ {money(filteredDeposits, currency)}</strong></div>
             <div><span>Total Outflows (Debits):</span> <strong>- {money(filteredWithdrawals, currency)}</strong></div>
             <div><span>Net Period Movement:</span> <strong>{filteredNet >= 0 ? "+" : ""}{money(filteredNet, currency)}</strong></div>
-            <div><span>Closing Balance:</span> <strong>{money(activeAccount?.currentBalance ?? filteredNet, currency)}</strong></div>
+            <div>
+              <span>Closing Balance (Available):</span>
+              <strong>
+                {money(activeAccount?.currentBalance ?? filteredNet, currency)}
+                {totalHold > 0 ? ` (Hold: ${money(totalHold, currency)})` : ""}
+              </strong>
+            </div>
           </div>
         </div>
 
