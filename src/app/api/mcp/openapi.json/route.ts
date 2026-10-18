@@ -78,6 +78,196 @@ export async function GET(request: Request) {
           },
         },
       },
+      "/api/mcp/companies": {
+        get: {
+          operationId: "getCompaniesDetails",
+          summary: "Get all companies and workspace details",
+          description:
+            "Retrieve comprehensive details for all registered companies and workspaces (e.g. Simulcast Technologies Pvt Ltd, My House, Himalayan Retail Mart), including company ID, name, PAN/VAT number, address, contact email, phone, fiscal year (2083/2084 BS), active status, bank accounts, and current balances.",
+          parameters: [
+            {
+              name: "company",
+              in: "query",
+              required: false,
+              schema: { type: "string" },
+              description: "Optional company name, slug, workspace ('simulcast', 'house', 'office'), or company ID",
+            },
+          ],
+          responses: {
+            "200": {
+              description: "List of registered companies with full profiles and balances",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      success: { type: "boolean" },
+                      count: { type: "integer" },
+                      companies: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            id: { type: "string" },
+                            name: { type: "string" },
+                            slug: { type: "string" },
+                            kind: { type: "string" },
+                            panVatNumber: { type: "string" },
+                            address: { type: "string" },
+                            email: { type: "string" },
+                            phone: { type: "string" },
+                            fiscalYear: { type: "string" },
+                            totalBankBalance: { type: "number" },
+                            bankAccounts: { type: "array", items: { type: "object" } },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        post: {
+          operationId: "postCompaniesDetails",
+          summary: "Query companies and workspace details",
+          description: "Query company and organization profile details via POST payload.",
+          requestBody: {
+            required: false,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    company: { type: "string", description: "Company name, slug, or workspace alias" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "200": {
+              description: "Company details result",
+              content: { "application/json": { schema: { type: "object" } } },
+            },
+          },
+        },
+      },
+      "/api/mcp/transactions": {
+        get: {
+          operationId: "getCompanyTransactions",
+          summary: "Get company bank transactions and ledger records",
+          description:
+            "Retrieve complete bank transactions, sales, payments, receipts, and ledger statements for any registered company. Supports Nepali Bikram Sambat periods (e.g. 'ashoj' / '2083-06', 'bhadra', 'shrawan'), English dates (e.g. '2026-10', 'today', 'all'), transaction types (DEPOSIT, WITHDRAWAL, ALL), and keyword searches.",
+          parameters: [
+            {
+              name: "month",
+              in: "query",
+              required: false,
+              schema: { type: "string" },
+              description: "Billing month or period: 'ashoj' (or '2083-06'), 'bhadra', 'shrawan', '2026-10', 'today', 'all'",
+            },
+            {
+              name: "company",
+              in: "query",
+              required: false,
+              schema: { type: "string" },
+              description: "Company or workspace filter: 'simulcast', 'house', 'office', or company name / slug",
+            },
+            {
+              name: "type",
+              in: "query",
+              required: false,
+              schema: { type: "string", enum: ["DEPOSIT", "WITHDRAWAL", "ALL"] },
+              description: "Filter by transaction type: DEPOSIT, WITHDRAWAL, or ALL",
+            },
+            {
+              name: "search",
+              in: "query",
+              required: false,
+              schema: { type: "string" },
+              description: "Search keyword in description, reference, or cheque number",
+            },
+            {
+              name: "limit",
+              in: "query",
+              required: false,
+              schema: { type: "integer", default: 100 },
+              description: "Maximum number of transactions to return (up to 500)",
+            },
+          ],
+          responses: {
+            "200": {
+              description: "List of transactions and cashflow summary",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      success: { type: "boolean" },
+                      period: { type: "string" },
+                      summary: {
+                        type: "object",
+                        properties: {
+                          totalRecords: { type: "integer" },
+                          totalDeposits: { type: "number" },
+                          totalWithdrawals: { type: "number" },
+                          netCashflow: { type: "number" },
+                        },
+                      },
+                      transactions: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            id: { type: "string" },
+                            date: { type: "string" },
+                            type: { type: "string" },
+                            amount: { type: "number" },
+                            description: { type: "string" },
+                            bankName: { type: "string" },
+                            accountNumber: { type: "string" },
+                            companyName: { type: "string" },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        post: {
+          operationId: "postCompanyTransactions",
+          summary: "Query company transactions with JSON parameters",
+          description: "Query bank transactions for a specific company and period via POST body.",
+          requestBody: {
+            required: false,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    month: { type: "string", description: "e.g. 'ashoj', '2083-06', '2026-10', 'today'" },
+                    company: { type: "string", description: "e.g. 'simulcast', 'house', 'office'" },
+                    type: { type: "string", enum: ["DEPOSIT", "WITHDRAWAL", "ALL"] },
+                    search: { type: "string" },
+                    limit: { type: "integer" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "200": {
+              description: "Transactions query result",
+              content: { "application/json": { schema: { type: "object" } } },
+            },
+          },
+        },
+      },
       "/api/mcp/balance": {
         get: {
           operationId: "getFinancialBalance",
