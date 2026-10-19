@@ -893,6 +893,64 @@ export async function convertQuoteToInvoiceAction(formData: FormData) {
   redirect(`/${orgId}/invoices/${invoice.id}`);
 }
 
+export async function convertSalesOrderToInvoiceAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  await orgAccess(orgId);
+  const salesOrderId = s(formData, "salesOrderId");
+  if (!salesOrderId) return;
+  const so = await db.salesOrder.findFirst({
+    where: { id: salesOrderId, organizationId: orgId },
+    include: { items: true },
+  });
+  if (!so) return;
+
+  // Check if an invoice for this sales order already exists
+  const existingInv = await db.invoice.findFirst({
+    where: {
+      organizationId: orgId,
+      notes: { contains: `Tax invoice for order ${so.orderNumber}` },
+    },
+  });
+  if (existingInv) {
+    redirect(`/${orgId}/invoices/${existingInv.id}`);
+  }
+
+  const number = `INV-${so.orderNumber}`;
+  const invoice = await db.invoice.create({
+    data: {
+      organizationId: orgId,
+      invoiceNumber: number,
+      contactId: so.contactId,
+      status: so.status === "COMPLETED" ? "PAID" : "DRAFT",
+      issueDate: so.orderDate,
+      dueDate: so.orderDate,
+      subtotal: so.subtotal,
+      tax: so.tax,
+      discount: so.discount,
+      total: so.total,
+      paidAmount: so.status === "COMPLETED" ? so.total : 0,
+      notes: `Tax invoice for order ${so.orderNumber}`,
+      items: {
+        create: so.items.map((i) => ({
+          productId: i.productId,
+          description: i.description,
+          quantity: i.quantity,
+          unitPrice: i.unitPrice,
+          taxRate: 0,
+          amount: i.amount,
+        })),
+      },
+    },
+  });
+
+  refresh(orgId, "sales");
+  refresh(orgId, "invoices");
+  refresh(orgId, "crm");
+  revalidatePath(`/${orgId}/invoices/${invoice.id}`);
+  redirect(`/${orgId}/invoices/${invoice.id}`);
+}
+
+
 export async function createBankAccountAction(formData: FormData) {
   const orgId = s(formData, "orgId");
   await orgAccess(orgId);

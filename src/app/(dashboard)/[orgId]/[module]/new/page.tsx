@@ -36,13 +36,13 @@ const entries = [
 const officeOnly = new Set(["sales","purchase","stock","crm","leads","staff","payroll","leaves","invoices","quotes","licenses"]);
 export default async function NewEntryPage({params, searchParams}: {
  params: Promise<{orgId: string; module: string}>;
- searchParams: Promise<{type?: string; defaultType?: string}>;
+ searchParams: Promise<{type?: string; defaultType?: string; contactId?: string}>;
 }) {
  const {orgId, module} = await params;
  if (["projects", "wallets", "worklogs"].includes(module)) {
    redirect(`/${orgId}/${module}`);
  }
- const {type, defaultType} = await searchParams;
+ const {type, defaultType, contactId} = await searchParams;
  const entry = entries.find(e => e.module === module && (!type || e.type === type));
  if (!entry) notFound();
  const {organization, membership} = await requireOrganizationAccess(orgId);
@@ -98,6 +98,7 @@ export default async function NewEntryPage({params, searchParams}: {
         currentBalance: Number(b.currentBalance),
       }))}
       action={saveIncomeAction}
+      initialContactId={contactId || ""}
     />
   ); break;
   case "new-account": form = (
@@ -456,16 +457,16 @@ export default async function NewEntryPage({params, searchParams}: {
             </form>
           </>); break;
  case "new-invoice": form = (<>
-            <DocumentComposer action={saveCommerceDocumentAction} currency={organization.currency} defaultTaxRate={organization.defaultTaxPercent ? Number(organization.defaultTaxPercent) : 13} kind="INVOICE" orgId={orgId} contacts={contacts} products={products} />
+            <DocumentComposer action={saveCommerceDocumentAction} currency={organization.currency} defaultTaxRate={organization.defaultTaxPercent ? Number(organization.defaultTaxPercent) : 13} kind="INVOICE" orgId={orgId} contacts={contacts} products={products} initialData={contactId ? { contactId } : undefined} />
           </>); break;
  case "new-quotation": form = (<>
-            <DocumentComposer action={saveCommerceDocumentAction} currency={organization.currency} defaultTaxRate={organization.defaultTaxPercent ? Number(organization.defaultTaxPercent) : 13} kind="QUOTE" orgId={orgId} contacts={contacts} products={products} />
+            <DocumentComposer action={saveCommerceDocumentAction} currency={organization.currency} defaultTaxRate={organization.defaultTaxPercent ? Number(organization.defaultTaxPercent) : 13} kind="QUOTE" orgId={orgId} contacts={contacts} products={products} initialData={contactId ? { contactId } : undefined} />
           </>); break;
  case "new-sales-order": form = (<>
-            <DocumentComposer action={saveCommerceDocumentAction} currency={organization.currency} defaultTaxRate={organization.defaultTaxPercent ? Number(organization.defaultTaxPercent) : 13} kind="SALES_ORDER" orgId={orgId} contacts={contacts} products={products} />
+            <DocumentComposer action={saveCommerceDocumentAction} currency={organization.currency} defaultTaxRate={organization.defaultTaxPercent ? Number(organization.defaultTaxPercent) : 13} kind="SALES_ORDER" orgId={orgId} contacts={contacts} products={products} initialData={contactId ? { contactId } : undefined} />
           </>); break;
  case "new-purchase-order": form = (<>
-            <DocumentComposer action={saveCommerceDocumentAction} currency={organization.currency} defaultTaxRate={organization.defaultTaxPercent ? Number(organization.defaultTaxPercent) : 13} kind="PURCHASE_ORDER" orgId={orgId} contacts={contacts} products={products} />
+            <DocumentComposer action={saveCommerceDocumentAction} currency={organization.currency} defaultTaxRate={organization.defaultTaxPercent ? Number(organization.defaultTaxPercent) : 13} kind="PURCHASE_ORDER" orgId={orgId} contacts={contacts} products={products} initialData={contactId ? { contactId } : undefined} />
           </>); break;
  case "new-loan": form = (
     <form action={saveLoanAction}>

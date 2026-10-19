@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { requireOrganizationAccess } from "@/lib/session";
 import { money, shortDate } from "@/lib/format";
 import { formatDualDate } from "@/lib/nepali-calendar";
-import { convertQuoteToInvoiceAction, recordInvoicePaymentAction, updateStatusAction, recordPurchasePaymentAction, settleLoanAction } from "@/app/(dashboard)/actions";
+import { convertQuoteToInvoiceAction, convertSalesOrderToInvoiceAction, recordInvoicePaymentAction, updateStatusAction, recordPurchasePaymentAction, settleLoanAction } from "@/app/(dashboard)/actions";
 import { PrintButton } from "@/components/print-button";
 import { NepaliDatePicker } from "@/components/nepali-date-picker";
 import { LoanSettlementForm } from "@/components/loan-settlement-form";
@@ -744,6 +744,14 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
     const tax = Number(so.tax);
     const discount = Number(so.discount);
 
+    // Check if an invoice has already been converted/created for this sales order
+    const existingInvoice = await db.invoice.findFirst({
+      where: {
+        organizationId: orgId,
+        notes: { contains: so.orderNumber },
+      },
+    });
+
     return (
       <main className="page-wrap">
         <div className="page-header no-print">
@@ -756,6 +764,20 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
             <p>Commercial customer sales order voucher, dispatch line items, and fulfillment record.</p>
           </div>
           <div className="page-actions">
+            {existingInvoice ? (
+              <Link className="success-btn" href={`/${orgId}/invoices/${existingInvoice.id}`}>
+                <CheckCircle2 size={13} style={{ marginRight: 4 }} /> Open Tax Invoice ({existingInvoice.invoiceNumber})
+              </Link>
+            ) : (
+              <form action={convertSalesOrderToInvoiceAction}>
+                <FormPendingFeedback processingMessage="Generating Tax Invoice from Sales Order..." successMessage="Tax Invoice generated successfully" />
+                <input type="hidden" name="orgId" value={orgId} />
+                <input type="hidden" name="salesOrderId" value={so.id} />
+                <button className="primary-btn">
+                  <FileText size={13} style={{ marginRight: 4 }} /> Generate Official Tax Invoice
+                </button>
+              </form>
+            )}
             <PrintButton label="Print Sales Invoice / PDF" />
           </div>
         </div>
@@ -1194,7 +1216,10 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
           orderBy: { issueDate: "desc" },
         },
         quotes: { orderBy: { issueDate: "desc" } },
-        salesOrders: { orderBy: { orderDate: "desc" } },
+        salesOrders: {
+          include: { items: true },
+          orderBy: { orderDate: "desc" },
+        },
         incomes: {
           include: { bankAccount: true },
           orderBy: { receivedAt: "desc" },
@@ -1224,7 +1249,22 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
     const totalPaidToVendor = contact.purchaseOrders.reduce((s, x) => s + Number(x.paidAmount), 0);
     const vendorDues = Math.max(0, totalPurchases - totalPaidToVendor);
 
-    const totalSales = contact.invoices.reduce((s, x) => s + Number(x.total), 0);
+    // Track which sales orders already have an official invoice generated to avoid duplicate debiting
+    const invoicedSalesOrderNumbers = new Set(
+      contact.invoices
+        .map((inv) => {
+          const match = inv.notes?.match(/SO-\d+/);
+          return match ? match[0] : null;
+        })
+        .filter(Boolean)
+    );
+
+    const totalInvoicesAmount = contact.invoices.reduce((s, x) => s + Number(x.total), 0);
+    const totalNonInvoicedSalesOrdersAmount = contact.salesOrders
+      .filter((so) => !invoicedSalesOrderNumbers.has(so.orderNumber) && so.status !== "CANCELLED")
+      .reduce((s, x) => s + Number(x.total), 0);
+
+    const totalSales = totalInvoicesAmount + totalNonInvoicedSalesOrdersAmount;
     const totalCollected = contact.invoices.reduce((s, x) => s + Number(x.paidAmount), 0);
     const customerReceivables = Math.max(0, totalSales - totalCollected);
 
@@ -1235,7 +1275,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
     type StatementRow = {
       id: string;
       date: Date;
-      type: "PURCHASE" | "PO_PAYMENT" | "INVOICE" | "INV_PAYMENT" | "INCOME" | "DIRECT_EXPENSE" | "BANK_TX";
+      type: "PURCHASE" | "PO_PAYMENT" | "INVOICE" | "INV_PAYMENT" | "SALES_ORDER" | "INCOME" | "DIRECT_EXPENSE" | "BANK_TX";
       typeLabel: string;
       reference: string;
       description: string;
@@ -1266,6 +1306,18 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
           credit: Number(p.amount),
         }))
       ),
+      ...contact.salesOrders
+        .filter((so) => !invoicedSalesOrderNumbers.has(so.orderNumber) && so.status !== "CANCELLED")
+        .map((so) => ({
+          id: `so-${so.id}`,
+          date: so.orderDate,
+          type: "SALES_ORDER" as const,
+          typeLabel: "Sales Order",
+          reference: so.orderNumber,
+          description: `Sales order (${so.items.length} line items) [${so.status}]`,
+          debit: Number(so.total),
+          credit: 0,
+        })),
       ...contact.invoices.map((inv) => ({
         id: `inv-${inv.id}`,
         date: inv.issueDate,
@@ -1647,10 +1699,10 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
 
         {/* Customer Sales & Invoices Table */}
         {contact.invoices.length > 0 && (
-          <div className="table-card">
+          <div className="table-card" style={{ marginBottom: 20 }}>
             <div className="table-toolbar">
               <h3>Customer Sales Invoices ({contact.invoices.length})</h3>
-              <span className="badge green">Total: {money(totalSales, organization.currency)}</span>
+              <span className="badge green">Total: {money(totalInvoicesAmount, organization.currency)}</span>
             </div>
             <div className="table-scroll">
               <DataTable className="responsive-table">
@@ -1691,6 +1743,86 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </DataTable>
+            </div>
+          </div>
+        )}
+
+        {/* Customer Sales Orders Table */}
+        {contact.salesOrders.length > 0 && (
+          <div className="table-card">
+            <div className="table-toolbar">
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <h3>Customer Sales Orders ({contact.salesOrders.length})</h3>
+                <span className="badge purple">
+                  Total: {money(contact.salesOrders.reduce((s, x) => s + Number(x.total), 0), organization.currency)}
+                </span>
+              </div>
+              <Link
+                href={`/${orgId}/sales/new?type=new-sales-order&contactId=${contact.id}`}
+                className="primary-btn"
+                style={{ fontSize: 12, padding: "5px 10px" }}
+              >
+                + New Sales Order
+              </Link>
+            </div>
+            <div className="table-scroll">
+              <DataTable className="responsive-table">
+                <thead>
+                  <tr>
+                    <th>SO #</th>
+                    <th>Order Date</th>
+                    <th>Line Items</th>
+                    <th style={{ textAlign: "right" }}>Total Amount</th>
+                    <th>Invoice Status</th>
+                    <th>Fulfillment Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {contact.salesOrders.map((so) => {
+                    const isInvoiced = invoicedSalesOrderNumbers.has(so.orderNumber);
+                    const matchedInvoice = isInvoiced
+                      ? contact.invoices.find((inv) => inv.notes?.includes(so.orderNumber))
+                      : null;
+                    return (
+                      <tr key={so.id}>
+                        <td data-label="SO #">
+                          <Link href={`/${orgId}/sales/${so.id}`} className="table-clickable-title">
+                            {so.orderNumber}
+                          </Link>
+                        </td>
+                        <td data-label="Date">{formatDualDate(so.orderDate)}</td>
+                        <td data-label="Lines">{so.items.length} items</td>
+                        <td data-label="Total" style={{ textAlign: "right", fontWeight: 700 }}>
+                          {money(so.total, organization.currency)}
+                        </td>
+                        <td data-label="Invoice Status">
+                          {matchedInvoice ? (
+                            <Link href={`/${orgId}/invoices/${matchedInvoice.id}`} className="badge green" style={{ textDecoration: "none" }}>
+                              Invoiced ({matchedInvoice.invoiceNumber})
+                            </Link>
+                          ) : (
+                            <span className="badge amber">Pending Invoice</span>
+                          )}
+                        </td>
+                        <td data-label="Status">
+                          <Badge value={so.status} />
+                        </td>
+                        <td data-label="Action" style={{ display: "flex", gap: 6 }}>
+                          <Link href={`/${orgId}/sales/${so.id}`} className="secondary-btn" style={{ padding: "3px 8px", fontSize: 11 }}>
+                            View Order
+                          </Link>
+                          {!matchedInvoice && (
+                            <Link href={`/${orgId}/sales/${so.id}`} className="primary-btn" style={{ padding: "3px 8px", fontSize: 11 }}>
+                              Invoice
+                            </Link>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </DataTable>
             </div>

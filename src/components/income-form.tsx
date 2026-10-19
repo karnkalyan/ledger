@@ -27,15 +27,18 @@ export function IncomeForm({
   contacts,
   bankAccounts = [],
   action,
+  initialContactId = "",
 }: {
   orgId: string;
   currency: string;
   contacts: Contact[];
   bankAccounts?: BankAccount[];
   action: (formData: FormData) => Promise<void>;
+  initialContactId?: string;
 }) {
-  const [source, setSource] = useState("");
-  const [selectedContactId, setSelectedContactId] = useState("");
+  const defaultContact = contacts.find((c) => c.id === initialContactId);
+  const [source, setSource] = useState(defaultContact ? (defaultContact.companyName || defaultContact.name) : "");
+  const [selectedContactId, setSelectedContactId] = useState(initialContactId);
   const [paymentMethod, setPaymentMethod] = useState<"CASH" | "BANK" | "OTHER">("CASH");
   const [selectedBankId, setSelectedBankId] = useState(bankAccounts[0]?.id || "");
   const [isDirector, setIsDirector] = useState(false);
