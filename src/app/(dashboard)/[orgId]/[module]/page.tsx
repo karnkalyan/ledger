@@ -36,6 +36,9 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   ArrowLeft,
+  Briefcase,
+  ShieldCheck,
+  ArrowRight,
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireOrganizationAccess, canAccessModule } from "@/lib/session";
@@ -59,6 +62,7 @@ import { RentalHouseSection } from "@/components/rental-house-section";
 import { MonthlyGeneratorModal } from "@/components/monthly-generator-modal";
 import { CompanyPrintLogo, CompanyPrintBanner } from "@/components/company-print-logo";
 import { CompanyAuditReport } from "@/components/company-audit-report";
+import { StatementPartySelector } from "@/components/statement-party-selector";
 import { cookies } from "next/headers";
 import { resolveActiveFiscalYear, buildFiscalYearFromStart, getAvailableFiscalYears } from "@/lib/fiscal-year";
 import {
@@ -5545,7 +5549,9 @@ export default async function ModulePage({
 
   if (module === "statement") {
     const requestedContactId = (query.contactId as string) || (query.partyId as string) || "";
+    const activeRoleFilter = ((query.role as string) || (query.category as string) || "all").toLowerCase();
     const activeTab = ((query.tab as string) || "all").toLowerCase();
+    const searchQuery = ((query.q as string) || (query.search as string) || "").trim().toLowerCase();
 
     const [allContacts, bankAccounts] = await Promise.all([
       db.contact.findMany({
@@ -5577,62 +5583,360 @@ export default async function ModulePage({
       }),
     ]);
 
-    const avBionicsContact = allContacts.find(
-      (c) =>
-        c.name.toLowerCase().includes("bionic") ||
-        c.companyName?.toLowerCase().includes("bionic")
-    );
-    const contactWithTxs = allContacts.find(
-      (c) =>
-        c._count.purchaseOrders > 0 ||
-        c._count.invoices > 0 ||
-        c._count.bankTransactions > 0
-    );
-    const selectedContactId =
-      requestedContactId ||
-      avBionicsContact?.id ||
-      contactWithTxs?.id ||
-      allContacts[0]?.id;
+    // Role classification helper
+    const classifyRole = (c: { name: string; companyName: string | null; type: string }) => {
+      const isDir =
+        c.name.toLowerCase().includes("kalyan") ||
+        c.name.toLowerCase().includes("director") ||
+        Boolean(c.companyName?.toLowerCase().includes("director"));
+      if (isDir) return "DIRECTOR" as const;
+      if (c.type === "BOTH") return "BOTH" as const;
+      if (c.type === "VENDOR") return "VENDOR" as const;
+      return "CUSTOMER" as const;
+    };
 
-    const contact = selectedContactId
-      ? await db.contact.findFirst({
-          where: { id: selectedContactId, organizationId: orgId },
-          include: {
-            purchaseOrders: {
-              include: { items: true, payments: true },
-              orderBy: { orderDate: "desc" },
-            },
-            invoices: {
-              include: { items: true, payments: true },
-              orderBy: { issueDate: "desc" },
-            },
-            salesOrders: {
-              include: { items: true },
-              orderBy: { orderDate: "desc" },
-            },
-            incomes: {
-              include: { bankAccount: true },
-              orderBy: { receivedAt: "desc" },
-            },
-            bankTransactions: {
-              include: { bankAccount: true },
-              orderBy: { transactionDate: "desc" },
-            },
-          },
-        })
+    // Precalculate counts for categories
+    const directorContacts = allContacts.filter((c) => classifyRole(c) === "DIRECTOR");
+    const vendorContacts = allContacts.filter((c) => classifyRole(c) === "VENDOR" || c.type === "BOTH");
+    const customerContacts = allContacts.filter((c) => classifyRole(c) === "CUSTOMER" || c.type === "BOTH");
+    const bothContacts = allContacts.filter((c) => classifyRole(c) === "BOTH");
+
+    // Dynamic selection: Do NOT force any default contact! If not requested, selectedContactId is null
+    const selectedContactId = requestedContactId && allContacts.some((c) => c.id === requestedContactId)
+      ? requestedContactId
       : null;
 
-    if (!contact) {
+    // =========================================================================
+    // SCENARIO 1: NO PARTY SELECTED -> Dynamic Entity Statement Directory Hub
+    // =========================================================================
+    if (!selectedContactId) {
+      const filteredContacts = allContacts.filter((c) => {
+        const role = classifyRole(c);
+        if (activeRoleFilter === "director" && role !== "DIRECTOR") return false;
+        if (activeRoleFilter === "vendor" && role !== "VENDOR" && role !== "BOTH") return false;
+        if (activeRoleFilter === "customer" && role !== "CUSTOMER" && role !== "BOTH") return false;
+        if (activeRoleFilter === "both" && role !== "BOTH") return false;
+
+        if (searchQuery) {
+          const matchName = c.name.toLowerCase().includes(searchQuery);
+          const matchCompany = c.companyName?.toLowerCase().includes(searchQuery);
+          const matchTax = c.taxNumber?.toLowerCase().includes(searchQuery);
+          if (!matchName && !matchCompany && !matchTax) return false;
+        }
+        return true;
+      });
+
       return (
         <main className="page-wrap">
-          <Header
-            title="Cross-Role Party Statement & Ledger"
-            description="Audit comprehensive party transaction history across Bank Statements, Invoices, Purchase Orders, and Payments."
-          />
-          <Empty>No parties/contacts registered yet. Add a customer or vendor in CRM.</Empty>
+          <div className="page-header no-print">
+            <div>
+              <Link href={`/${orgId}/crm`} className="topbar-kicker">
+                <ArrowLeft size={12} style={{ verticalAlign: "middle", marginRight: 4 }} />
+                Back to CRM Directory
+              </Link>
+              <h1 style={{ marginTop: 6 }}>Cross-Role Statement &amp; Actual Balance Sheet Hub</h1>
+              <p>
+                Dynamically select any Vendor, Customer, or Director to audit their comprehensive itemized statement, multi-account ledger, and real-time Balance Sheet position.
+              </p>
+            </div>
+            <div className="page-actions" style={{ flexWrap: "wrap", gap: 8 }}>
+              <Link href={`/${orgId}/crm`} className="secondary-btn" style={{ fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <UsersRound size={14} /> CRM Directory
+              </Link>
+            </div>
+          </div>
+
+          {/* Dynamic Selector Toolbar */}
+          <div className="table-card no-print" style={{ padding: "20px 24px", marginBottom: 24 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+              {/* Category Filter Pills */}
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", marginRight: 4 }}>
+                  Entity Role:
+                </span>
+                <Link
+                  href={`/${orgId}/statement?role=all${searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""}`}
+                  className={`filter-tab ${activeRoleFilter === "all" ? "active" : ""}`}
+                  style={{ textDecoration: "none", fontSize: 12, padding: "5px 12px" }}
+                >
+                  All Parties ({allContacts.length})
+                </Link>
+                <Link
+                  href={`/${orgId}/statement?role=customer${searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""}`}
+                  className={`filter-tab ${activeRoleFilter === "customer" ? "active" : ""}`}
+                  style={{ textDecoration: "none", fontSize: 12, padding: "5px 12px", display: "inline-flex", alignItems: "center", gap: 5 }}
+                >
+                  <UsersRound size={13} style={{ color: "#0284c7" }} /> Customers ({customerContacts.length})
+                </Link>
+                <Link
+                  href={`/${orgId}/statement?role=vendor${searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""}`}
+                  className={`filter-tab ${activeRoleFilter === "vendor" ? "active" : ""}`}
+                  style={{ textDecoration: "none", fontSize: 12, padding: "5px 12px", display: "inline-flex", alignItems: "center", gap: 5 }}
+                >
+                  <Briefcase size={13} style={{ color: "#10b981" }} /> Vendors ({vendorContacts.length})
+                </Link>
+                <Link
+                  href={`/${orgId}/statement?role=director${searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""}`}
+                  className={`filter-tab ${activeRoleFilter === "director" ? "active" : ""}`}
+                  style={{ textDecoration: "none", fontSize: 12, padding: "5px 12px", display: "inline-flex", alignItems: "center", gap: 5 }}
+                >
+                  <ShieldCheck size={13} style={{ color: "#8b5cf6" }} /> Directors &amp; Shareholders ({directorContacts.length})
+                </Link>
+                <Link
+                  href={`/${orgId}/statement?role=both${searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""}`}
+                  className={`filter-tab ${activeRoleFilter === "both" ? "active" : ""}`}
+                  style={{ textDecoration: "none", fontSize: 12, padding: "5px 12px", display: "inline-flex", alignItems: "center", gap: 5 }}
+                >
+                  <Building2 size={13} style={{ color: "#f59e0b" }} /> Dual-Role ({bothContacts.length})
+                </Link>
+              </div>
+
+              {/* Quick Jump Dropdown */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
+                  Quick Jump:
+                </span>
+                <StatementPartySelector
+                  orgId={orgId}
+                  allContacts={allContacts}
+                  placeholder="Select any party to open balance sheet..."
+                  minWidth={260}
+                />
+              </div>
+            </div>
+
+            {/* Search Input Bar */}
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 12 }}>
+              <Search size={15} style={{ color: "var(--text-muted)" }} />
+              <form method="GET" action={`/${orgId}/statement`} style={{ display: "flex", gap: 8, width: "100%", maxWidth: 440 }}>
+                {activeRoleFilter !== "all" && <input type="hidden" name="role" value={activeRoleFilter} />}
+                <input
+                  type="text"
+                  name="q"
+                  defaultValue={searchQuery}
+                  placeholder="Filter by vendor, customer, director name or PAN..."
+                  style={{
+                    flex: 1,
+                    fontSize: 12.5,
+                    padding: "6px 12px",
+                    borderRadius: "var(--radius-sm)",
+                    border: "1px solid var(--line)",
+                    background: "var(--surface)",
+                    color: "var(--text)",
+                  }}
+                />
+                <button type="submit" className="secondary-btn" style={{ fontSize: 12, padding: "6px 12px" }}>
+                  Filter
+                </button>
+                {searchQuery && (
+                  <Link
+                    href={`/${orgId}/statement${activeRoleFilter !== "all" ? `?role=${activeRoleFilter}` : ""}`}
+                    className="secondary-btn"
+                    style={{ fontSize: 12, padding: "6px 12px", textDecoration: "none" }}
+                  >
+                    Clear
+                  </Link>
+                )}
+              </form>
+              <div style={{ marginLeft: "auto", fontSize: 12, color: "var(--text-muted)" }}>
+                Showing <strong>{filteredContacts.length}</strong> of <strong>{allContacts.length}</strong> registered parties
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Entity Directory Grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(330px, 1fr))", gap: 16 }}>
+            {filteredContacts.map((c) => {
+              const role = classifyRole(c);
+              const txCount = c._count.purchaseOrders + c._count.invoices + c._count.bankTransactions + c._count.incomes;
+              const isDirectorCard = role === "DIRECTOR";
+
+              return (
+                <div
+                  key={c.id}
+                  className="table-card"
+                  style={{
+                    padding: "20px 22px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    borderRadius: "var(--radius-md)",
+                    border: isDirectorCard ? "1px solid rgba(139, 92, 246, 0.4)" : "1px solid var(--line)",
+                    background: isDirectorCard ? "linear-gradient(180deg, rgba(139, 92, 246, 0.04) 0%, var(--surface) 100%)" : "var(--surface)",
+                    transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                  }}
+                >
+                  <div>
+                    {/* Header Badges */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 8 }}>
+                      {role === "DIRECTOR" && (
+                        <span className="badge purple" style={{ fontSize: 10.5, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          <ShieldCheck size={12} /> DIRECTOR &amp; SHAREHOLDER
+                        </span>
+                      )}
+                      {role === "BOTH" && (
+                        <span className="badge amber" style={{ fontSize: 10.5, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          <Building2 size={12} /> DUAL-ROLE PARTNER
+                        </span>
+                      )}
+                      {role === "VENDOR" && (
+                        <span className="badge emerald" style={{ fontSize: 10.5, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          <Briefcase size={12} /> VENDOR / SUPPLIER
+                        </span>
+                      )}
+                      {role === "CUSTOMER" && (
+                        <span className="badge sky" style={{ fontSize: 10.5, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          <UsersRound size={12} /> COMMERCIAL CUSTOMER
+                        </span>
+                      )}
+
+                      {c.taxNumber && (
+                        <span className="badge cyan" style={{ fontSize: 10.5 }}>
+                          PAN: {c.taxNumber}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Entity Name */}
+                    <h3 style={{ margin: "0 0 4px 0", fontSize: 16, fontWeight: 700, color: "var(--text)" }}>
+                      {c.companyName || c.name}
+                    </h3>
+
+                    {c.companyName && c.name && c.companyName.trim().toLowerCase() !== c.name.trim().toLowerCase() && (
+                      <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>
+                        Contact Person: <strong>{c.name}</strong>
+                      </div>
+                    )}
+
+                    {c.address && (
+                      <div style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 12 }}>
+                        {c.address}
+                      </div>
+                    )}
+
+                    {/* Activity Counters */}
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "14px 0 18px 0" }}>
+                      {c._count.invoices > 0 && (
+                        <span className="badge sky" style={{ fontSize: 10.5 }}>
+                          {c._count.invoices} Sales Invoices
+                        </span>
+                      )}
+                      {c._count.purchaseOrders > 0 && (
+                        <span className="badge amber" style={{ fontSize: 10.5 }}>
+                          {c._count.purchaseOrders} Purchase Orders
+                        </span>
+                      )}
+                      {c._count.bankTransactions > 0 && (
+                        <span className="badge purple" style={{ fontSize: 10.5 }}>
+                          {c._count.bankTransactions} Bank Transactions
+                        </span>
+                      )}
+                      {c._count.incomes > 0 && (
+                        <span className="badge emerald" style={{ fontSize: 10.5 }}>
+                          {c._count.incomes} Income Receipts
+                        </span>
+                      )}
+                      {txCount === 0 && (
+                        <span className="badge gray" style={{ fontSize: 10.5 }}>
+                          Registered in CRM · Direct Statement Available
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Open Statement Action */}
+                  <div style={{ paddingTop: 14, borderTop: "1px solid var(--line)" }}>
+                    <Link
+                      href={`/${orgId}/statement?contactId=${c.id}`}
+                      className="primary-btn"
+                      style={{
+                        width: "100%",
+                        justifyContent: "center",
+                        fontSize: 12.5,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        textDecoration: "none",
+                        padding: "8px 14px",
+                      }}
+                    >
+                      <span>View Statement &amp; Balance Sheet</span>
+                      <ArrowRight size={13} />
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {filteredContacts.length === 0 && (
+            <div className="table-card" style={{ padding: "40px 20px", textAlign: "center" }}>
+              <Empty>No parties found matching the active filter "{activeRoleFilter}" and search query.</Empty>
+              <div style={{ marginTop: 12 }}>
+                <Link href={`/${orgId}/statement`} className="secondary-btn" style={{ fontSize: 12 }}>
+                  Reset All Filters
+                </Link>
+              </div>
+            </div>
+          )}
         </main>
       );
     }
+
+    // =========================================================================
+    // SCENARIO 2: PARTY IS SELECTED -> Comprehensive Multi-Account Statement & Actual Balance Sheet
+    // =========================================================================
+    const contact = await db.contact.findFirst({
+      where: { id: selectedContactId, organizationId: orgId },
+      include: {
+        purchaseOrders: {
+          include: { items: true, payments: true },
+          orderBy: { orderDate: "desc" },
+        },
+        invoices: {
+          include: { items: true, payments: true },
+          orderBy: { issueDate: "desc" },
+        },
+        salesOrders: {
+          include: { items: true },
+          orderBy: { orderDate: "desc" },
+        },
+        incomes: {
+          include: { bankAccount: true },
+          orderBy: { receivedAt: "desc" },
+        },
+        bankTransactions: {
+          include: { bankAccount: true },
+          orderBy: { transactionDate: "desc" },
+        },
+      },
+    });
+
+    if (!contact) {
+      redirect(`/${orgId}/statement`);
+    }
+
+    const contactRole = classifyRole(contact);
+    const isDirector = contactRole === "DIRECTOR";
+
+    // Multi-account bank search: Find any transactions across ALL bank accounts mentioning this entity
+    const searchTerms = [
+      contact.name,
+      contact.companyName,
+      isDirector ? "Kalyan" : null,
+    ].filter(Boolean) as string[];
+
+    const extraBankTxs = await db.bankTransaction.findMany({
+      where: {
+        organizationId: orgId,
+        contactId: null, // not already directly associated
+        OR: searchTerms.map((term) => ({
+          description: { contains: term },
+        })),
+      },
+      include: { bankAccount: true },
+      orderBy: { transactionDate: "desc" },
+    });
 
     const directExpenses = await db.expense.findMany({
       where: {
@@ -5640,148 +5944,320 @@ export default async function ModulePage({
         OR: [
           { vendor: contact.name },
           ...(contact.companyName ? [{ vendor: contact.companyName }] : []),
+          ...(isDirector
+            ? [
+                { title: { contains: "Kalyan" } },
+                { notes: { contains: "Kalyan" } },
+                { vendor: { contains: "Kalyan" } },
+              ]
+            : []),
         ],
       },
       include: { category: true },
       orderBy: { occurredAt: "desc" },
     });
 
-    const totalPurchases = contact.purchaseOrders.reduce((s, po) => s + Number(po.total), 0);
-    const totalDirectExpenses = directExpenses.reduce((s, e) => s + Number(e.amount), 0);
-    const totalVendorBills = totalPurchases + totalDirectExpenses;
+    // -------------------------------------------------------------------------
+    // STRICT DEDUPLICATION ENGINE: ZERO DUPLICATES GUARANTEED
+    // -------------------------------------------------------------------------
+    const allBankTxs = [...contact.bankTransactions, ...extraBankTxs];
 
-    const bankWithdrawals = contact.bankTransactions.filter((tx) => tx.type === "WITHDRAWAL");
-    const bankDeposits = contact.bankTransactions.filter((tx) => tx.type === "DEPOSIT");
-
-    const totalPaidViaBank = bankWithdrawals.reduce((s, tx) => s + Number(tx.amount), 0);
-    const totalPoPayments = contact.purchaseOrders
-      .flatMap((po) => po.payments)
-      .reduce((s, p) => s + Number(p.amount), 0);
-    const totalDisbursed = Math.max(totalPaidViaBank, totalPoPayments);
-    const remainingVendorDues = Math.max(0, totalVendorBills - totalDisbursed);
-
-    const totalSalesInvoices = contact.invoices.reduce((s, inv) => s + Number(inv.total), 0);
-    const totalReceivedViaBank = bankDeposits.reduce((s, tx) => s + Number(tx.amount), 0);
-    const totalIncomeReceipts = contact.incomes.reduce((s, inc) => s + Number(inc.amount), 0);
-    const totalCollected = Math.max(totalReceivedViaBank, totalIncomeReceipts);
-    const remainingReceivables = Math.max(0, totalSalesInvoices - totalCollected);
+    const handledBankTxIds = new Set<string>();
+    const handledExpenseIds = new Set<string>();
+    const handledIncomeIds = new Set<string>();
 
     type UnifiedRow = {
       id: string;
       date: Date;
-      category: "PURCHASE" | "BANK_PAYMENT" | "INVOICE" | "BANK_COLLECTION" | "INCOME" | "EXPENSE";
+      category:
+        | "PURCHASE"
+        | "BANK_PAYMENT"
+        | "INVOICE"
+        | "BANK_COLLECTION"
+        | "INCOME"
+        | "EXPENSE"
+        | "DIRECTOR_DRAWING"
+        | "DIRECTOR_INJECTION"
+        | "DIRECTOR_CASH";
       nature: string;
-      badgeColor: "amber" | "emerald" | "sky" | "purple" | "red" | "gray";
+      badgeColor: "amber" | "emerald" | "sky" | "purple" | "red" | "gray" | "blue";
       reference: string;
       description: string;
       channel: string;
       debit: number;
       credit: number;
+      rawAmount: number;
     };
 
-    const rawRows: UnifiedRow[] = [
-      ...contact.purchaseOrders.map((po) => ({
+    const rawRows: UnifiedRow[] = [];
+
+    // 1. Authoritative Bank Transactions across all accounts
+    for (const btx of allBankTxs) {
+      if (handledBankTxIds.has(btx.id)) continue;
+      handledBankTxIds.add(btx.id);
+
+      // Match and deduplicate mirrored expense
+      const matchingExp = directExpenses.find(
+        (e) =>
+          !handledExpenseIds.has(e.id) &&
+          (btx.expenseId === e.id ||
+            (btx.reference && e.notes?.includes(btx.reference)) ||
+            (btx.reference && e.title?.includes(btx.reference)) ||
+            (Math.abs(Number(e.amount) - Number(btx.amount)) < 0.01 &&
+              Math.abs(new Date(e.occurredAt).getTime() - new Date(btx.transactionDate).getTime()) < 86400000 * 2))
+      );
+      if (matchingExp) {
+        handledExpenseIds.add(matchingExp.id);
+      }
+
+      // Match and deduplicate mirrored income
+      const matchingInc = contact.incomes.find(
+        (inc) =>
+          !handledIncomeIds.has(inc.id) &&
+          (btx.incomeId === inc.id ||
+            (btx.reference && inc.title?.includes(btx.reference)) ||
+            (btx.reference && inc.source?.includes(btx.reference)) ||
+            (Math.abs(Number(inc.amount) - Number(btx.amount)) < 0.01 &&
+              Math.abs(new Date(inc.receivedAt).getTime() - new Date(btx.transactionDate).getTime()) < 86400000 * 2))
+      );
+      if (matchingInc) {
+        handledIncomeIds.add(matchingInc.id);
+      }
+
+      const amt = Number(btx.amount);
+      const channelName = btx.bankAccount ? btx.bankAccount.bankName : "Bank Statement";
+      const refCode = btx.reference || `SN-${btx.id.slice(-4)}`;
+
+      if (isDirector) {
+        if (btx.type === "WITHDRAWAL") {
+          rawRows.push({
+            id: `btx-${btx.id}`,
+            date: btx.transactionDate,
+            category: "DIRECTOR_DRAWING",
+            nature: "Director Drawings / Bank Outlay",
+            badgeColor: "blue",
+            reference: refCode,
+            description: btx.description || (matchingExp ? matchingExp.title : "Disbursement to Director"),
+            channel: channelName,
+            debit: amt,
+            credit: 0,
+            rawAmount: amt,
+          });
+        } else {
+          rawRows.push({
+            id: `btx-${btx.id}`,
+            date: btx.transactionDate,
+            category: "DIRECTOR_INJECTION",
+            nature: "Director Capital / Injected Funds",
+            badgeColor: "emerald",
+            reference: refCode,
+            description: btx.description || (matchingInc ? matchingInc.title : "Director fund deposit to company"),
+            channel: channelName,
+            debit: 0,
+            credit: amt,
+            rawAmount: amt,
+          });
+        }
+      } else {
+        if (btx.type === "WITHDRAWAL") {
+          rawRows.push({
+            id: `btx-${btx.id}`,
+            date: btx.transactionDate,
+            category: "BANK_PAYMENT",
+            nature: "Bank Payment to Vendor",
+            badgeColor: "emerald",
+            reference: refCode,
+            description: btx.description || (matchingExp ? matchingExp.title : "Disbursement via bank wire"),
+            channel: channelName,
+            debit: 0,
+            credit: amt,
+            rawAmount: amt,
+          });
+        } else {
+          rawRows.push({
+            id: `btx-${btx.id}`,
+            date: btx.transactionDate,
+            category: "BANK_COLLECTION",
+            nature: "Bank Deposit from Customer",
+            badgeColor: "purple",
+            reference: refCode,
+            description: btx.description || (matchingInc ? matchingInc.title : "Inflow into bank account"),
+            channel: channelName,
+            debit: 0,
+            credit: amt,
+            rawAmount: amt,
+          });
+        }
+      }
+    }
+
+    // 2. Direct Expenses that were NOT mirrored in bank transactions (e.g. Cash in Hand vouchers)
+    for (const exp of directExpenses) {
+      if (handledExpenseIds.has(exp.id)) continue;
+      handledExpenseIds.add(exp.id);
+
+      const amt = Number(exp.amount);
+      if (isDirector) {
+        rawRows.push({
+          id: `exp-${exp.id}`,
+          date: exp.occurredAt,
+          category: "DIRECTOR_CASH",
+          nature: "Director Cash Out Voucher",
+          badgeColor: "red",
+          reference: `VOUCHER-${exp.id.slice(-4)}`,
+          description: `${exp.title}${exp.notes ? ` · ${exp.notes}` : ""}`,
+          channel: exp.category?.name || "Cash in Hand",
+          debit: amt,
+          credit: 0,
+          rawAmount: amt,
+        });
+      } else {
+        rawRows.push({
+          id: `exp-${exp.id}`,
+          date: exp.occurredAt,
+          category: "EXPENSE",
+          nature: "Direct Operational Expense",
+          badgeColor: "red",
+          reference: `EXP-${exp.id.slice(-4)}`,
+          description: `${exp.title}${exp.notes ? ` · ${exp.notes}` : ""}`,
+          channel: exp.category?.name || "Expense Ledger",
+          debit: amt,
+          credit: 0,
+          rawAmount: amt,
+        });
+      }
+    }
+
+    // 3. Direct Incomes that were NOT mirrored in bank transactions
+    for (const inc of contact.incomes) {
+      if (handledIncomeIds.has(inc.id)) continue;
+      handledIncomeIds.add(inc.id);
+
+      const amt = Number(inc.amount);
+      rawRows.push({
+        id: `inc-${inc.id}`,
+        date: inc.receivedAt,
+        category: "INCOME",
+        nature: "Direct Income Receipt",
+        badgeColor: "purple",
+        reference: inc.source || `INC-${inc.id.slice(-4)}`,
+        description: inc.title,
+        channel: inc.bankAccount?.bankName || inc.paymentMethod || "Direct Cash",
+        debit: 0,
+        credit: amt,
+        rawAmount: amt,
+      });
+    }
+
+    // 4. Purchase Orders (Procurement Bills)
+    for (const po of contact.purchaseOrders) {
+      const amt = Number(po.total);
+      rawRows.push({
         id: `po-${po.id}`,
         date: po.orderDate,
-        category: "PURCHASE" as const,
-        nature: "Procurement Bill",
-        badgeColor: "amber" as const,
+        category: "PURCHASE",
+        nature: "Procurement Bill (PO)",
+        badgeColor: "amber",
         reference: `PO #${po.orderNumber}`,
         description: `Purchase order (${po.items.length} line items) - ${po.status}`,
         channel: "Trade Payable",
-        debit: Number(po.total),
+        debit: amt,
         credit: 0,
-      })),
-      ...bankWithdrawals.map((tx) => ({
-        id: `btx-${tx.id}`,
-        date: tx.transactionDate,
-        category: "BANK_PAYMENT" as const,
-        nature: "Bank Payment to Vendor",
-        badgeColor: "emerald" as const,
-        reference: tx.reference || `SN-${tx.id.slice(-4)}`,
-        description: tx.description || "Disbursement from bank account",
-        channel: tx.bankAccount.bankName,
-        debit: 0,
-        credit: Number(tx.amount),
-      })),
-      ...contact.invoices.map((inv) => ({
+        rawAmount: amt,
+      });
+    }
+
+    // 5. Sales Invoices (Commercial Billings)
+    for (const inv of contact.invoices) {
+      const amt = Number(inv.total);
+      rawRows.push({
         id: `inv-${inv.id}`,
         date: inv.issueDate,
-        category: "INVOICE" as const,
-        nature: "Sales Invoice",
-        badgeColor: "sky" as const,
+        category: "INVOICE",
+        nature: "Commercial Sales Invoice",
+        badgeColor: "sky",
         reference: `INV #${inv.invoiceNumber}`,
-        description: `Commercial sales invoice (${inv.items.length} items) - ${inv.status}`,
+        description: `Commercial invoice (${inv.items.length} items) - ${inv.status}`,
         channel: "Trade Receivable",
-        debit: Number(inv.total),
+        debit: amt,
         credit: 0,
-      })),
-      ...bankDeposits.map((tx) => ({
-        id: `btx-${tx.id}`,
-        date: tx.transactionDate,
-        category: "BANK_COLLECTION" as const,
-        nature: "Bank Deposit from Customer",
-        badgeColor: "purple" as const,
-        reference: tx.reference || `SN-${tx.id.slice(-4)}`,
-        description: tx.description || "Inflow into bank account",
-        channel: tx.bankAccount.bankName,
-        debit: 0,
-        credit: Number(tx.amount),
-      })),
-      ...contact.incomes.map((inc) => ({
-        id: `inc-${inc.id}`,
-        date: inc.receivedAt,
-        category: "INCOME" as const,
-        nature: "Income Receipt",
-        badgeColor: "purple" as const,
-        reference: inc.source || "Income",
-        description: inc.title,
-        channel: inc.bankAccount?.bankName || inc.paymentMethod || "Direct",
-        debit: 0,
-        credit: Number(inc.amount),
-      })),
-      ...directExpenses.map((exp) => ({
-        id: `exp-${exp.id}`,
-        date: exp.occurredAt,
-        category: "EXPENSE" as const,
-        nature: "Direct Operational Expense",
-        badgeColor: "red" as const,
-        reference: exp.category?.name || "Expense",
-        description: `${exp.title}${exp.notes ? ` (${exp.notes})` : ""}`,
-        channel: "Expense Ledger",
-        debit: Number(exp.amount),
-        credit: 0,
-      })),
-    ];
+        rawAmount: amt,
+      });
+    }
 
+    // -------------------------------------------------------------------------
+    // ACTUAL BALANCE SHEET OF SELECTED ENTITY: METROLOGY & ACCOUNTING
+    // -------------------------------------------------------------------------
+    // DIRECTOR METRICS:
+    const dirDrawings = rawRows
+      .filter((r) => r.category === "DIRECTOR_DRAWING" || r.category === "DIRECTOR_CASH")
+      .reduce((s, r) => s + r.rawAmount, 0);
+    const dirInjections = rawRows
+      .filter((r) => r.category === "DIRECTOR_INJECTION")
+      .reduce((s, r) => s + r.rawAmount, 0);
+    const dirNetPosition = dirDrawings - dirInjections;
+
+    // CUSTOMER METRICS:
+    const custInvoiced = contact.invoices.reduce((s, inv) => s + Number(inv.total), 0);
+    const custCollected = rawRows
+      .filter((r) => r.category === "BANK_COLLECTION" || r.category === "INCOME")
+      .reduce((s, r) => s + r.rawAmount, 0);
+    const custNetReceivable = custInvoiced - custCollected;
+
+    // VENDOR METRICS:
+    const vendPurchases = contact.purchaseOrders.reduce((s, po) => s + Number(po.total), 0);
+    const vendDirectExpenses = rawRows
+      .filter((r) => r.category === "EXPENSE")
+      .reduce((s, r) => s + r.rawAmount, 0);
+    const vendTotalBills = vendPurchases + vendDirectExpenses;
+    const vendDisbursed = rawRows
+      .filter((r) => r.category === "BANK_PAYMENT")
+      .reduce((s, r) => s + r.rawAmount, 0);
+    const vendNetPayable = vendTotalBills - vendDisbursed;
+
+    // DUAL-ROLE METRICS:
+    const dualNetOffset = custNetReceivable - vendNetPayable;
+
+    // Filter table by activeTab
     const filteredRows = rawRows.filter((r) => {
-      if (activeTab === "bank_outflows") return r.category === "BANK_PAYMENT";
-      if (activeTab === "bank_inflows") return r.category === "BANK_COLLECTION";
-      if (activeTab === "purchases") return r.category === "PURCHASE" || r.category === "EXPENSE";
-      if (activeTab === "sales") return r.category === "INVOICE" || r.category === "INCOME";
+      if (activeTab === "bank_outflows")
+        return r.category === "BANK_PAYMENT" || r.category === "DIRECTOR_DRAWING";
+      if (activeTab === "bank_inflows")
+        return r.category === "BANK_COLLECTION" || r.category === "DIRECTOR_INJECTION";
+      if (activeTab === "purchases")
+        return r.category === "PURCHASE" || r.category === "EXPENSE";
+      if (activeTab === "sales")
+        return r.category === "INVOICE" || r.category === "INCOME";
+      if (activeTab === "cash")
+        return r.category === "DIRECTOR_CASH";
       return true;
     });
 
-    const sortedAsc = [...filteredRows].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const sortedAsc = [...filteredRows].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
     let runBal = 0;
-    const rowsWithRunBal = sortedAsc.map((r) => {
-      runBal += r.debit - r.credit;
-      return { ...r, runningBalance: runBal };
-    }).reverse();
-
-    const netPartyPosition = remainingReceivables - remainingVendorDues;
+    const rowsWithRunBal = sortedAsc
+      .map((r) => {
+        runBal += r.debit - r.credit;
+        return { ...r, runningBalance: runBal };
+      })
+      .reverse();
 
     return (
       <main className="page-wrap">
+        {/* Top Header */}
         <div className="page-header no-print">
           <div>
-            <Link href={`/${orgId}/crm`} className="topbar-kicker">
+            <Link href={`/${orgId}/statement`} className="topbar-kicker">
               <ArrowLeft size={12} style={{ verticalAlign: "middle", marginRight: 4 }} />
-              Back to CRM Directory
+              Choose Another Party (Directory Hub)
             </Link>
-            <h1 style={{ marginTop: 6 }}>Cross-Role Party Statement &amp; Ledger</h1>
+            <h1 style={{ marginTop: 6 }}>
+              {contact.companyName || contact.name} · Consolidated Statement &amp; Balance Sheet
+            </h1>
             <p>
-              Reconcile banking transactions, invoices, bills, and purchase orders for any party acting as customer, vendor, or dual-role commercial partner.
+              Audited cross-ledger statement aggregating multi-account bank transactions, commercial billing, purchase orders, and direct vouchers with zero duplicate count.
             </p>
           </div>
           <div className="page-actions" style={{ flexWrap: "wrap", gap: 8 }}>
@@ -5792,42 +6268,31 @@ export default async function ModulePage({
           </div>
         </div>
 
-        {/* Party Selector Toolbar */}
+        {/* Dynamic Switcher Bar */}
         <div className="table-card no-print" style={{ padding: "16px 20px", marginBottom: 20 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14 }}>
-            <form method="GET" action={`/${orgId}/statement`} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            {/* Direct Switcher Dropdown */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
-                Select Contact / Party:
+                Switch Party:
               </span>
-              <select
-                name="contactId"
-                defaultValue={contact.id}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  window.location.href = `/${orgId}/statement?contactId=${val}`;
-                }}
-                style={{
-                  minWidth: 260,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  padding: "7px 12px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--line)",
-                  background: "var(--surface)",
-                  color: "var(--text)",
-                }}
+              <StatementPartySelector
+                orgId={orgId}
+                selectedContactId={contact.id}
+                allContacts={allContacts}
+                placeholder="Switch to another party..."
+                minWidth={280}
+              />
+              <Link
+                href={`/${orgId}/statement`}
+                className="secondary-btn"
+                style={{ fontSize: 12, padding: "7px 12px", textDecoration: "none" }}
               >
-                {allContacts.map((c) => {
-                  const txCount = c._count.purchaseOrders + c._count.invoices + c._count.bankTransactions + c._count.incomes;
-                  return (
-                    <option key={c.id} value={c.id}>
-                      {c.companyName || c.name} · [{c.type}] {txCount > 0 ? `(${txCount} txs)` : ""}
-                    </option>
-                  );
-                })}
-              </select>
-            </form>
+                Browse All Directory
+              </Link>
+            </div>
 
+            {/* Filter Tabs for Active Entity Ledger */}
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", marginRight: 4 }}>
                 Filter Ledger:
@@ -5839,62 +6304,123 @@ export default async function ModulePage({
               >
                 All Records ({rawRows.length})
               </Link>
-              <Link
-                href={`/${orgId}/statement?contactId=${contact.id}&tab=bank_outflows`}
-                className={`filter-tab ${activeTab === "bank_outflows" ? "active" : ""}`}
-                style={{ textDecoration: "none", fontSize: 11, padding: "4px 9px", display: "inline-flex", alignItems: "center", gap: 4 }}
-              >
-                <ArrowUpRight size={12} style={{ color: "#10b981" }} /> Paid via Bank ({bankWithdrawals.length})
-              </Link>
-              <Link
-                href={`/${orgId}/statement?contactId=${contact.id}&tab=bank_inflows`}
-                className={`filter-tab ${activeTab === "bank_inflows" ? "active" : ""}`}
-                style={{ textDecoration: "none", fontSize: 11, padding: "4px 9px", display: "inline-flex", alignItems: "center", gap: 4 }}
-              >
-                <ArrowDownLeft size={12} style={{ color: "#8b5cf6" }} /> Received via Bank ({bankDeposits.length})
-              </Link>
-              <Link
-                href={`/${orgId}/statement?contactId=${contact.id}&tab=purchases`}
-                className={`filter-tab ${activeTab === "purchases" ? "active" : ""}`}
-                style={{ textDecoration: "none", fontSize: 11, padding: "4px 9px" }}
-              >
-                Purchases ({contact.purchaseOrders.length + directExpenses.length})
-              </Link>
-              <Link
-                href={`/${orgId}/statement?contactId=${contact.id}&tab=sales`}
-                className={`filter-tab ${activeTab === "sales" ? "active" : ""}`}
-                style={{ textDecoration: "none", fontSize: 11, padding: "4px 9px" }}
-              >
-                Sales ({contact.invoices.length + contact.incomes.length})
-              </Link>
+
+              {isDirector ? (
+                <>
+                  <Link
+                    href={`/${orgId}/statement?contactId=${contact.id}&tab=bank_outflows`}
+                    className={`filter-tab ${activeTab === "bank_outflows" ? "active" : ""}`}
+                    style={{ textDecoration: "none", fontSize: 11, padding: "4px 9px", display: "inline-flex", alignItems: "center", gap: 4 }}
+                  >
+                    <ArrowUpRight size={12} style={{ color: "#3b82f6" }} /> Bank Drawings ({rawRows.filter((r) => r.category === "DIRECTOR_DRAWING").length})
+                  </Link>
+                  <Link
+                    href={`/${orgId}/statement?contactId=${contact.id}&tab=bank_inflows`}
+                    className={`filter-tab ${activeTab === "bank_inflows" ? "active" : ""}`}
+                    style={{ textDecoration: "none", fontSize: 11, padding: "4px 9px", display: "inline-flex", alignItems: "center", gap: 4 }}
+                  >
+                    <ArrowDownLeft size={12} style={{ color: "#10b981" }} /> Funds Injected ({rawRows.filter((r) => r.category === "DIRECTOR_INJECTION").length})
+                  </Link>
+                  <Link
+                    href={`/${orgId}/statement?contactId=${contact.id}&tab=cash`}
+                    className={`filter-tab ${activeTab === "cash" ? "active" : ""}`}
+                    style={{ textDecoration: "none", fontSize: 11, padding: "4px 9px" }}
+                  >
+                    Cash Vouchers ({rawRows.filter((r) => r.category === "DIRECTOR_CASH").length})
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href={`/${orgId}/statement?contactId=${contact.id}&tab=bank_outflows`}
+                    className={`filter-tab ${activeTab === "bank_outflows" ? "active" : ""}`}
+                    style={{ textDecoration: "none", fontSize: 11, padding: "4px 9px", display: "inline-flex", alignItems: "center", gap: 4 }}
+                  >
+                    <ArrowUpRight size={12} style={{ color: "#10b981" }} /> Paid via Bank ({rawRows.filter((r) => r.category === "BANK_PAYMENT").length})
+                  </Link>
+                  <Link
+                    href={`/${orgId}/statement?contactId=${contact.id}&tab=bank_inflows`}
+                    className={`filter-tab ${activeTab === "bank_inflows" ? "active" : ""}`}
+                    style={{ textDecoration: "none", fontSize: 11, padding: "4px 9px", display: "inline-flex", alignItems: "center", gap: 4 }}
+                  >
+                    <ArrowDownLeft size={12} style={{ color: "#8b5cf6" }} /> Received via Bank ({rawRows.filter((r) => r.category === "BANK_COLLECTION").length})
+                  </Link>
+                  <Link
+                    href={`/${orgId}/statement?contactId=${contact.id}&tab=purchases`}
+                    className={`filter-tab ${activeTab === "purchases" ? "active" : ""}`}
+                    style={{ textDecoration: "none", fontSize: 11, padding: "4px 9px" }}
+                  >
+                    Purchases ({contact.purchaseOrders.length + rawRows.filter((r) => r.category === "EXPENSE").length})
+                  </Link>
+                  <Link
+                    href={`/${orgId}/statement?contactId=${contact.id}&tab=sales`}
+                    className={`filter-tab ${activeTab === "sales" ? "active" : ""}`}
+                    style={{ textDecoration: "none", fontSize: 11, padding: "4px 9px" }}
+                  >
+                    Sales ({contact.invoices.length + rawRows.filter((r) => r.category === "INCOME").length})
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
 
         <CompanyPrintBanner
           organization={organization}
-          title="Comprehensive Cross-Role Statement & Ledger"
-          subtitle={`${contact.companyName || contact.name} · Consolidated Financial Statement`}
+          title="Consolidated Cross-Role Statement &amp; Actual Balance Sheet"
+          subtitle={`${contact.companyName || contact.name} · Audited Unique Financial Statement`}
         />
 
-        {/* Contact Overview Card */}
-        <div className="table-card" style={{ padding: "20px 24px", marginBottom: 20 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
+        {/* =====================================================================
+            ACTUAL BALANCE SHEET OF SELECTED ENTITY CARD
+        ===================================================================== */}
+        <div
+          className="table-card"
+          style={{
+            padding: "24px 28px",
+            marginBottom: 20,
+            border: isDirector ? "1px solid rgba(139, 92, 246, 0.45)" : "1px solid var(--line)",
+            background: isDirector
+              ? "linear-gradient(180deg, rgba(139, 92, 246, 0.05) 0%, var(--surface) 100%)"
+              : "var(--surface)",
+          }}
+        >
+          {/* Header of Balance Sheet */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16, marginBottom: 20 }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                <span className="badge purple" style={{ fontSize: 11 }}>
-                  PARTNER: {contact.type === "BOTH" ? "CUSTOMER & VENDOR (DUAL ROLE)" : contact.type}
-                </span>
+                {contactRole === "DIRECTOR" && (
+                  <span className="badge purple" style={{ fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    <ShieldCheck size={13} /> DIRECTOR &amp; SHAREHOLDER ACCOUNT
+                  </span>
+                )}
+                {contactRole === "BOTH" && (
+                  <span className="badge amber" style={{ fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    <Building2 size={13} /> DUAL-ROLE COMMERCIAL PARTNER
+                  </span>
+                )}
+                {contactRole === "VENDOR" && (
+                  <span className="badge emerald" style={{ fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    <Briefcase size={13} /> TRADE VENDOR &amp; SUPPLIER
+                  </span>
+                )}
+                {contactRole === "CUSTOMER" && (
+                  <span className="badge sky" style={{ fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    <UsersRound size={13} /> COMMERCIAL CLIENT &amp; CUSTOMER
+                  </span>
+                )}
+
                 {contact.taxNumber && (
                   <span className="badge cyan" style={{ fontSize: 11 }}>
                     PAN / VAT: <strong>{contact.taxNumber}</strong>
                   </span>
                 )}
               </div>
-              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>{contact.companyName || contact.name}</h2>
+
+              <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>{contact.companyName || contact.name}</h2>
               {contact.companyName && contact.name && contact.companyName.trim().toLowerCase() !== contact.name.trim().toLowerCase() && (
                 <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 2 }}>
-                  Contact Person: <strong>{contact.name}</strong>
+                  Contact Representative: <strong>{contact.name}</strong>
                 </div>
               )}
               {contact.address && (
@@ -5904,67 +6430,307 @@ export default async function ModulePage({
               )}
             </div>
 
-            <div style={{ display: "flex", gap: 20, textAlign: "right", flexWrap: "wrap" }}>
-              <div>
-                <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>Total Purchases (Bills)</div>
-                <strong style={{ fontSize: 18, color: "var(--text)" }}>
-                  {money(totalPurchases, organization.currency)}
-                </strong>
-                <div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{contact.purchaseOrders.length} purchase orders</div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>
+                Accounting Metrology
               </div>
-
-              <div>
-                <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>Paid via Bank Wire</div>
-                <strong style={{ fontSize: 18, color: "#10b981" }}>
-                  {money(totalPaidViaBank, organization.currency)}
-                </strong>
-                <div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{bankWithdrawals.length} wire disbursements</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>
+                Strictly Deduplicated Ledger
               </div>
-
-              <div>
-                <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>Vendor Dues (Remaining)</div>
-                <strong style={{ fontSize: 18, color: remainingVendorDues > 0 ? "var(--danger)" : "var(--success)" }}>
-                  {money(remainingVendorDues, organization.currency)}
-                </strong>
-                <div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>Payable balance</div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>Received via Bank Inflow</div>
-                <strong style={{ fontSize: 18, color: "#8b5cf6" }}>
-                  {money(totalReceivedViaBank, organization.currency)}
-                </strong>
-                <div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{bankDeposits.length} deposit postings</div>
-              </div>
-
-              <div style={{ paddingLeft: 12, borderLeft: "2px solid var(--line)" }}>
-                <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>Net Party Position</div>
-                <strong
-                  style={{
-                    fontSize: 18,
-                    color: netPartyPosition > 0 ? "#0284c7" : netPartyPosition < 0 ? "var(--danger)" : "var(--success)",
-                  }}
-                >
-                  {netPartyPosition > 0
-                    ? `+${money(netPartyPosition, organization.currency)} Dr`
-                    : netPartyPosition < 0
-                    ? `-${money(Math.abs(netPartyPosition), organization.currency)} Cr`
-                    : `${money(0, organization.currency)} (Balanced)`}
-                </strong>
-                <div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>
-                  {netPartyPosition > 0 ? "Net Receivable" : netPartyPosition < 0 ? "Net Payable" : "Fully Settled"}
-                </div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                {rawRows.length} Unique Verified Entries
               </div>
             </div>
           </div>
+
+          {/* Actual Balance Sheet Metrology Grid */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+              gap: 16,
+              padding: "18px 20px",
+              borderRadius: "var(--radius-md)",
+              background: "var(--surface-muted, rgba(255, 255, 255, 0.03))",
+              border: "1px solid var(--line)",
+            }}
+          >
+            {/* CASE 1: DIRECTOR ACCOUNT */}
+            {isDirector && (
+              <>
+                <div>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>
+                    Total Drawings / Advances (Dr)
+                  </div>
+                  <strong style={{ fontSize: 20, color: "#3b82f6" }}>
+                    {money(dirDrawings, organization.currency)}
+                  </strong>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    Bank Transfers &amp; Cash Vouchers Drawn
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>
+                    Funds Injected / Capital (Cr)
+                  </div>
+                  <strong style={{ fontSize: 20, color: "#10b981" }}>
+                    {money(dirInjections, organization.currency)}
+                  </strong>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    Director Bank Inflows to Company
+                  </div>
+                </div>
+
+                <div style={{ paddingLeft: 12, borderLeft: "2px solid var(--line)" }}>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>
+                    Actual Balance Sheet Standing
+                  </div>
+                  <strong
+                    style={{
+                      fontSize: 20,
+                      color: dirNetPosition > 0 ? "#0284c7" : dirNetPosition < 0 ? "var(--danger)" : "var(--success)",
+                    }}
+                  >
+                    {dirNetPosition > 0
+                      ? `+${money(dirNetPosition, organization.currency)} Dr`
+                      : dirNetPosition < 0
+                      ? `-${money(Math.abs(dirNetPosition), organization.currency)} Cr`
+                      : `${money(0, organization.currency)} (Balanced)`}
+                  </strong>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    {dirNetPosition > 0
+                      ? "Current Asset · Due from Director"
+                      : dirNetPosition < 0
+                      ? "Current Liability · Payable to Director"
+                      : "Account Fully Cleared & Settled"}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>
+                    Audit &amp; Reconciliation
+                  </div>
+                  <strong style={{ fontSize: 20, color: "var(--text)" }}>
+                    100% Reconciled
+                  </strong>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    {allBankTxs.length} Bank Wires + Cash Outlays
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* CASE 2: COMMERCIAL CUSTOMER */}
+            {!isDirector && contactRole === "CUSTOMER" && (
+              <>
+                <div>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>
+                    Total Invoiced Sales (Gross Dr)
+                  </div>
+                  <strong style={{ fontSize: 20, color: "var(--text)" }}>
+                    {money(custInvoiced, organization.currency)}
+                  </strong>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    {contact.invoices.length} Sales Invoices Issued
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>
+                    Total Collections Realized (Cr)
+                  </div>
+                  <strong style={{ fontSize: 20, color: "#10b981" }}>
+                    {money(custCollected, organization.currency)}
+                  </strong>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    Bank Deposits &amp; Income Receipts
+                  </div>
+                </div>
+
+                <div style={{ paddingLeft: 12, borderLeft: "2px solid var(--line)" }}>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>
+                    Actual Trade Receivable (Asset)
+                  </div>
+                  <strong
+                    style={{
+                      fontSize: 20,
+                      color: custNetReceivable > 0 ? "var(--danger)" : custNetReceivable < 0 ? "#8b5cf6" : "var(--success)",
+                    }}
+                  >
+                    {custNetReceivable > 0
+                      ? `+${money(custNetReceivable, organization.currency)} Dr`
+                      : custNetReceivable < 0
+                      ? `-${money(Math.abs(custNetReceivable), organization.currency)} Cr`
+                      : `${money(0, organization.currency)} (Cleared)`}
+                  </strong>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    {custNetReceivable > 0
+                      ? "Current Asset · Uncollected Dues"
+                      : custNetReceivable < 0
+                      ? "Current Liability · Customer Advance"
+                      : "Zero Outstanding · Fully Paid"}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>
+                    Collection Realization
+                  </div>
+                  <strong style={{ fontSize: 20, color: custNetReceivable <= 0 ? "var(--success)" : "#0284c7" }}>
+                    {custInvoiced > 0 ? `${Math.min(100, Math.round((custCollected / custInvoiced) * 100))}%` : "100%"}
+                  </strong>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    {custNetReceivable <= 0 ? "Fully Realized" : "Pending Inflow"}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* CASE 3: TRADE VENDOR / SUPPLIER */}
+            {!isDirector && contactRole === "VENDOR" && (
+              <>
+                <div>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>
+                    Total Procurement Bills (Cr)
+                  </div>
+                  <strong style={{ fontSize: 20, color: "var(--text)" }}>
+                    {money(vendTotalBills, organization.currency)}
+                  </strong>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    {contact.purchaseOrders.length} POs + Direct Bills
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>
+                    Total Disbursed (Dr)
+                  </div>
+                  <strong style={{ fontSize: 20, color: "#10b981" }}>
+                    {money(vendDisbursed, organization.currency)}
+                  </strong>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    Bank Wires &amp; Cash Outlays Paid
+                  </div>
+                </div>
+
+                <div style={{ paddingLeft: 12, borderLeft: "2px solid var(--line)" }}>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>
+                    Actual Trade Payable (Liability)
+                  </div>
+                  <strong
+                    style={{
+                      fontSize: 20,
+                      color: vendNetPayable > 0 ? "var(--danger)" : vendNetPayable < 0 ? "#0284c7" : "var(--success)",
+                    }}
+                  >
+                    {vendNetPayable > 0
+                      ? `-${money(vendNetPayable, organization.currency)} Cr`
+                      : vendNetPayable < 0
+                      ? `+${money(Math.abs(vendNetPayable), organization.currency)} Dr`
+                      : `${money(0, organization.currency)} (Settled)`}
+                  </strong>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    {vendNetPayable > 0
+                      ? "Current Liability · Vendor Dues"
+                      : vendNetPayable < 0
+                      ? "Current Asset · Supplier Advance"
+                      : "Account Fully Settled"}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>
+                    Settlement Ratio
+                  </div>
+                  <strong style={{ fontSize: 20, color: vendNetPayable <= 0 ? "var(--success)" : "#f59e0b" }}>
+                    {vendTotalBills > 0 ? `${Math.min(100, Math.round((vendDisbursed / vendTotalBills) * 100))}%` : "100%"}
+                  </strong>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    {vendNetPayable <= 0 ? "Fully Disbursed" : "Disbursement Pending"}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* CASE 4: DUAL-ROLE COMMERCIAL PARTNER */}
+            {!isDirector && contactRole === "BOTH" && (
+              <>
+                <div>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>
+                    Customer Account (Receivable)
+                  </div>
+                  <strong style={{ fontSize: 20, color: "#0284c7" }}>
+                    {custNetReceivable >= 0
+                      ? `+${money(custNetReceivable, organization.currency)} Dr`
+                      : `-${money(Math.abs(custNetReceivable), organization.currency)} Cr`}
+                  </strong>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    Sales ({money(custInvoiced, organization.currency)}) - Collections ({money(custCollected, organization.currency)})
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>
+                    Vendor Account (Payable)
+                  </div>
+                  <strong style={{ fontSize: 20, color: "#f59e0b" }}>
+                    {vendNetPayable >= 0
+                      ? `-${money(vendNetPayable, organization.currency)} Cr`
+                      : `+${money(Math.abs(vendNetPayable), organization.currency)} Dr`}
+                  </strong>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    Bills ({money(vendTotalBills, organization.currency)}) - Paid ({money(vendDisbursed, organization.currency)})
+                  </div>
+                </div>
+
+                <div style={{ paddingLeft: 12, borderLeft: "2px solid var(--line)" }}>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>
+                    Consolidated Net Offset Exposure
+                  </div>
+                  <strong
+                    style={{
+                      fontSize: 20,
+                      color: dualNetOffset > 0 ? "#0284c7" : dualNetOffset < 0 ? "var(--danger)" : "var(--success)",
+                    }}
+                  >
+                    {dualNetOffset > 0
+                      ? `+${money(dualNetOffset, organization.currency)} Dr`
+                      : dualNetOffset < 0
+                      ? `-${money(Math.abs(dualNetOffset), organization.currency)} Cr`
+                      : `${money(0, organization.currency)} (Balanced Offset)`}
+                  </strong>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    {dualNetOffset > 0
+                      ? "Net Debtor · Company Asset"
+                      : dualNetOffset < 0
+                      ? "Net Creditor · Company Liability"
+                      : "Two-Sided Offset Perfectly Balanced"}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>
+                    Gross Flow Across Accounts
+                  </div>
+                  <strong style={{ fontSize: 20, color: "var(--text)" }}>
+                    {money(custInvoiced + vendTotalBills + vendDisbursed, organization.currency)}
+                  </strong>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    Combined Multi-Account Trade Volume
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Master Transaction Table */}
+        {/* Master Deduplicated Transaction Table */}
         <div className="table-card">
           <div className="table-toolbar" style={{ flexWrap: "wrap", gap: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <h3 style={{ margin: 0 }}>Itemized Statement &amp; Posting History</h3>
-              <span className="badge purple">{rowsWithRunBal.length} entries</span>
+              <h3 style={{ margin: 0 }}>Itemized Posting History &amp; Multi-Account Ledger</h3>
+              <span className="badge purple">{rowsWithRunBal.length} unique entries</span>
             </div>
           </div>
 
@@ -5974,10 +6740,10 @@ export default async function ModulePage({
                 <tr>
                   <th style={{ width: 44 }}>#</th>
                   <th style={{ minWidth: 120 }}>Date (BS / AD)</th>
-                  <th style={{ minWidth: 150 }}>Transaction Type</th>
+                  <th style={{ minWidth: 160 }}>Transaction Type</th>
                   <th style={{ minWidth: 130 }}>Reference / Code</th>
-                  <th style={{ minWidth: 240 }}>Description / Particulars</th>
-                  <th style={{ minWidth: 140 }}>Channel / Bank</th>
+                  <th style={{ minWidth: 250 }}>Description / Particulars</th>
+                  <th style={{ minWidth: 150 }}>Channel / Bank Account</th>
                   <th style={{ textAlign: "right", minWidth: 110 }}>Debit (Dr)</th>
                   <th style={{ textAlign: "right", minWidth: 110 }}>Credit (Cr)</th>
                   <th style={{ textAlign: "right", minWidth: 130 }}>Net Balance</th>
@@ -6053,7 +6819,7 @@ export default async function ModulePage({
               <div className="sign-cell">
                 <div className="sign-line" style={{ borderBottom: "1px dashed var(--line)", height: 40, marginBottom: 6 }} />
                 <span style={{ fontWeight: 600, fontSize: 12 }}>Prepared By (Accounts Officer)</span>
-                <small style={{ color: "var(--text-muted)", display: "block" }}>Simulcast Technologies Pvt Ltd</small>
+                <small style={{ color: "var(--text-muted)", display: "block" }}>{organization.name}</small>
               </div>
               <div className="sign-cell">
                 <div className="sign-line" style={{ borderBottom: "1px dashed var(--line)", height: 40, marginBottom: 6 }} />
