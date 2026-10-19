@@ -17,6 +17,7 @@ import {
   Search,
   Key,
   ExternalLink,
+  Lock,
 } from "lucide-react";
 import {
   addWorkspaceMemberAction,
@@ -37,8 +38,11 @@ type Member = {
     name: string;
     email: string;
     phone: string | null;
+    role?: string;
     status: string;
   };
+  isSuperAdmin?: boolean;
+  isOwner?: boolean;
   userWorkspaces: {
     id: string;
     name: string;
@@ -105,6 +109,7 @@ export function WorkspaceUsersClient({
   members,
   candidateUsers,
   allWorkspaces,
+  isActorSuperAdmin = false,
 }: {
   orgId: string;
   currentOrgName: string;
@@ -112,6 +117,7 @@ export function WorkspaceUsersClient({
   members: Member[];
   candidateUsers: CandidateUser[];
   allWorkspaces: WorkspaceOption[];
+  isActorSuperAdmin?: boolean;
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRoleFilter, setSelectedRoleFilter] = useState("ALL");
@@ -148,35 +154,28 @@ export function WorkspaceUsersClient({
           <strong className="kpi-value" style={{ color: "var(--purple)" }}>
             {adminCount}
           </strong>
-          <span className="kpi-meta">Full company administration</span>
+          <span className="kpi-meta">Executive administrators</span>
         </div>
         <div className="kpi-card">
-          <span className="kpi-label">Accountants &amp; Finance</span>
+          <span className="kpi-label">Finance &amp; Accountants</span>
           <strong className="kpi-value" style={{ color: "var(--success)" }}>
             {accountantCount}
           </strong>
-          <span className="kpi-meta">Invoices, expenses &amp; banks</span>
+          <span className="kpi-meta">Tax invoices, expenses, banking</span>
         </div>
         <div className="kpi-card">
-          <span className="kpi-label">CRM &amp; Sales Users</span>
+          <span className="kpi-label">Sales &amp; CRM Users</span>
           <strong className="kpi-value" style={{ color: "var(--warning)" }}>
             {salesCount}
           </strong>
-          <span className="kpi-meta">Customers, leads &amp; orders</span>
-        </div>
-        <div className="kpi-card">
-          <span className="kpi-label">HR &amp; Viewers</span>
-          <strong className="kpi-value" style={{ color: "var(--cyan)" }}>
-            {hrCount + viewerCount}
-          </strong>
-          <span className="kpi-meta">{hrCount} HR · {viewerCount} Viewers</span>
+          <span className="kpi-meta">Customers, leads, sales orders</span>
         </div>
       </div>
 
-      {/* TOOLBAR & SEARCH */}
-      <div className="table-card" style={{ marginBottom: 24 }}>
-        <div className="table-toolbar" style={{ flexWrap: "wrap", gap: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 260 }}>
+      {/* SEARCH, ROLE FILTER & ADD BUTTON TOOLBAR */}
+      <div className="table-card" style={{ marginBottom: 24, padding: "16px 20px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 280 }}>
             <div style={{ position: "relative", flex: 1 }}>
               <Search
                 size={14}
@@ -207,7 +206,10 @@ export function WorkspaceUsersClient({
           <button
             type="button"
             className="primary-btn"
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={() => {
+              setAddMode("NEW");
+              setIsAddModalOpen(true);
+            }}
             style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 34, fontSize: 13 }}
           >
             <UserPlus size={15} />
@@ -216,22 +218,24 @@ export function WorkspaceUsersClient({
         </div>
 
         {/* MEMBERS TABLE */}
-        <div className="table-scroll">
+        <div className="table-scroll" style={{ marginTop: 14 }}>
           <table className="responsive-table">
             <thead>
               <tr>
                 <th>User &amp; Contact</th>
-                <th>Workspace Role</th>
-                <th>Accessible Workspaces</th>
+                <th>Workspace Operational Role</th>
+                <th>Permitted Workspaces</th>
                 <th>Joined Date</th>
                 <th style={{ textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredMembers.map((m) => {
-                const isOwner = m.userId === ownerId || m.role === "OWNER";
+                const isSuperAdminMember = Boolean(m.isSuperAdmin || m.user.role === "SUPER_ADMIN");
+                const isOwnerMember = Boolean(m.isOwner || m.userId === ownerId || m.role === "OWNER");
+                const isProtected = isSuperAdminMember || isOwnerMember;
                 const info = ROLE_INFO[m.role] || ROLE_INFO.VIEWER;
-                const Icon = info.icon;
+
                 return (
                   <tr key={m.id}>
                     <td data-label="User">
@@ -241,8 +245,8 @@ export function WorkspaceUsersClient({
                             width: 34,
                             height: 34,
                             borderRadius: "50%",
-                            background: "var(--brand-soft)",
-                            color: "var(--brand)",
+                            background: isSuperAdminMember ? "var(--purple-soft)" : "var(--brand-soft)",
+                            color: isSuperAdminMember ? "var(--purple)" : "var(--brand)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -254,7 +258,14 @@ export function WorkspaceUsersClient({
                           {m.user.name.slice(0, 1).toUpperCase()}
                         </div>
                         <div>
-                          <div style={{ fontWeight: 600, fontSize: 13.5 }}>{m.user.name}</div>
+                          <div style={{ fontWeight: 600, fontSize: 13.5, display: "flex", alignItems: "center", gap: 6 }}>
+                            <span>{m.user.name}</span>
+                            {isSuperAdminMember && (
+                              <span className="badge purple" style={{ fontSize: 9 }}>
+                                Super Admin
+                              </span>
+                            )}
+                          </div>
                           <div style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{m.user.email}</div>
                           {m.user.phone && (
                             <div style={{ fontSize: 11, color: "var(--text-dim)" }}>{m.user.phone}</div>
@@ -264,9 +275,13 @@ export function WorkspaceUsersClient({
                     </td>
 
                     <td data-label="Role">
-                      {isOwner ? (
+                      {isSuperAdminMember ? (
                         <span className="badge purple" style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-                          <ShieldCheck size={12} /> Workspace Owner
+                          <ShieldCheck size={12} /> Master Super Admin (Protected)
+                        </span>
+                      ) : isOwnerMember ? (
+                        <span className="badge purple" style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                          <ShieldCheck size={12} /> Workspace Owner (Protected)
                         </span>
                       ) : (
                         <form action={updateWorkspaceMemberRoleAction} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -286,11 +301,11 @@ export function WorkspaceUsersClient({
                               cursor: "pointer",
                             }}
                           >
-                            <option value="ADMIN">ADMIN (Full Company)</option>
-                            <option value="ACCOUNTANT">ACCOUNTANT (Accounts &amp; Banks)</option>
-                            <option value="SALES">SALES (CRM &amp; Invoices)</option>
-                            <option value="HR">HR (Staff &amp; Payroll)</option>
-                            <option value="VIEWER">VIEWER (Read Only)</option>
+                            <option value="ADMIN">ADMIN — Full Company Access</option>
+                            <option value="ACCOUNTANT">ACCOUNTANT — Invoices, Expenses, Banking</option>
+                            <option value="SALES">SALES — Customers, CRM, Orders &amp; Quotes</option>
+                            <option value="HR">HR — Staff, Payroll &amp; Leave Approvals</option>
+                            <option value="VIEWER">VIEWER — Read Only Inspection</option>
                           </select>
                         </form>
                       )}
@@ -301,15 +316,18 @@ export function WorkspaceUsersClient({
                         <span className="badge cyan" style={{ fontSize: 11 }}>
                           {m.userWorkspaces.length} workspace{m.userWorkspaces.length === 1 ? "" : "s"}
                         </span>
-                        <button
-                          type="button"
-                          className="secondary-btn"
-                          onClick={() => setManagingWorkspacesUser(m)}
-                          style={{ fontSize: 11, padding: "2px 7px", height: 24 }}
-                          title="Manage which workspaces this user can access"
-                        >
-                          Configure Access →
-                        </button>
+                        {/* Only allow configuring workspaces for non-protected members, and only when multiple authorized workspaces exist */}
+                        {!isProtected && allWorkspaces.length > 1 && (
+                          <button
+                            type="button"
+                            className="secondary-btn"
+                            onClick={() => setManagingWorkspacesUser(m)}
+                            style={{ fontSize: 11, padding: "2px 7px", height: 24 }}
+                            title="Manage which authorized workspaces this user can access"
+                          >
+                            Configure Access →
+                          </button>
+                        )}
                       </div>
                       <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
                         {m.userWorkspaces.map((w) => w.name).slice(0, 2).join(", ")}
@@ -320,7 +338,15 @@ export function WorkspaceUsersClient({
                     <td data-label="Joined">{formatDualDate(m.createdAt)}</td>
 
                     <td data-label="Actions" style={{ textAlign: "right" }}>
-                      {!isOwner && (
+                      {isSuperAdminMember ? (
+                        <span className="badge purple" style={{ fontSize: 10, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          <Lock size={10} /> Super Admin
+                        </span>
+                      ) : isOwnerMember ? (
+                        <span className="badge gray" style={{ fontSize: 10, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          <Lock size={10} /> Owner
+                        </span>
+                      ) : (
                         <form
                           action={removeWorkspaceMemberAction}
                           onSubmit={(e) => {
@@ -339,7 +365,7 @@ export function WorkspaceUsersClient({
                             style={{ color: "var(--danger)" }}
                             title="Remove member from workspace"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={15} />
                           </button>
                         </form>
                       )}
@@ -396,35 +422,25 @@ export function WorkspaceUsersClient({
 
       {/* MODAL: ADD / INVITE USER TO WORKSPACE */}
       {isAddModalOpen && (
-        <div className="search-modal-backdrop" onClick={() => setIsAddModalOpen(false)}>
-          <div className="search-modal-box" style={{ maxWidth: 560 }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, borderBottom: "1px solid var(--line)", paddingBottom: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <UserPlus size={18} style={{ color: "var(--brand)" }} />
-                <h3 style={{ margin: 0, fontSize: 16 }}>Add User to Workspace</h3>
+        <div className="app-modal-backdrop" onClick={() => setIsAddModalOpen(false)}>
+          <div className="app-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="app-modal-header">
+              <div className="app-modal-title-group">
+                <UserPlus size={19} style={{ color: "var(--brand)" }} />
+                <div>
+                  <h3>Add User to Workspace</h3>
+                  <div style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 2 }}>
+                    Adding team member to <strong>{currentOrgName}</strong>
+                  </div>
+                </div>
               </div>
-              <button type="button" className="ghost-btn icon-btn" onClick={() => setIsAddModalOpen(false)}>
+              <button
+                type="button"
+                className="ghost-btn icon-btn"
+                onClick={() => setIsAddModalOpen(false)}
+                title="Close"
+              >
                 <X size={16} />
-              </button>
-            </div>
-
-            {/* Toggle Mode */}
-            <div style={{ display: "flex", gap: 8, marginBottom: 16, background: "var(--soft)", padding: 4, borderRadius: 8 }}>
-              <button
-                type="button"
-                className={`secondary-btn ${addMode === "NEW" ? "active-tab" : ""}`}
-                style={{ flex: 1, height: 32, fontSize: 12.5, fontWeight: addMode === "NEW" ? 700 : 500 }}
-                onClick={() => setAddMode("NEW")}
-              >
-                Create New Company User
-              </button>
-              <button
-                type="button"
-                className={`secondary-btn ${addMode === "EXISTING" ? "active-tab" : ""}`}
-                style={{ flex: 1, height: 32, fontSize: 12.5, fontWeight: addMode === "EXISTING" ? 700 : 500 }}
-                onClick={() => setAddMode("EXISTING")}
-              >
-                Select Existing User
               </button>
             </div>
 
@@ -434,82 +450,138 @@ export function WorkspaceUsersClient({
                 setIsAddModalOpen(false);
               }}
             >
-              <FormPendingFeedback processingMessage="Adding user to workspace..." successMessage="User added successfully!" />
-              <input type="hidden" name="orgId" value={orgId} />
-              <input type="hidden" name="mode" value={addMode} />
+              <div className="app-modal-body">
+                <FormPendingFeedback processingMessage="Adding user to workspace..." successMessage="User added successfully!" />
+                <input type="hidden" name="orgId" value={orgId} />
+                <input type="hidden" name="mode" value={addMode} />
 
-              <div className="form-grid">
-                {addMode === "EXISTING" ? (
-                  <label className="field full">
-                    <span>Select User Profile</span>
-                    <select name="existingUserId" required>
-                      <option value="">-- Choose registered user --</option>
-                      {candidateUsers.map((u) => (
-                        <option key={u.id} value={u.id}>
-                          {u.name} ({u.email})
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ) : (
-                  <>
-                    <label className="field">
-                      <span>Full Name</span>
-                      <input name="name" required placeholder="e.g. Ramesh Shrestha" />
-                    </label>
-                    <label className="field">
-                      <span>Email Address</span>
-                      <input name="email" type="email" required placeholder="user@company.com" />
-                    </label>
-                    <label className="field">
-                      <span>Phone / Mobile</span>
-                      <input name="phone" placeholder="+977-98..." />
-                    </label>
-                    <label className="field">
-                      <span>Password (min. 6 characters)</span>
-                      <input name="password" type="password" required defaultValue="Simulcast@123" />
-                    </label>
-                  </>
+                {/* Standard Mode Switcher (Crystal Clear Contrast) */}
+                {candidateUsers.length > 0 && (
+                  <div className="amount-mode-toggle">
+                    <button
+                      type="button"
+                      className={`mode-btn ${addMode === "NEW" ? "active" : ""}`}
+                      onClick={() => setAddMode("NEW")}
+                    >
+                      Create New Company User
+                    </button>
+                    <button
+                      type="button"
+                      className={`mode-btn ${addMode === "EXISTING" ? "active" : ""}`}
+                      onClick={() => setAddMode("EXISTING")}
+                    >
+                      Select Existing User ({candidateUsers.length})
+                    </button>
+                  </div>
                 )}
 
-                <label className="field full">
-                  <span>Workspace Operational Role</span>
-                  <select name="role" defaultValue="ACCOUNTANT" required>
-                    <option value="ADMIN">ADMIN — Full Company Access</option>
-                    <option value="ACCOUNTANT">ACCOUNTANT — Invoices, Expenses, Income, Banking &amp; Reports</option>
-                    <option value="SALES">SALES / CRM — Customers, Vendors, Leads, Sales Orders &amp; Quotes</option>
-                    <option value="HR">HR — Staff Directory, Payroll &amp; Leave Approvals</option>
-                    <option value="VIEWER">VIEWER — Read Only Inspection</option>
-                  </select>
-                </label>
-
-                {/* WORKSPACE ACCESS SELECTION */}
-                <div className="field full" style={{ background: "var(--soft)", padding: "12px 14px", borderRadius: 8, border: "1px solid var(--line)" }}>
-                  <span style={{ fontWeight: 700, fontSize: 13, display: "block", marginBottom: 6 }}>
-                    Permitted Workspaces for this User:
-                  </span>
-                  <small style={{ color: "var(--text-muted)", fontSize: 11.5, display: "block", marginBottom: 10 }}>
-                    Company users will only be able to view and switch between the checked workspaces.
-                  </small>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    {allWorkspaces.map((ws) => (
-                      <label key={ws.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, cursor: "pointer" }}>
-                        <input
-                          type="checkbox"
-                          name="allowedOrgIds"
-                          value={ws.id}
-                          defaultChecked={ws.id === orgId}
-                          style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
-                        />
-                        <span>{ws.name} ({ws.kind})</span>
+                <div className="form-grid">
+                  {addMode === "EXISTING" ? (
+                    <label className="field full">
+                      <span>Select Team Member</span>
+                      <select name="existingUserId" required>
+                        <option value="">-- Choose registered team member --</option>
+                        {candidateUsers.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.name} ({u.email})
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : (
+                    <>
+                      <label className="field">
+                        <span>Full Name</span>
+                        <input name="name" required placeholder="e.g. Ramesh Shrestha" />
                       </label>
-                    ))}
+                      <label className="field">
+                        <span>Email Address</span>
+                        <input name="email" type="email" required placeholder="user@company.com" />
+                      </label>
+                      <label className="field">
+                        <span>Phone / Mobile</span>
+                        <input name="phone" placeholder="+977-98..." />
+                      </label>
+                      <label className="field">
+                        <span>Password (min. 6 characters)</span>
+                        <input name="password" type="password" required defaultValue="Simulcast@123" />
+                      </label>
+                    </>
+                  )}
+
+                  <label className="field full">
+                    <span>Workspace Operational Role</span>
+                    <select name="role" defaultValue="ACCOUNTANT" required>
+                      <option value="ADMIN">ADMIN — Full Company Access</option>
+                      <option value="ACCOUNTANT">ACCOUNTANT — Invoices, Expenses, Income, Banking &amp; Reports</option>
+                      <option value="SALES">SALES / CRM — Customers, Vendors, Leads, Sales Orders &amp; Quotes</option>
+                      <option value="HR">HR — Staff Directory, Payroll &amp; Leave Approvals</option>
+                      <option value="VIEWER">VIEWER — Read Only Inspection</option>
+                    </select>
+                  </label>
+
+                  {/* WORKSPACE TARGET SCOPE */}
+                  <div className="field full">
+                    {allWorkspaces.length <= 1 ? (
+                      <div style={{ background: "var(--soft)", padding: "12px 14px", borderRadius: 8, border: "1px solid var(--line)" }}>
+                        <span style={{ fontWeight: 600, fontSize: 11.5, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", display: "block", marginBottom: 4 }}>
+                          Assigned Company Workspace
+                        </span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <Building2 size={16} style={{ color: "var(--brand)" }} />
+                          <strong style={{ fontSize: 13, color: "var(--text)" }}>{currentOrgName}</strong>
+                          <span className="badge purple" style={{ fontSize: 9 }}>Current Workspace</span>
+                        </div>
+                        <input type="hidden" name="allowedOrgIds" value={orgId} />
+                      </div>
+                    ) : (
+                      <div style={{ background: "var(--soft)", padding: "12px 14px", borderRadius: 8, border: "1px solid var(--line)" }}>
+                        <span style={{ fontWeight: 700, fontSize: 12.5, display: "block", marginBottom: 4, color: "var(--text)" }}>
+                          Permitted Workspaces for this User:
+                        </span>
+                        <small style={{ color: "var(--text-muted)", fontSize: 11, display: "block", marginBottom: 10 }}>
+                          Select which of your organizations this user can log into. Foreign vendor companies are strictly isolated.
+                        </small>
+
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                          {allWorkspaces.map((ws) => (
+                            <label
+                              key={ws.id}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                fontSize: 12,
+                                cursor: "pointer",
+                                background: "var(--surface)",
+                                padding: "8px 10px",
+                                borderRadius: 6,
+                                border: "1px solid var(--line)",
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                name="allowedOrgIds"
+                                value={ws.id}
+                                defaultChecked={ws.id === orgId}
+                                style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
+                              />
+                              <div>
+                                <div style={{ fontWeight: 600 }}>{ws.name}</div>
+                                <span className={`badge ${ws.kind === "COMPANY" ? "purple" : "cyan"}`} style={{ fontSize: 9 }}>
+                                  {ws.kind}
+                                </span>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              <div className="form-actions" style={{ marginTop: 16 }}>
+              <div className="app-modal-footer">
                 <button type="button" className="ghost-btn" onClick={() => setIsAddModalOpen(false)}>
                   Cancel
                 </button>
@@ -522,25 +594,29 @@ export function WorkspaceUsersClient({
         </div>
       )}
 
-      {/* MODAL: MANAGE USER WORKSPACES ACCESS */}
+      {/* MODAL: CONFIGURE USER WORKSPACES ACCESS */}
       {managingWorkspacesUser && (
-        <div className="search-modal-backdrop" onClick={() => setManagingWorkspacesUser(null)}>
-          <div className="search-modal-box" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, borderBottom: "1px solid var(--line)", paddingBottom: 10 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Building2 size={18} style={{ color: "var(--brand)" }} />
-                <h3 style={{ margin: 0, fontSize: 16 }}>
-                  Configure Workspace Access for {managingWorkspacesUser.user.name}
-                </h3>
+        <div className="app-modal-backdrop" onClick={() => setManagingWorkspacesUser(null)}>
+          <div className="app-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="app-modal-header">
+              <div className="app-modal-title-group">
+                <Building2 size={19} style={{ color: "var(--brand)" }} />
+                <div>
+                  <h3>Configure Workspace Access</h3>
+                  <div style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 2 }}>
+                    {managingWorkspacesUser.user.name} ({managingWorkspacesUser.user.email})
+                  </div>
+                </div>
               </div>
-              <button type="button" className="ghost-btn icon-btn" onClick={() => setManagingWorkspacesUser(null)}>
+              <button
+                type="button"
+                className="ghost-btn icon-btn"
+                onClick={() => setManagingWorkspacesUser(null)}
+                title="Close"
+              >
                 <X size={16} />
               </button>
             </div>
-
-            <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 0, marginBottom: 14 }}>
-              Check which workspaces <strong>{managingWorkspacesUser.user.name}</strong> ({managingWorkspacesUser.user.email}) can access. Company users can only log into and choose among permitted workspaces.
-            </p>
 
             <form
               action={async (formData) => {
@@ -548,49 +624,55 @@ export function WorkspaceUsersClient({
                 setManagingWorkspacesUser(null);
               }}
             >
-              <FormPendingFeedback processingMessage="Saving workspace permissions..." successMessage="Permissions updated" />
-              <input type="hidden" name="orgId" value={orgId} />
-              <input type="hidden" name="userId" value={managingWorkspacesUser.userId} />
+              <div className="app-modal-body">
+                <FormPendingFeedback processingMessage="Saving workspace permissions..." successMessage="Permissions updated" />
+                <input type="hidden" name="orgId" value={orgId} />
+                <input type="hidden" name="userId" value={managingWorkspacesUser.userId} />
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, background: "var(--soft)", padding: 14, borderRadius: 8, border: "1px solid var(--line)", marginBottom: 16 }}>
-                {allWorkspaces.map((ws) => {
-                  const hasAccess = managingWorkspacesUser.userWorkspaces.some((w) => w.id === ws.id);
-                  return (
-                    <label
-                      key={ws.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "8px 10px",
-                        background: "var(--surface)",
-                        borderRadius: 6,
-                        border: "1px solid var(--line)",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <input
-                          type="checkbox"
-                          name="allowedOrgIds"
-                          value={ws.id}
-                          defaultChecked={hasAccess}
-                          style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
-                        />
-                        <div>
-                          <strong style={{ fontSize: 13 }}>{ws.name}</strong>
-                          <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Kind: {ws.kind}</div>
+                <p style={{ fontSize: 12.5, color: "var(--text-muted)", margin: 0 }}>
+                  Select which workspaces <strong>{managingWorkspacesUser.user.name}</strong> can log into and switch between under your organization group. Foreign vendor workspaces are strictly isolated.
+                </p>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, background: "var(--soft)", padding: 12, borderRadius: 8, border: "1px solid var(--line)" }}>
+                  {allWorkspaces.map((ws) => {
+                    const hasAccess = managingWorkspacesUser.userWorkspaces.some((w) => w.id === ws.id);
+                    return (
+                      <label
+                        key={ws.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "10px 12px",
+                          background: "var(--surface)",
+                          borderRadius: 6,
+                          border: "1px solid var(--line)",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <input
+                            type="checkbox"
+                            name="allowedOrgIds"
+                            value={ws.id}
+                            defaultChecked={hasAccess}
+                            style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
+                          />
+                          <div>
+                            <strong style={{ fontSize: 13 }}>{ws.name}</strong>
+                            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Kind: {ws.kind}</div>
+                          </div>
                         </div>
-                      </div>
-                      <span className={`badge ${ws.kind === "COMPANY" ? "purple" : "cyan"}`} style={{ fontSize: 10 }}>
-                        {ws.kind}
-                      </span>
-                    </label>
-                  );
-                })}
+                        <span className={`badge ${ws.kind === "COMPANY" ? "purple" : "cyan"}`} style={{ fontSize: 10 }}>
+                          {ws.kind}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div className="form-actions">
+              <div className="app-modal-footer">
                 <button type="button" className="ghost-btn" onClick={() => setManagingWorkspacesUser(null)}>
                   Cancel
                 </button>

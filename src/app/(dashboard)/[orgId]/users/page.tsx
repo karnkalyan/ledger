@@ -27,16 +27,35 @@ export default async function WorkspaceUsersPage({
     orderBy: { createdAt: "asc" },
   });
 
-  // Fetch all registered workspaces in the company group
+  // Multi-tenant security scoping: regular company admins can only see workspaces
+  // owned by their organization owner. Cross-tenant organizations (other vendors) are never leaked.
+  const isActorSuperAdmin = user.role === "SUPER_ADMIN";
   const allWorkspaces = await db.organization.findMany({
+    where: isActorSuperAdmin
+      ? {}
+      : { ownerId: organization.ownerId },
     select: { id: true, name: true, kind: true },
     orderBy: { name: "asc" },
   });
 
-  // Candidate users who are registered in the system but not yet part of this workspace
+  // Candidate users: exclude SUPER_ADMIN accounts and users from completely separate vendor organizations
   const memberUserIds = new Set(rawMembers.map((m) => m.userId));
   const candidateUsers = await db.user.findMany({
-    where: { id: { notIn: Array.from(memberUserIds) } },
+    where: {
+      id: { notIn: Array.from(memberUserIds) },
+      role: { not: "SUPER_ADMIN" },
+      ...(isActorSuperAdmin
+        ? {}
+        : {
+            memberships: {
+              some: {
+                organization: {
+                  ownerId: organization.ownerId,
+                },
+              },
+            },
+          }),
+    },
     select: { id: true, name: true, email: true },
     orderBy: { name: "asc" },
   });
@@ -51,15 +70,21 @@ export default async function WorkspaceUsersPage({
       name: m.user.name,
       email: m.user.email,
       phone: m.user.phone,
+      role: m.user.role,
       status: m.user.status,
     },
-    userWorkspaces: m.user.memberships.map((mem) => ({
-      id: mem.organization.id,
-      name: mem.organization.name,
-      kind: mem.organization.kind,
-      role: mem.role,
-    })),
+    isSuperAdmin: m.user.role === "SUPER_ADMIN",
+    isOwner: m.userId === organization.ownerId,
+    userWorkspaces: m.user.memberships
+      .filter((mem) => isActorSuperAdmin || mem.organization.ownerId === organization.ownerId)
+      .map((mem) => ({
+        id: mem.organization.id,
+        name: mem.organization.name,
+        kind: mem.organization.kind,
+        role: mem.role,
+      })),
   }));
+
 
   return (
     <main className="page-wrap">
@@ -88,6 +113,7 @@ export default async function WorkspaceUsersPage({
         members={formattedMembers}
         candidateUsers={candidateUsers}
         allWorkspaces={allWorkspaces}
+        isActorSuperAdmin={isActorSuperAdmin}
       />
     </main>
   );

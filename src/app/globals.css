@@ -4659,12 +4659,102 @@ button.filter-preset-chip.active * {
   color: var(--text-muted);
 }
 
-/* User management styles */
-.active-tab {
+/* ==========================================================================
+   DEDICATED APPLICATION MODAL POPUPS (USER MANAGEMENT & FORMS)
+   ========================================================================== */
+
+.app-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  animation: searchFadeIn 0.15s ease-out;
+}
+
+.app-modal-box {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  box-shadow: var(--modal-shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: searchSlideDown 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.app-modal-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-modal-title-group h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.app-modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  max-height: calc(90vh - 130px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.app-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--line);
+  background: var(--soft);
+}
+
+/* User management styles: ensure high-contrast readable text */
+.active-tab,
+button.active-tab,
+.secondary-btn.active-tab {
   background: var(--brand) !important;
   color: #ffffff !important;
   border-color: var(--brand) !important;
 }
+
+.active-tab *,
+button.active-tab *,
+.secondary-btn.active-tab * {
+  color: #ffffff !important;
+}
+
+@media print {
+  .app-modal-backdrop,
+  .app-modal-box {
+    display: none !important;
+    visibility: hidden !important;
+  }
+}
+
 
 
 
