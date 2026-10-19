@@ -1141,61 +1141,6 @@ async function main() {
       }
     }
 
-    // Add verified transaction on 2026-10-15 (29 Ashwin 2083 BS) - Deduplicated
-    const oct15Date = new Date("2026-10-15T12:00:00Z");
-    const oct15Desc = "Fund Trf to KALYAN KUMAR KARN-Kalyan Kumar Kar FUN MOB/SBLMOB01Kalyan Kumar Karn";
-    const oct15Key = `2026-10-15_15000_${oct15Desc.toLowerCase().trim()}_WITHDRAWAL`;
-
-    if (!seenTxKeys.has(oct15Key)) {
-      seenTxKeys.add(oct15Key);
-
-      const oct15Exp = await prisma.expense.create({
-        data: {
-          organizationId: company.id,
-          title: oct15Desc,
-          vendor: "Director Current Account (Kalyan Kumar Karn)",
-          type: ExpenseType.ONE_TIME,
-          amount: 15000,
-          occurredAt: oct15Date,
-          notes: "Bank ref: MOB/SBLMOB01Kalyan Kumar Karn | Category: Director Current Account (Drawings)",
-        },
-      });
-
-      try {
-        await prisma.bankTransaction.create({
-          data: {
-            organizationId: company.id,
-            bankAccountId: sBank.id,
-            transactionDate: oct15Date,
-            type: "WITHDRAWAL",
-            amount: 15000,
-            balance: 12944.68,
-            description: oct15Desc,
-            reference: "MOB/SBLMOB01Kalyan Kumar Karn",
-            category: "Director Current Account (Drawings)",
-            expenseId: oct15Exp.id,
-          },
-        });
-      } catch (err: any) {
-        if (err?.code === "P2003") {
-          await prisma.bankTransaction.create({
-            data: {
-              organizationId: company.id,
-              bankAccountId: sBank.id,
-              transactionDate: oct15Date,
-              type: "WITHDRAWAL",
-              amount: 15000,
-              balance: 12944.68,
-              description: oct15Desc,
-              reference: "MOB/SBLMOB01Kalyan Kumar Karn",
-              category: "Director Current Account (Drawings)",
-            },
-          });
-        } else {
-          throw err;
-        }
-      }
-    }
 
     await prisma.bankAccount.update({
       where: { id: sBank.id },
