@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { getCurrentNepaliFiscalYear, getAvailableFiscalYears } from "@/lib/fiscal-year";
 import { ToastProvider } from "@/components/toast-provider";
 import { db } from "@/lib/db";
+import { ensureBlackSwan2083Transactions } from "@/lib/ensure-black-swan";
 
 export default async function DashboardLayout({
   children,
@@ -14,6 +15,7 @@ export default async function DashboardLayout({
 }) {
   const { orgId } = await params;
   const { user, organization, membership } = await requireOrganizationAccess(orgId);
+  await ensureBlackSwan2083Transactions(orgId);
   const cookieStore = await cookies();
   const fyCookie = cookieStore.get("flowledger_fy")?.value || null;
   const customFyCookie = cookieStore.get("flowledger_custom_fy")?.value || "";

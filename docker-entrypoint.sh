@@ -32,6 +32,7 @@ if [ "${SEED_ON_STARTUP:-false}" = "true" ]; then
   npx tsx prisma/seed.ts || echo "==> [Notice] Seed script completed with warnings."
 else
   echo "==> [Seed] SEED_ON_STARTUP is false. Preserving existing user data (skipping seed)."
+  node scripts/ensure_sync.js || true
 fi
 
 echo "==> Starting Leader Next.js server on port ${PORT:-3080}..."

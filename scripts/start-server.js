@@ -2,6 +2,11 @@ const fs = require("fs");
 const path = require("path");
 const { spawn } = require("child_process");
 
+try {
+  const { ensureSync } = require("./ensure_sync");
+  ensureSync().catch(() => {});
+} catch (e) {}
+
 const standaloneServer = path.join(process.cwd(), ".next", "standalone", "server.js");
 
 if (fs.existsSync(standaloneServer)) {

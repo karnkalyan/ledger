@@ -1283,10 +1283,12 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
       .reduce((s, x) => s + Number(x.total), 0);
 
     const totalSales = totalInvoicesAmount + totalNonInvoicedSalesOrdersAmount;
-    const totalCollected = contact.invoices.reduce((s, x) => s + Number(x.paidAmount), 0);
-    const customerReceivables = Math.max(0, totalSales - totalCollected);
-
+    const totalInvoicePayments = contact.invoices.flatMap((inv) => inv.payments).reduce((s, p) => s + Number(p.amount), 0);
+    const totalInvoicePaidAmount = contact.invoices.reduce((s, x) => s + Number(x.paidAmount), 0);
     const totalIncomeReceived = contact.incomes.reduce((s, x) => s + Number(x.amount), 0);
+    const totalCollected = totalInvoicePayments > 0 ? totalInvoicePayments : (totalIncomeReceived > 0 ? 0 : totalInvoicePaidAmount);
+    const totalCustomerReceipts = totalCollected + totalIncomeReceived;
+    const customerReceivables = Math.max(0, totalSales - totalCustomerReceipts);
     const totalDirectExpenses = vendorExpenses.reduce((s, x) => s + Number(x.amount), 0);
 
     // Build unified chronological statement entries
@@ -1471,7 +1473,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
               <div>
                 <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)" }}>Total Payments Received</div>
                 <strong style={{ fontSize: 18, color: "var(--success)" }}>
-                  {money(totalCollected + totalIncomeReceived, organization.currency)}
+                  {money(totalCustomerReceipts, organization.currency)}
                 </strong>
                 {totalCollected > 0 && totalIncomeReceived > 0 && (
                   <div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>

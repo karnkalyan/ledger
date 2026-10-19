@@ -3729,7 +3729,7 @@ export default async function ModulePage({
     if (reportType === "director") {
       const selectedYear = query.year?.trim() || "";
       const searchKey = directorFirstName.toLowerCase();
-      const allDirTxs = await db.bankTransaction.findMany({
+      const allDirBankTxs = await db.bankTransaction.findMany({
         where: {
           organizationId: orgId,
           OR: [
@@ -3744,6 +3744,72 @@ export default async function ModulePage({
         include: { bankAccount: true },
         orderBy: { transactionDate: "asc" },
       });
+
+      // Also include cash director drawings or capital injections not routed through bank passbook
+      const [cashDirExpenses, cashDirIncomes] = await Promise.all([
+        db.expense.findMany({
+          where: {
+            organizationId: orgId,
+            bankTransactions: { none: {} },
+            OR: [
+              { category: { name: { contains: "Director" } } },
+              { title: { contains: "Director" } },
+              { notes: { contains: "Director" } },
+              { vendor: { contains: searchKey } },
+              { title: { contains: searchKey } },
+            ],
+            NOT: [{ title: { contains: "kashvi" } }],
+          },
+          include: { category: true },
+          orderBy: { occurredAt: "asc" },
+        }),
+        db.income.findMany({
+          where: {
+            organizationId: orgId,
+            bankTransactions: { none: {} },
+            bankAccountId: null,
+            OR: [
+              { title: { contains: "Director" } },
+              { source: { contains: "Director" } },
+              { notes: { contains: "Director" } },
+            ],
+          },
+          orderBy: { receivedAt: "asc" },
+        }),
+      ]);
+
+      const allDirTxs = [
+        ...allDirBankTxs.map((t) => ({
+          id: t.id,
+          transactionDate: t.transactionDate,
+          type: t.type,
+          amount: t.amount,
+          description: t.description,
+          reference: t.reference,
+          chequeNumber: (t as any).chequeNumber || null,
+          bankAccount: t.bankAccount,
+        })),
+        ...cashDirExpenses.map((e) => ({
+          id: e.id,
+          transactionDate: e.occurredAt,
+          type: "WITHDRAWAL" as const,
+          amount: e.amount,
+          description: e.title,
+          reference: e.notes || "Director Cash Drawings",
+          chequeNumber: "CASH",
+          bankAccount: null,
+        })),
+        ...cashDirIncomes.map((i) => ({
+          id: i.id,
+          transactionDate: i.receivedAt,
+          type: "DEPOSIT" as const,
+          amount: i.amount,
+          description: i.title,
+          reference: i.notes || i.source || "Director Cash Injection",
+          chequeNumber: "CASH",
+          bankAccount: null,
+        })),
+      ].sort((a, b) => new Date(a.transactionDate).getTime() - new Date(b.transactionDate).getTime());
 
       let runningBal = 0;
       const enrichedAll = allDirTxs.map((t) => {
@@ -3888,6 +3954,11 @@ export default async function ModulePage({
                         {t.bankAccount && (
                           <div className="muted-text">
                             {t.bankAccount.bankName} · {t.bankAccount.accountNumber}
+                          </div>
+                        )}
+                        {!t.bankAccount && (
+                          <div className="muted-text" style={{ color: "var(--amber)", fontSize: 11 }}>
+                            Cash in Hand (Petty Cash / Vault)
                           </div>
                         )}
                       </td>

@@ -813,7 +813,12 @@ async function main() {
       const compName = meta ? meta.name : toTitleCase(raw);
       const key = (canonKey || raw).toLowerCase();
 
-      if (contactMap.has(key)) continue;
+      if (contactMap.has(key)) {
+        const existingId = contactMap.get(key)!;
+        contactMap.set(raw.toLowerCase(), existingId);
+        if (canonKey) contactMap.set(canonKey, existingId);
+        continue;
+      }
 
       const c = await prisma.contact.create({
         data: {
@@ -830,6 +835,7 @@ async function main() {
       });
       contactMap.set(key, c.id);
       contactMap.set(raw.toLowerCase(), c.id);
+      if (canonKey) contactMap.set(canonKey, c.id);
       if (meta) contactMap.set(meta.name.toLowerCase(), c.id);
     }
 
@@ -867,8 +873,24 @@ async function main() {
         });
         contactMap.set(key, c.id);
         contactMap.set(raw.toLowerCase(), c.id);
+        if (canonKey) contactMap.set(canonKey, c.id);
         if (meta) contactMap.set(meta.name.toLowerCase(), c.id);
       }
+    }
+
+    function resolveContactId(rawName: string | null | undefined): string | null {
+      if (!rawName) return null;
+      const raw = rawName.trim().toLowerCase();
+      if (contactMap.has(raw)) return contactMap.get(raw)!;
+      const canonKey = matchCanonicalKey(raw);
+      if (canonKey && contactMap.has(canonKey)) return contactMap.get(canonKey)!;
+      if (canonKey && CANONICAL_CONTACTS[canonKey] && contactMap.has(CANONICAL_CONTACTS[canonKey].name.toLowerCase())) {
+        return contactMap.get(CANONICAL_CONTACTS[canonKey].name.toLowerCase())!;
+      }
+      for (const [k, v] of contactMap.entries()) {
+        if (k.length >= 3 && (raw.includes(k) || k.includes(raw))) return v;
+      }
+      return null;
     }
 
     // Products & Stock
@@ -900,7 +922,7 @@ async function main() {
     let poCount = 0;
     for (const [, items] of purchaseGroups.entries()) {
       const first = items[0];
-      const contactId = contactMap.get(first.vendor.toLowerCase()) || null;
+      const contactId = resolveContactId(first.vendor);
       const subtotal = items.reduce((s: number, i: any) => s + Number(i.total), 0);
       const tax = items.reduce((s: number, i: any) => s + Number(i.vat || 0), 0);
       const total = subtotal + tax;
@@ -944,7 +966,7 @@ async function main() {
     let soCount = 0;
     for (const [, items] of salesGroups.entries()) {
       const first = items[0];
-      const contactId = contactMap.get(first.client.toLowerCase()) || null;
+      const contactId = resolveContactId(first.client);
       const subtotal = items.reduce((s: number, i: any) => s + Number(i.total), 0);
       const tax = items.reduce((s: number, i: any) => s + Number(i.vat || 0), 0);
       const total = subtotal + tax;
@@ -995,6 +1017,15 @@ async function main() {
               unitPrice: Number(i.unitPrice) || 0,
               amount: Number(i.total) || 0,
             })),
+          },
+          payments: {
+            create: [{
+              amount: total,
+              paidAt: orderDate,
+              method: "Settled",
+              reference: `Settlement for ${so.orderNumber}`,
+              notes: "Historical order settled in full",
+            }],
           },
         },
       });
@@ -1234,6 +1265,110 @@ async function main() {
     }
   }
   console.log(`Rental reconciliation populated with ${rentalPaymentsImported} actual payments.`);
+
+  // 10. BLACK SWAN NEPAL 2083-06-29 BS TRANSACTIONS & DIRECTOR CASH DRAWINGS (USER SPECIFIED)
+  console.log("\n--- SEEDING 2083-06-29 BS TRANSACTIONS (BLACK SWAN AP1 & DIRECTOR KALYAN KARN CASH) ---");
+  let blackSwan = await prisma.contact.findFirst({
+    where: { organizationId: company.id, name: { contains: "Black Swan" } },
+  });
+  if (!blackSwan) {
+    blackSwan = await prisma.contact.create({
+      data: {
+        organizationId: company.id,
+        type: ContactType.CUSTOMER,
+        name: "Black Swan Nepal",
+      },
+    });
+  }
+
+  const dirCat = await prisma.expenseCategory.findFirst({
+    where: { organizationId: company.id, name: { contains: "Director Current Account" } },
+  });
+
+  // 2083-06-29 BS is 2026-10-15 AD
+  const txDate2083 = new Date("2026-10-15T12:00:00.000Z");
+
+  // 1. Sales Order SO-7994542
+  await prisma.salesOrder.create({
+    data: {
+      organizationId: company.id,
+      orderNumber: "SO-7994542",
+      contactId: blackSwan.id,
+      status: OrderStatus.COMPLETED,
+      orderDate: txDate2083,
+      subtotal: 50000,
+      tax: 0,
+      discount: 0,
+      total: 50000,
+      notes: "AP1 Service Charge for Black Swan Nepal (2083-06-29 BS)",
+      stockPostedAt: txDate2083,
+      items: {
+        create: [{
+          description: "AP1 Service Charge",
+          quantity: 1,
+          unitPrice: 50000,
+          amount: 50000,
+        }],
+      },
+    },
+  });
+
+  // 2. Invoice INV-SO-7994542
+  await prisma.invoice.create({
+    data: {
+      organizationId: company.id,
+      invoiceNumber: "INV-SO-7994542",
+      contactId: blackSwan.id,
+      status: "PAID",
+      issueDate: txDate2083,
+      dueDate: txDate2083,
+      subtotal: 50000,
+      tax: 0,
+      discount: 0,
+      total: 50000,
+      paidAmount: 50000,
+      notes: "Tax invoice for order SO-7994542 - AP1 Service Charge (2083-06-29 BS)",
+      items: {
+        create: [{
+          description: "AP1 Service Charge",
+          quantity: 1,
+          unitPrice: 50000,
+          amount: 50000,
+          taxRate: 0,
+        }],
+      },
+    },
+  });
+
+  // 3. Direct Income Receipt (+ NPR 50,000 Cash in Hand)
+  await prisma.income.create({
+    data: {
+      organizationId: company.id,
+      title: "AP1 Service Charge From Black Swan",
+      source: "Black Swan Nepal",
+      amount: 50000,
+      receivedAt: txDate2083,
+      paymentMethod: "CASH",
+      contactId: blackSwan.id,
+      notes: "AP1 Service Charge From Black Swan [Cash in Hand] - 2083-06-29 BS",
+    },
+  });
+
+  // 4. Cash Out to Kalyan Kumar Karn Director Account (NPR 50,000 Cash)
+  await prisma.expense.create({
+    data: {
+      organizationId: company.id,
+      title: "Cash Out to Kalyan Kumar Karn Director [Director: Kalyan Kumar Karn]",
+      vendor: "Director: Kalyan Kumar Karn",
+      categoryId: dirCat ? dirCat.id : null,
+      type: ExpenseType.ONE_TIME,
+      amount: 50000,
+      occurredAt: txDate2083,
+      isEstimated: false,
+      notes: "[Director Account: DRAWINGS - Kalyan Kumar Karn] Cash given to director account Kalyan Karn on 2083-06-29 BS (Cash in Hand)",
+    },
+  });
+  console.log("Seeded Black Swan 50k AP1 service charge & Kalyan Karn 50k director cash drawings for 2083-06-29 BS.");
 
   console.log("\n=== MASTER SEED COMPLETED SUCCESSFULLY ===");
   console.log("Credentials:");
