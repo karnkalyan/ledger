@@ -2789,6 +2789,16 @@ button.filter-tab.active * {
   .audit-sheet { max-width: none !important; box-shadow: none !important; }
   .audit-sheet .report-section-block { break-inside: auto; }
   .audit-sheet .audit-avoid-break { break-inside: avoid; page-break-inside: avoid; }
+  .tenant-house-card,
+  .house-card-grid > div,
+  .rental-bill-details,
+  details,
+  details summary,
+  .table-card,
+  #electricity-meter-logger {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
   .company-print-logo { max-width: 42mm !important; max-height: 18mm !important; object-fit: contain !important; margin: 0 !important; flex-shrink: 0 !important; }
   .company-print-logo.compact { max-width: 30mm !important; max-height: 12mm !important; margin: 0 !important; }
   .company-print-logo-fallback { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; margin: 0 !important; flex-shrink: 0 !important; }

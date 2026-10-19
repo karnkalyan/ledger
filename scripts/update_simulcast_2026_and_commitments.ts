@@ -127,7 +127,8 @@ async function main() {
         accountType: "CANR (Current Account)",
         currency: "NPR",
         openingBalance: 5795.0,
-        currentBalance: 27944.68,
+        currentBalance: 87944.68,
+        holdAmount: 2500.0,
         isActive: true,
         notes: "Corporate current account verified against all 2023-2026 statements",
       },
@@ -141,7 +142,8 @@ async function main() {
         accountNumber: "02017249683",
         accountType: "CANR (Current Account)",
         openingBalance: 5795.0,
-        currentBalance: 27944.68,
+        currentBalance: 87944.68,
+        holdAmount: 2500.0,
         isActive: true,
       },
     });
@@ -239,7 +241,7 @@ async function main() {
   // Update bank current balance to the exact closing balance
   await prisma.bankAccount.update({
     where: { id: bankAccount.id },
-    data: { currentBalance: 27944.68 },
+    data: { currentBalance: 87944.68, holdAmount: 2500.0 },
   });
 
   console.log("\n================ SUMMARY ================");
@@ -250,7 +252,7 @@ async function main() {
   console.log(`  - Injections: ${directorDepCount} transactions (Rs. ${directorDepTotal.toLocaleString()})`);
   console.log(`  - Drawings: ${directorWdCount} transactions (Rs. ${directorWdTotal.toLocaleString()})`);
   console.log(`  - Net Director Position: Rs. ${(directorDepTotal - directorWdTotal).toLocaleString()}`);
-  console.log(`Bank Final Balance: Rs. 27,944.68`);
+  console.log(`Bank Final Balance: Rs. 87,944.68 (Hold: Rs. 2,500.00 | Available: Rs. 85,444.68)`);
   console.log("=========================================\n");
 }
 

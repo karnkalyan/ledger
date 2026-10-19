@@ -20,6 +20,10 @@ import {
   Calendar,
   Sparkles,
   Award,
+  Edit3,
+  Plus,
+  Trash2,
+  RotateCcw,
 } from "lucide-react";
 
 export type AuditLine = { label: string; amount: number; note?: string };
@@ -105,7 +109,12 @@ export interface CompanyAuditReportProps {
     auditorUdin?: string;
     auditorAddress?: string;
     directorName?: string;
+    directorTitle?: string;
+    directorSubtitle?: string;
     accountantName?: string;
+    accountantTitle?: string;
+    accountantSubtitle?: string;
+    reportDate?: string;
     authorizedCapital?: number;
     paidUpCapital?: number;
     shareCount?: number;
@@ -138,17 +147,27 @@ export function CompanyAuditReport({
 }: CompanyAuditReportProps) {
   const [activeTab, setActiveTab] = useState<string>("all");
 
-  // Statutory defaults matching official audit-report.pdf
-  const auditorFirm = propStatutory?.auditorFirm || "Bishnu Timilsina & Associates";
-  const auditorName = propStatutory?.auditorName || "Bishnu Prasad Timilsina";
-  const auditorCop = propStatutory?.auditorCop || 'COP No: 1106 "C"';
-  const auditorUdin = propStatutory?.auditorUdin || "250102RA605478RMCb";
-  const auditorAddress = propStatutory?.auditorAddress || "Bhaktapur, Nepal";
-  const directorName = propStatutory?.directorName || "Kalyan Kumar Karn";
-  const accountantName = propStatutory?.accountantName || "Diwakar Karna";
-  const authorizedCapital = propStatutory?.authorizedCapital || 1000000;
-  const paidUpCapital = propStatutory?.paidUpCapital || 100000;
-  const shareCount = propStatutory?.shareCount || 1000;
+  // Dynamic Statutory Signatories & Auditor Details (Assignable & Live-Updated)
+  const [auditorFirm, setAuditorFirm] = useState<string>(propStatutory?.auditorFirm || "Bishnu Timilsina & Associates");
+  const [auditorName, setAuditorName] = useState<string>(propStatutory?.auditorName || "Bishnu Prasad Timilsina");
+  const [auditorCop, setAuditorCop] = useState<string>(propStatutory?.auditorCop || 'COP No: 1106 "C"');
+  const [auditorUdin, setAuditorUdin] = useState<string>(propStatutory?.auditorUdin || "250102RA605478RMCb");
+  const [auditorAddress, setAuditorAddress] = useState<string>(propStatutory?.auditorAddress || "Bhaktapur, Nepal");
+
+  const [directorName, setDirectorName] = useState<string>(propStatutory?.directorName || "Kalyan Kumar Karn");
+  const [directorTitle, setDirectorTitle] = useState<string>(propStatutory?.directorTitle || "Director / Single Shareholder");
+  const [directorSubtitle, setDirectorSubtitle] = useState<string>(propStatutory?.directorSubtitle || "For & on behalf of Board");
+
+  const [accountantName, setAccountantName] = useState<string>(propStatutory?.accountantName || "Diwakar Karna");
+  const [accountantTitle, setAccountantTitle] = useState<string>(propStatutory?.accountantTitle || "Accountant / Lead");
+  const [accountantSubtitle, setAccountantSubtitle] = useState<string>(propStatutory?.accountantSubtitle || "FlowLedger Accounts Division");
+
+  const [reportDate, setReportDate] = useState<string>(propStatutory?.reportDate || "2083-07-02 BS (2026-10-19 AD)");
+  const [authorizedCapital, setAuthorizedCapital] = useState<number>(propStatutory?.authorizedCapital || 1000000);
+  const [paidUpCapital, setPaidUpCapital] = useState<number>(propStatutory?.paidUpCapital || 100000);
+  const [shareCount, setShareCount] = useState<number>(propStatutory?.shareCount || 1000);
+
+  const [isAssignOpen, setIsAssignOpen] = useState<boolean>(false);
 
   // Bank calculations
   const bankBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
@@ -217,29 +236,69 @@ export function CompanyAuditReport({
   const totalEquity = paidUpCapital + retainedEarnings;
   const totalEquityAndLiabilities = totalEquity + totalLiabilities;
 
-  // Employees Schedule
-  const employees: AuditEmployee[] = propEmployees && propEmployees.length > 0 ? propEmployees : [
-    {
-      name: "Kalyan Kumar Karna",
-      designation: "Managing Director / Software Architect",
-      pan: "601928374",
-      monthlySalary: 30000,
-      grossSalary: 360000,
-      sst: 3600,
-      taxTds: 0,
-      netPay: 356400,
-    },
-    {
-      name: "Diwakar Karna",
-      designation: "Accountant / Operations Lead",
-      pan: "601928374",
-      monthlySalary: 20000,
-      grossSalary: 240000,
-      sst: 2400,
-      taxTds: 0,
-      netPay: 237600,
-    },
-  ];
+  // Dynamic Employees Schedule (Assignable & Live-Updated)
+  const [employees, setEmployees] = useState<AuditEmployee[]>(() =>
+    propEmployees && propEmployees.length > 0
+      ? propEmployees
+      : [
+          {
+            name: "Kalyan Kumar Karna",
+            designation: "Managing Director / Software Architect",
+            pan: organization.taxNumber || organization.panVatNumber || "601928374",
+            monthlySalary: 30000,
+            grossSalary: 360000,
+            sst: 3600,
+            taxTds: 0,
+            netPay: 356400,
+          },
+          {
+            name: "Diwakar Karna",
+            designation: "Accountant / Operations Lead",
+            pan: organization.taxNumber || organization.panVatNumber || "601928374",
+            monthlySalary: 20000,
+            grossSalary: 240000,
+            sst: 2400,
+            taxTds: 0,
+            netPay: 237600,
+          },
+        ]
+  );
+
+  const handleUpdateEmployee = (index: number, field: keyof AuditEmployee, val: any) => {
+    setEmployees((prev) => {
+      const copy = [...prev];
+      const cur = { ...copy[index], [field]: val };
+      if (field === "monthlySalary") {
+        const m = Number(val) || 0;
+        cur.monthlySalary = m;
+        cur.grossSalary = m * 12;
+        cur.sst = Math.round(cur.grossSalary * 0.01);
+        cur.netPay = cur.grossSalary - cur.sst - (cur.taxTds || 0);
+      }
+      copy[index] = cur;
+      return copy;
+    });
+  };
+
+  const handleAddEmployee = () => {
+    setEmployees((prev) => [
+      ...prev,
+      {
+        name: "New Staff Member",
+        designation: "Associate / Analyst",
+        pan: organization.taxNumber || organization.panVatNumber || "601928374",
+        monthlySalary: 25000,
+        grossSalary: 300000,
+        sst: 3000,
+        taxTds: 0,
+        netPay: 297000,
+      },
+    ]);
+  };
+
+  const handleRemoveEmployee = (index: number) => {
+    setEmployees((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const totalGrossSalary = employees.reduce((s, e) => s + e.grossSalary, 0);
   const totalSst = employees.reduce((s, e) => s + e.sst, 0);
@@ -308,30 +367,30 @@ export function CompanyAuditReport({
         <div className="report-period-badge">{fiscalYear.label}</div>
         <div className="report-period-sub">{fiscalYear.start} to {fiscalYear.end}</div>
         <div className="report-generated-timestamp">
-          Generated: {formatDualDate(generatedAt)}
+          Date: {reportDate}
         </div>
         {subtitle && <div style={{ fontSize: "8pt", color: "#64748b", marginTop: 2 }}>{subtitle}</div>}
       </div>
     </header>
   );
 
-  // Statutory Triple Signature Block
+  // Statutory Triple Signature Block (Dynamic & Fully Assignable)
   const SignaturesBlock = () => (
     <div className="audit-signature-grid">
       <div className="audit-sign-cell">
         <div className="audit-sign-line" />
         <strong>{directorName}</strong>
-        <span>Director / Single Shareholder</span>
-        <span>For &amp; on behalf of Board</span>
+        <span>{directorTitle}</span>
+        <span>{directorSubtitle}</span>
         <span style={{ fontSize: "7.5pt", color: "#64748b" }}>{organization.name}</span>
       </div>
 
       <div className="audit-sign-cell">
         <div className="audit-sign-line" />
         <strong>{accountantName}</strong>
-        <span>Accountant / Lead</span>
-        <span>FlowLedger Accounts Division</span>
-        <span style={{ fontSize: "7.5pt", color: "#64748b" }}>Date: {formatDualDate(generatedAt)}</span>
+        <span>{accountantTitle}</span>
+        <span>{accountantSubtitle}</span>
+        <span style={{ fontSize: "7.5pt", color: "#64748b" }}>Date: {reportDate}</span>
       </div>
 
       <div className="audit-sign-cell" style={{ borderLeft: "1px dashed #cbd5e1", paddingLeft: 16 }}>
@@ -361,9 +420,369 @@ export function CompanyAuditReport({
         </div>
 
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <button
+            type="button"
+            onClick={() => setIsAssignOpen(!isAssignOpen)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "8px 14px",
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 650,
+              cursor: "pointer",
+              border: isAssignOpen ? "1px solid var(--brand)" : "1px solid var(--line)",
+              background: isAssignOpen ? "var(--brand)" : "var(--surface)",
+              color: isAssignOpen ? "#fff" : "var(--text)",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <Edit3 size={15} />
+            <span>{isAssignOpen ? "Close Signatories Editor" : "Assign Signatories & Personnel"}</span>
+          </button>
           <PrintButton label="Print Complete Audit Report / Save PDF" defaultOrientation="portrait" />
         </div>
       </div>
+
+      {/* Assign Signatories & Personnel Drawer (Hidden in Print) */}
+      {isAssignOpen && (
+        <section
+          className="no-print"
+          style={{
+            background: "var(--surface)",
+            border: "1px solid var(--brand)",
+            borderRadius: 12,
+            padding: 20,
+            marginBottom: 24,
+            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.08)",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, borderBottom: "1px solid var(--line)", paddingBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ background: "rgba(14,165,233,0.12)", padding: 8, borderRadius: 8 }}>
+                <Edit3 size={18} style={{ color: "var(--brand)" }} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 750 }}>
+                  Assign Audit Signatories, Auditor &amp; Staff Personnel
+                </h3>
+                <p style={{ margin: "2px 0 0", fontSize: 12, color: "#64748b" }}>
+                  Customize the registered auditor, company director, accountant, report date, and Schedule 14 staff roster. All changes update all 16 pages and printable PDF instantly.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setAuditorName("Bishnu Prasad Timilsina");
+                setAuditorFirm("Bishnu Timilsina & Associates");
+                setAuditorCop('COP No: 1106 "C"');
+                setAuditorUdin("250102RA605478RMCb");
+                setAuditorAddress("Bhaktapur, Nepal");
+                setDirectorName("Kalyan Kumar Karn");
+                setDirectorTitle("Director / Single Shareholder");
+                setDirectorSubtitle("For & on behalf of Board");
+                setAccountantName("Diwakar Karna");
+                setAccountantTitle("Accountant / Lead");
+                setAccountantSubtitle("FlowLedger Accounts Division");
+                setReportDate("2083-07-02 BS (2026-10-19 AD)");
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: 12,
+                color: "#64748b",
+                background: "none",
+                border: "1px solid var(--line)",
+                padding: "6px 12px",
+                borderRadius: 6,
+                cursor: "pointer",
+              }}
+            >
+              <RotateCcw size={14} />
+              Reset Defaults
+            </button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
+            {/* Column 1: Registered Auditor */}
+            <div style={{ background: "#f8fafc", padding: 14, borderRadius: 8, border: "1px solid var(--line)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700, fontSize: 13, marginBottom: 10, color: "#0f172a" }}>
+                <ShieldCheck size={16} style={{ color: "var(--brand)" }} />
+                <span>1. Independent Registered Auditor</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 650, color: "#475569" }}>Auditor Full Name</label>
+                  <input
+                    type="text"
+                    value={auditorName}
+                    onChange={(e) => setAuditorName(e.target.value)}
+                    placeholder="e.g. Bishnu Prasad Timilsina"
+                    className="input-field"
+                    style={{ width: "100%", padding: "6px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--line)", background: "#fff", marginTop: 2 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 650, color: "#475569" }}>Proprietorship / Firm Name</label>
+                  <input
+                    type="text"
+                    value={auditorFirm}
+                    onChange={(e) => setAuditorFirm(e.target.value)}
+                    placeholder="e.g. Bishnu Timilsina & Associates"
+                    className="input-field"
+                    style={{ width: "100%", padding: "6px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--line)", background: "#fff", marginTop: 2 }}
+                  />
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 650, color: "#475569" }}>COP No.</label>
+                    <input
+                      type="text"
+                      value={auditorCop}
+                      onChange={(e) => setAuditorCop(e.target.value)}
+                      placeholder='e.g. COP No: 1106 "C"'
+                      className="input-field"
+                      style={{ width: "100%", padding: "6px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--line)", background: "#fff", marginTop: 2 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 650, color: "#475569" }}>UDIN Reference</label>
+                    <input
+                      type="text"
+                      value={auditorUdin}
+                      onChange={(e) => setAuditorUdin(e.target.value)}
+                      placeholder="e.g. 250102RA605478RMCb"
+                      className="input-field"
+                      style={{ width: "100%", padding: "6px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--line)", background: "#fff", marginTop: 2 }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 650, color: "#475569" }}>Location / Practice Address</label>
+                  <input
+                    type="text"
+                    value={auditorAddress}
+                    onChange={(e) => setAuditorAddress(e.target.value)}
+                    placeholder="e.g. Bhaktapur, Nepal"
+                    className="input-field"
+                    style={{ width: "100%", padding: "6px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--line)", background: "#fff", marginTop: 2 }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Column 2: Director / Board */}
+            <div style={{ background: "#f8fafc", padding: 14, borderRadius: 8, border: "1px solid var(--line)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700, fontSize: 13, marginBottom: 10, color: "#0f172a" }}>
+                <Building2 size={16} style={{ color: "var(--brand)" }} />
+                <span>2. Director / Shareholder</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 650, color: "#475569" }}>Director Full Name</label>
+                  <input
+                    type="text"
+                    value={directorName}
+                    onChange={(e) => setDirectorName(e.target.value)}
+                    placeholder="e.g. Kalyan Kumar Karn"
+                    className="input-field"
+                    style={{ width: "100%", padding: "6px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--line)", background: "#fff", marginTop: 2 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 650, color: "#475569" }}>Title / Role</label>
+                  <input
+                    type="text"
+                    value={directorTitle}
+                    onChange={(e) => setDirectorTitle(e.target.value)}
+                    placeholder="e.g. Director / Single Shareholder"
+                    className="input-field"
+                    style={{ width: "100%", padding: "6px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--line)", background: "#fff", marginTop: 2 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 650, color: "#475569" }}>Capacity Subtitle</label>
+                  <input
+                    type="text"
+                    value={directorSubtitle}
+                    onChange={(e) => setDirectorSubtitle(e.target.value)}
+                    placeholder="e.g. For & on behalf of Board"
+                    className="input-field"
+                    style={{ width: "100%", padding: "6px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--line)", background: "#fff", marginTop: 2 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 650, color: "#475569" }}>Audit Report Signature Date</label>
+                  <input
+                    type="text"
+                    value={reportDate}
+                    onChange={(e) => setReportDate(e.target.value)}
+                    placeholder="e.g. 2083-07-02 BS (2026-10-19 AD)"
+                    className="input-field"
+                    style={{ width: "100%", padding: "6px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--line)", background: "#fff", marginTop: 2 }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Column 3: Accountant */}
+            <div style={{ background: "#f8fafc", padding: 14, borderRadius: 8, border: "1px solid var(--line)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700, fontSize: 13, marginBottom: 10, color: "#0f172a" }}>
+                <Receipt size={16} style={{ color: "var(--brand)" }} />
+                <span>3. Accountant / Accounts Lead</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 650, color: "#475569" }}>Accountant Full Name</label>
+                  <input
+                    type="text"
+                    value={accountantName}
+                    onChange={(e) => setAccountantName(e.target.value)}
+                    placeholder="e.g. Diwakar Karna"
+                    className="input-field"
+                    style={{ width: "100%", padding: "6px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--line)", background: "#fff", marginTop: 2 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 650, color: "#475569" }}>Title / Role</label>
+                  <input
+                    type="text"
+                    value={accountantTitle}
+                    onChange={(e) => setAccountantTitle(e.target.value)}
+                    placeholder="e.g. Accountant / Lead"
+                    className="input-field"
+                    style={{ width: "100%", padding: "6px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--line)", background: "#fff", marginTop: 2 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 650, color: "#475569" }}>Division / Department</label>
+                  <input
+                    type="text"
+                    value={accountantSubtitle}
+                    onChange={(e) => setAccountantSubtitle(e.target.value)}
+                    placeholder="e.g. FlowLedger Accounts Division"
+                    className="input-field"
+                    style={{ width: "100%", padding: "6px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--line)", background: "#fff", marginTop: 2 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 650, color: "#475569" }}>Reporting Organization</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={organization.name}
+                    className="input-field"
+                    style={{ width: "100%", padding: "6px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--line)", background: "#e2e8f0", color: "#64748b", marginTop: 2 }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Schedule 14 Personnel Table in Drawer */}
+          <div style={{ marginTop: 18, borderTop: "1px solid var(--line)", paddingTop: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Users size={16} style={{ color: "var(--brand)" }} />
+                <strong style={{ fontSize: 13 }}>Schedule 14 Staff Roster (SST 1% &amp; Payroll Schedule)</strong>
+              </div>
+              <button
+                type="button"
+                onClick={handleAddEmployee}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  fontSize: 12,
+                  fontWeight: 650,
+                  color: "var(--brand)",
+                  background: "rgba(14,165,233,0.12)",
+                  border: "none",
+                  padding: "4px 10px",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                }}
+              >
+                <Plus size={14} /> Add Staff Member
+              </button>
+            </div>
+
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ background: "#f1f5f9", textAlign: "left" }}>
+                    <th style={{ padding: "6px 8px" }}>Staff Name</th>
+                    <th style={{ padding: "6px 8px" }}>Designation</th>
+                    <th style={{ padding: "6px 8px" }}>PAN</th>
+                    <th style={{ padding: "6px 8px", width: 120 }}>Monthly Base ({currency})</th>
+                    <th style={{ padding: "6px 8px", width: 120 }}>Annual Gross</th>
+                    <th style={{ padding: "6px 8px", width: 100 }}>SST (1%)</th>
+                    <th style={{ padding: "6px 8px", width: 50, textAlign: "center" }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {employees.map((emp, i) => (
+                    <tr key={i} style={{ borderBottom: "1px solid var(--line)" }}>
+                      <td style={{ padding: "4px 8px" }}>
+                        <input
+                          type="text"
+                          value={emp.name}
+                          onChange={(e) => handleUpdateEmployee(i, "name", e.target.value)}
+                          style={{ width: "100%", padding: "4px 6px", fontSize: 12, borderRadius: 4, border: "1px solid var(--line)" }}
+                        />
+                      </td>
+                      <td style={{ padding: "4px 8px" }}>
+                        <input
+                          type="text"
+                          value={emp.designation}
+                          onChange={(e) => handleUpdateEmployee(i, "designation", e.target.value)}
+                          style={{ width: "100%", padding: "4px 6px", fontSize: 12, borderRadius: 4, border: "1px solid var(--line)" }}
+                        />
+                      </td>
+                      <td style={{ padding: "4px 8px" }}>
+                        <input
+                          type="text"
+                          value={emp.pan || ""}
+                          onChange={(e) => handleUpdateEmployee(i, "pan", e.target.value)}
+                          style={{ width: "100%", padding: "4px 6px", fontSize: 12, borderRadius: 4, border: "1px solid var(--line)" }}
+                        />
+                      </td>
+                      <td style={{ padding: "4px 8px" }}>
+                        <input
+                          type="number"
+                          value={emp.monthlySalary}
+                          onChange={(e) => handleUpdateEmployee(i, "monthlySalary", e.target.value)}
+                          style={{ width: "100%", padding: "4px 6px", fontSize: 12, borderRadius: 4, border: "1px solid var(--line)", textAlign: "right" }}
+                        />
+                      </td>
+                      <td style={{ padding: "4px 8px", fontWeight: 650 }}>
+                        {money(emp.grossSalary, currency)}
+                      </td>
+                      <td style={{ padding: "4px 8px", color: "var(--red)" }}>
+                        {money(emp.sst, currency)}
+                      </td>
+                      <td style={{ padding: "4px 8px", textAlign: "center" }}>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveEmployee(i)}
+                          title="Remove staff"
+                          style={{ background: "none", border: "none", color: "var(--red)", cursor: "pointer", padding: 4 }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Filter / Quick Navigation Tabs */}
       <div className="report-filter-nav no-print" style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 24 }}>
@@ -1305,7 +1724,7 @@ export function CompanyAuditReport({
             </thead>
             <tbody>
               {employees.map((emp, idx) => (
-                <tr key={emp.name}>
+                <tr key={`${emp.name}-${idx}`}>
                   <td>{idx + 1}</td>
                   <td><strong>{emp.name}</strong></td>
                   <td>{emp.designation}</td>

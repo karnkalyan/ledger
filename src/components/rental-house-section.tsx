@@ -676,11 +676,14 @@ export function RentalHouseSection({
                     return (
                       <details
                         key={bill.id}
+                        className="rental-bill-details"
                         style={{
                           background: "var(--soft)",
                           border: "1px solid var(--line)",
                           borderRadius: 8,
                           padding: "8px 12px",
+                          breakInside: "avoid",
+                          pageBreakInside: "avoid",
                         }}
                       >
                         <summary
@@ -692,6 +695,8 @@ export function RentalHouseSection({
                             gap: 12,
                             flexWrap: "wrap",
                             fontSize: 12,
+                            breakInside: "avoid",
+                            pageBreakInside: "avoid",
                           }}
                         >
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

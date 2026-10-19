@@ -3408,6 +3408,24 @@
         "description": "Fund Trf frm NABIL BANK LTD - WD:1790090175061 FUN",
         "reference": "SN-6",
         "source_pdf": "statement-2026-09-01-to-2026-10-07 (1).pdf"
+      },
+      {
+        "date": "2026-10-15",
+        "type": "WITHDRAWAL",
+        "amount": 15000.0,
+        "balance": 12944.68,
+        "description": "Fund Trf to KALYAN KUMAR KARN- Kalyan Kumar Kar FUN MOB/SBLMOB01Kalyan Kumar Karn",
+        "reference": "SN-1",
+        "source_pdf": "statement-2026-10-01-to-2026-10-18.pdf"
+      },
+      {
+        "date": "2026-10-17",
+        "type": "DEPOSIT",
+        "amount": 75000.0,
+        "balance": 87944.68,
+        "description": "cIPS Fund Trf frm IPS E-PAYMENT I-FUN IPS/SBLIPS02cIPS/Mediko Life",
+        "reference": "SN-2",
+        "source_pdf": "statement-2026-10-01-to-2026-10-18.pdf"
       }
     ]
   },
@@ -5004,7 +5022,8 @@
     "primeminister office",
     "riddhi siddhi multipurpose",
     "simul",
-    "tv today"
+    "tv today",
+    "Mediko Life"
   ],
   "vendors": [
     "AIR",

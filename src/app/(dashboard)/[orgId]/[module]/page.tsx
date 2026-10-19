@@ -870,7 +870,7 @@ export default async function ModulePage({
 
           <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 24 }}>
             {/* HOUSE OWNER & OFFICE TENANCY MANAGEMENT */}
-            <div className="table-card" style={{ padding: 20 }}>
+            <div className="table-card" style={{ padding: 20, breakInside: "avoid", pageBreakInside: "avoid" }}>
               <RentalHouseSection
                 orgId={orgId}
                 orgKind={organization.kind}
@@ -1042,8 +1042,8 @@ export default async function ModulePage({
         </div>
 
         {/* ELECTRICITY METER READING & AUTO BILL ADJUSTMENT */}
-        <div id="electricity-meter-logger" className="table-card" style={{ padding: 20, marginTop: 20 }}>
-          <div style={{ marginBottom: 16 }}>
+        <div id="electricity-meter-logger" className={`table-card ${electricityLogs.length === 0 ? "no-print" : ""}`} style={{ padding: 20, marginTop: 20, breakInside: "avoid", pageBreakInside: "avoid" }}>
+          <div className="no-print" style={{ marginBottom: 16 }}>
             <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
               Electricity Meter Unit Reading &amp; Auto Bill
             </h3>
@@ -1052,13 +1052,15 @@ export default async function ModulePage({
             </p>
           </div>
 
-          <ElectricityReadingForm
-            orgId={orgId}
-            currency={currency}
-            initialLastUnit={autoOldLastUnit}
-            defaultRate={electricityRate}
-            defaultMonth={currentBsMonthKey}
-          />
+          <div className="no-print">
+            <ElectricityReadingForm
+              orgId={orgId}
+              currency={currency}
+              initialLastUnit={autoOldLastUnit}
+              defaultRate={electricityRate}
+              defaultMonth={currentBsMonthKey}
+            />
+          </div>
 
           {/* Past Electricity Records Table */}
           {electricityLogs.length > 0 && (
@@ -3696,16 +3698,21 @@ export default async function ModulePage({
             invoiceTax={invoiceTax}
             employees={statutoryEmployees}
             statutoryDetails={{
-              auditorFirm: "Bishnu Timilsina & Associates",
-              auditorName: "Bishnu Prasad Timilsina",
-              auditorCop: "COP No: 1106 \"C\"",
-              auditorUdin: "250102RA605478RMCb",
-              auditorAddress: "Bhaktapur, Nepal",
-              directorName: "Kalyan Kumar Karn",
-              accountantName: "Diwakar Karna",
-              authorizedCapital: 1000000,
-              paidUpCapital: 100000,
-              shareCount: 1000,
+              auditorFirm: (query.auditorFirm as string) || "Bishnu Timilsina & Associates",
+              auditorName: (query.auditorName as string) || "Bishnu Prasad Timilsina",
+              auditorCop: (query.auditorCop as string) || "COP No: 1106 \"C\"",
+              auditorUdin: (query.auditorUdin as string) || "250102RA605478RMCb",
+              auditorAddress: (query.auditorAddress as string) || "Bhaktapur, Nepal",
+              directorName: (query.directorName as string) || "Kalyan Kumar Karn",
+              directorTitle: (query.directorTitle as string) || "Director / Single Shareholder",
+              directorSubtitle: (query.directorSubtitle as string) || "For & on behalf of Board",
+              accountantName: (query.accountantName as string) || "Diwakar Karna",
+              accountantTitle: (query.accountantTitle as string) || "Accountant / Lead",
+              accountantSubtitle: (query.accountantSubtitle as string) || "FlowLedger Accounts Division",
+              reportDate: (query.reportDate as string) || "2083-07-02 BS (2026-10-19 AD)",
+              authorizedCapital: Number(query.authorizedCapital) || 1000000,
+              paidUpCapital: Number(query.paidUpCapital) || 100000,
+              shareCount: Number(query.shareCount) || 1000,
             }}
           />
         </>
