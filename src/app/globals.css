@@ -2305,16 +2305,40 @@ button.filter-tab.active * {
     margin: 8mm 10mm 10mm 10mm;
   }
 
+  /* Force pure clean light mode tokens regardless of screen dark/light mode */
+  :root,
+  [data-theme="dark"],
+  html,
+  body {
+    --bg: #ffffff !important;
+    --surface: #ffffff !important;
+    --surface-raised: #f8fafc !important;
+    --soft: #f8fafc !important;
+    --soft-hover: #f1f5f9 !important;
+    --line: #cbd5e1 !important;
+    --line-strong: #94a3b8 !important;
+    --text: #0f172a !important;
+    --text-secondary: #334155 !important;
+    --text-muted: #64748b !important;
+    --text-dim: #94a3b8 !important;
+    color-scheme: light !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+  }
+
   *, *::before, *::after {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     box-sizing: border-box !important;
+    color-scheme: light !important;
   }
 
   html, body {
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
+    background-color: #ffffff !important;
     color: #0f172a !important;
     font-size: 10.5pt !important;
     line-height: 1.4 !important;
@@ -2322,6 +2346,43 @@ button.filter-tab.active * {
     height: auto !important;
     min-height: 0 !important;
     overflow: visible !important;
+  }
+
+  /* Strip dark background colors from all cards and tables during printing */
+  .table-card,
+  .kpi-card,
+  .doc-lines-card,
+  .report-document-sheet,
+  .doc-summary-card,
+  .entry-form-card,
+  .tenant-house-card,
+  table,
+  thead,
+  tbody,
+  tr,
+  th,
+  td {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  th, thead th {
+    background: #f1f5f9 !important;
+    background-color: #f1f5f9 !important;
+    color: #1e293b !important;
+  }
+
+  .badge,
+  .status-pill {
+    background: #f1f5f9 !important;
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
   }
 
   /* Hide navigation, toolbars, sidebar, drawers, filter controls */
@@ -3096,14 +3157,29 @@ button.filter-preset-chip.active * {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  overflow: visible !important;
   margin: 10px 0 16px 0;
   box-shadow: var(--shadow-sm);
+  position: relative;
+}
+
+.doc-lines-scroll-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-bottom: 80px;
+  margin-bottom: -60px;
+}
+
+.doc-lines-body {
+  min-height: 180px;
+  position: relative;
 }
 
 .doc-lines-header {
   display: grid;
-  grid-template-columns: 3.5fr 1fr 1.3fr 0.9fr 1.3fr 44px;
+  grid-template-columns: minmax(260px, 3.5fr) minmax(75px, 1fr) minmax(95px, 1.3fr) minmax(70px, 0.9fr) minmax(110px, 1.3fr) 44px;
+  min-width: 680px;
   gap: 12px;
   padding: 10px 14px;
   background: var(--soft);
@@ -3117,13 +3193,15 @@ button.filter-preset-chip.active * {
 
 .doc-line-row {
   display: grid;
-  grid-template-columns: 3.5fr 1fr 1.3fr 0.9fr 1.3fr 44px;
+  grid-template-columns: minmax(260px, 3.5fr) minmax(75px, 1fr) minmax(95px, 1.3fr) minmax(70px, 0.9fr) minmax(110px, 1.3fr) 44px;
+  min-width: 680px;
   gap: 12px;
   padding: 10px 14px;
   align-items: center;
   border-bottom: 1px solid var(--line);
   background: var(--surface);
   transition: background 0.15s ease;
+  position: relative;
 }
 
 .doc-line-row:last-child {

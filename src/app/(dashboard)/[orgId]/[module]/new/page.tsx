@@ -53,7 +53,7 @@ export default async function NewEntryPage({params, searchParams}: {
   module === "expenses" ? db.expenseCategory.findMany({where:{organizationId:orgId},orderBy:{name:"asc"}}) : Promise.resolve([]),
   commerce || module === "leads" || module === "income" || module === "banking" ? db.contact.findMany({where:{organizationId:orgId, ...(commerce ? {type:{in:module === "purchase" ? ["VENDOR","BOTH"] : ["CUSTOMER","BOTH"]}} : {})},orderBy:{name:"asc"}}) : Promise.resolve([]),
   commerce || module === "stock" ? db.product.findMany({where:{organizationId:orgId, ...(commerce ? {active:true} : {})},orderBy:{name:"asc"}}) : Promise.resolve([]),
-  ["payroll","leaves","tasks"].includes(module) ? db.employee.findMany({where:{organizationId:orgId, ...(module === "payroll" ? {status:"ACTIVE"} : {})},orderBy:{name:"asc"}}) : Promise.resolve([]),
+  ["payroll","leaves","tasks","staff"].includes(module) ? db.employee.findMany({where:{organizationId:orgId, ...(module === "payroll" ? {status:"ACTIVE"} : {})},orderBy:{name:"asc"}}) : Promise.resolve([]),
   module === "banking" || module === "income" || module === "expenses" ? db.bankAccount.findMany({where:{organizationId:orgId},orderBy:{bankName:"asc"}}) : Promise.resolve([]),
   module === "expenses" ? db.income.aggregate({where:{organizationId:orgId, paymentMethod:"CASH"}, _sum:{amount:true}}) : Promise.resolve({_sum:{amount:null}}),
   module === "expenses" ? db.expense.aggregate({where:{organizationId:orgId, notes:{contains:"Cash in Hand"}, isEstimated:false}, _sum:{amount:true}}) : Promise.resolve({_sum:{amount:null}}),
@@ -347,25 +347,106 @@ export default async function NewEntryPage({params, searchParams}: {
               <div className="form-actions"><button className="primary-btn">Save Product</button></div>
             </form>
           </>); break;
- case "add-employee": form = (<>
-            <form action={saveEmployeeAction}>
-              <FormPendingFeedback processingMessage="Saving team member..." successMessage="Team member created successfully" />
-              <input type="hidden" name="orgId" value={orgId} />
-              <div className="form-grid">
-                <label className="field">Employee Code<input name="employeeCode" required placeholder="EMP-001" /></label>
-                <label className="field">Full Name<input name="name" required /></label>
-                <label className="field">Email<input name="email" type="email" /></label>
-                <label className="field">Phone<input name="phone" /></label>
-                <label className="field">Designation<input name="designation" /></label>
-                <label className="field">Department<input name="department" /></label>
-                <div className="field full">
-                  <NepaliDatePicker name="joinDate" label="Join Date (BS / AD)" />
-                </div>
-                <label className="field full">Basic Monthly Salary (NPR)<input name="basicSalary" type="number" min="0" step="0.01" /></label>
-              </div>
-              <div className="form-actions"><button className="primary-btn">Save Member</button></div>
-            </form>
-          </>); break;
+  case "add-employee": {
+    const existingDepts = Array.from(new Set(staff.map((s) => s.department).filter(Boolean))) as string[];
+    const existingDesigs = Array.from(new Set(staff.map((s) => s.designation).filter(Boolean))) as string[];
+
+    let orgDepts: string[] = [];
+    if (organization.departments) {
+      try {
+        const p = JSON.parse(organization.departments);
+        if (Array.isArray(p)) orgDepts = p;
+      } catch {
+        orgDepts = organization.departments.split(",").map((s) => s.trim()).filter(Boolean);
+      }
+    }
+
+    let orgDesigs: string[] = [];
+    if (organization.designations) {
+      try {
+        const p = JSON.parse(organization.designations);
+        if (Array.isArray(p)) orgDesigs = p;
+      } catch {
+        orgDesigs = organization.designations.split(",").map((s) => s.trim()).filter(Boolean);
+      }
+    }
+
+    const defaultDepts = [
+      "Accounts & Finance",
+      "Engineering & Tech",
+      "Executive & Management",
+      "Sales & Marketing",
+      "Operations",
+      "Human Resources",
+      "Administration",
+      "Customer Support",
+      "Procurement & Supply Chain"
+    ];
+    const defaultDesigs = [
+      "Director",
+      "Managing Director",
+      "Chief Executive Officer (CEO)",
+      "Chief Technology Officer (CTO)",
+      "Finance Manager",
+      "Senior Accountant",
+      "Junior Accountant",
+      "Software Engineer",
+      "Full Stack Developer",
+      "Sales Executive",
+      "HR Lead",
+      "Operations Associate",
+      "Office Administrator"
+    ];
+
+    const allDepartments = Array.from(new Set([...orgDepts, ...existingDepts, ...defaultDepts]));
+    const allDesignations = Array.from(new Set([...orgDesigs, ...existingDesigs, ...defaultDesigs]));
+
+    form = (<>
+             <form action={saveEmployeeAction}>
+               <FormPendingFeedback processingMessage="Saving team member..." successMessage="Team member created successfully" />
+               <input type="hidden" name="orgId" value={orgId} />
+               <div className="form-grid">
+                 <label className="field">Employee Code<input name="employeeCode" required placeholder="EMP-001" /></label>
+                 <label className="field">Full Name<input name="name" required placeholder="Employee full name" /></label>
+                 <label className="field">Email<input name="email" type="email" placeholder="official@company.com" /></label>
+                 <label className="field">Phone<input name="phone" placeholder="+977-98XXXXXXXX" /></label>
+                 <label className="field">
+                   Designation (Role)
+                   <select name="designation" defaultValue="Software Engineer" required>
+                     <option value="">Select Designation...</option>
+                     {allDesignations.map((d) => (
+                       <option key={d} value={d}>
+                         {d}
+                       </option>
+                     ))}
+                   </select>
+                   <span style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                     Select role or configure in <Link href={`/${orgId}/settings`} style={{ color: "var(--brand)" }}>Settings</Link>
+                   </span>
+                 </label>
+                 <label className="field">
+                   Department
+                   <select name="department" defaultValue="Engineering & Tech" required>
+                     <option value="">Select Department...</option>
+                     {allDepartments.map((d) => (
+                       <option key={d} value={d}>
+                         {d}
+                       </option>
+                     ))}
+                   </select>
+                   <span style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                     Select department or configure in <Link href={`/${orgId}/settings`} style={{ color: "var(--brand)" }}>Settings</Link>
+                   </span>
+                 </label>
+                 <div className="field full">
+                   <NepaliDatePicker name="joinDate" label="Join Date (BS / AD)" />
+                 </div>
+                 <label className="field full">Basic Monthly Salary (NPR)<input name="basicSalary" type="number" min="0" step="0.01" placeholder="e.g. 50000" /></label>
+               </div>
+               <div className="form-actions"><button className="primary-btn">Save Member</button></div>
+             </form>
+           </>); break;
+  }
  case "new-payroll": form = (<>
             <form action={savePayrollAction}>
               <FormPendingFeedback processingMessage="Generating payroll record..." successMessage="Payroll record created successfully" />

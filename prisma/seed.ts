@@ -576,45 +576,17 @@ async function main() {
   await prisma.reminder.deleteMany({ where: { organizationId: company.id } });
   console.log("All previous company records cleaned successfully.");
 
-  // 6. OFFICE COMMITMENTS (SIMULCAST)
-  // Office Rent: 17,500
-  // Office Electricity: 15 rupees per unit (150 units = 2,250)
-  console.log("\n--- CONFIGURING OFFICE COMMITMENTS (SIMULCAST) ---");
-
-  const officeRentCat = await prisma.expenseCategory.findUnique({
-    where: { organizationId_name: { organizationId: company.id, name: "Office Rent" } },
-  });
-  const officeElecCat = await prisma.expenseCategory.findUnique({
-    where: { organizationId_name: { organizationId: company.id, name: "Electricity" } },
-  });
-
-  await prisma.recurringExpense.create({
-    data: {
+  // 6. REMOVED OFFICE COMMITMENTS FOR COMPANY (RENT & ELECTRICITY)
+  console.log("\n--- CLEANING OFFICE COMMITMENTS (SIMULCAST) ---");
+  await prisma.recurringExpense.deleteMany({
+    where: {
       organizationId: company.id,
-      categoryId: officeRentCat?.id,
-      title: "Office monthly rent",
-      vendor: "Office Landlord",
-      recurrence: Recurrence.MONTHLY,
-      fixedAmount: 17500,
-      dayOfMonth: 1,
-      reminderDaysBefore: 3,
-      notes: "Fixed monthly commercial office rent",
-    },
-  });
-
-  await prisma.recurringExpense.create({
-    data: {
-      organizationId: company.id,
-      categoryId: officeElecCat?.id,
-      title: "Office electricity",
-      vendor: "Nepal Electricity Authority (NEA)",
-      recurrence: Recurrence.MONTHLY,
-      unit: "unit",
-      unitRate: 15,
-      quantity: 150,
-      dayOfMonth: 5,
-      reminderDaysBefore: 3,
-      notes: "Office commercial electricity at NPR 15/unit (~150 units/mo)",
+      OR: [
+        { title: { contains: "rent" } },
+        { title: { contains: "Rent" } },
+        { title: { contains: "electricity" } },
+        { title: { contains: "Electricity" } },
+      ],
     },
   });
 
@@ -681,23 +653,9 @@ async function main() {
     },
   });
 
-  // 8. OFFICE PREMISES & LEASE TENANCY (SIMULCAST)
-  console.log("\n--- CONFIGURING OFFICE PREMISES & LEASE (SIMULCAST) ---");
+  // 8. OFFICE PREMISES & LEASE TENANCY (REMOVED FROM COMPANY WORKSPACE)
+  console.log("\n--- CLEANING OFFICE PREMISES & LEASE FOR COMPANY (SIMULCAST) ---");
   await prisma.rentalHouse.deleteMany({ where: { organizationId: company.id } });
-  await prisma.rentalHouse.create({
-    data: {
-      organizationId: company.id,
-      title: "Simulcast Head Office Lease",
-      ownerName: "Commercial Office Landlord",
-      ownerPhone: "+977-9851000000",
-      address: "Kathmandu, Nepal",
-      monthlyRent: 17500,
-      electricityRate: 15,
-      waterGarbageFee: 500,
-      notes: "Commercial office lease agreement. Monthly rent NPR 17,500, water/CAM NPR 500, electricity NPR 15/unit.",
-      isActive: true,
-    },
-  });
 
   // Seed Milk Monthly Log sample (28 days @ 1.5L + 2 days @ 1.0L = 44L @ 115/L = NPR 5,060)
   await prisma.milkMonthlyLog.deleteMany({ where: { organizationId: household.id } });

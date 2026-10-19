@@ -73,6 +73,10 @@ export function BankCardWidget({
     ? moneyFormatter(account.currentBalance, account.currency || currency)
     : `${account.currency || currency} ${balanceNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
+  const formattedAvailable = moneyFormatter
+    ? moneyFormatter(availableNum, account.currency || currency)
+    : `${account.currency || currency} ${availableNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+
   const accountTypeFormatted = formatAccountType(account.accountType);
   const txCount = account._count?.transactions ?? 0;
 
@@ -150,26 +154,24 @@ export function BankCardWidget({
           </div>
 
           <div style={{ textAlign: "right", whiteSpace: "nowrap", flexShrink: 0 }}>
-            <div style={{ fontSize: 9.5, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 700 }}>
-              Ending Balance
+            <div style={{ fontSize: 9.5, color: "var(--brand)", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 800 }}>
+              Available Balance
             </div>
             <div
               style={{
-                fontSize: 17,
+                fontSize: 18,
                 fontWeight: 800,
-                color: balanceNum >= 0 ? "var(--text)" : "var(--danger)",
+                color: availableNum >= 0 ? "var(--text)" : "var(--danger)",
                 letterSpacing: -0.4,
                 lineHeight: 1.2,
                 marginTop: 2,
               }}
             >
-              {formattedBalance}
+              {formattedAvailable}
             </div>
-            {holdNum > 0 && (
-              <div style={{ fontSize: 10, color: "#ea580c", fontWeight: 700, marginTop: 2 }}>
-                Hold: {account.currency || currency} {holdNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </div>
-            )}
+            <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 650, marginTop: 2 }}>
+              Total: {formattedBalance} {holdNum > 0 && `· Hold: ${account.currency || currency} ${holdNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+            </div>
           </div>
         </div>
 
@@ -256,7 +258,7 @@ export function BankCardWidget({
               </span>
             </div>
             <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-              Available Liquidity: <strong style={{ color: "var(--success)" }}>{account.currency || currency} {availableNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
+              Total Ledger: <strong>{formattedBalance}</strong> · Available: <strong style={{ color: "var(--success)" }}>{formattedAvailable}</strong>
             </div>
           </div>
         )}

@@ -386,7 +386,8 @@ export function DocumentComposer({
       </div>
 
       <div className="doc-lines-card">
-        <div className="doc-lines-header">
+        <div className="doc-lines-scroll-wrapper">
+          <div className="doc-lines-header">
           <div style={{ paddingLeft: 4 }}>Item / Description (Search & Select)</div>
           <div style={{ textAlign: "right" }}>Qty</div>
           <div style={{ textAlign: "right" }}>Rate ({currency})</div>
@@ -505,13 +506,15 @@ export function DocumentComposer({
                         position: "absolute",
                         top: "calc(100% + 4px)",
                         left: 0,
-                        right: 0,
+                        minWidth: "100%",
+                        width: "max-content",
+                        maxWidth: 460,
                         background: "var(--surface)",
-                        border: "1px solid var(--line)",
+                        border: "1px solid var(--brand, #6366f1)",
                         borderRadius: "var(--radius, 8px)",
-                        boxShadow: "0 10px 30px rgba(0,0,0,0.18)",
-                        zIndex: 999,
-                        maxHeight: 220,
+                        boxShadow: "0 14px 35px rgba(0,0,0,0.22)",
+                        zIndex: 99999,
+                        maxHeight: 240,
                         overflowY: "auto",
                         padding: 6,
                         display: "flex",
@@ -666,6 +669,7 @@ export function DocumentComposer({
               </div>
             );
           })}
+        </div>
         </div>
       </div>
 

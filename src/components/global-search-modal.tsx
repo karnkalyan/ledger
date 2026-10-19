@@ -280,8 +280,8 @@ export function GlobalSearchModal({
                 <div>
                   <strong>Quick jump examples:</strong>
                   <ul>
-                    <li>Type customer or vendor name (e.g. <code>Black Swan</code>)</li>
-                    <li>Type invoice or order # (e.g. <code>INV-9925139</code>, <code>SO-7994542</code>)</li>
+                    <li>Type customer or vendor name (e.g. <code>Acme Corp</code> or <code>Himalayan Tech</code>)</li>
+                    <li>Type invoice or order # (e.g. <code>INV-001</code>, <code>PO-001</code>)</li>
                     <li>Type product name or SKU</li>
                     <li>Type bank account, payee, or particulars</li>
                   </ul>

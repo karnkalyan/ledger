@@ -142,7 +142,7 @@ export function NepaliDatePicker({
           >
             {Array.from({ length: maxDaysInCurrentBsMonth }, (_, i) => i + 1).map((d) => (
               <option key={d} value={d}>
-                Day {d}
+                {String(d).padStart(2, "0")}
               </option>
             ))}
           </select>
@@ -156,7 +156,7 @@ export function NepaliDatePicker({
             {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((month, i) => <option key={month} value={i + 1}>{month}</option>)}
           </select>
           <select aria-label="AD Day" required={required} value={date.getDate()} onChange={(e) => handleAdChange(date.getFullYear(), date.getMonth() + 1, Number(e.target.value))}>
-            {Array.from({ length: new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate() }, (_, i) => i + 1).map(day => <option key={day} value={day}>Day {day}</option>)}
+            {Array.from({ length: new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate() }, (_, i) => i + 1).map(day => <option key={day} value={day}>{String(day).padStart(2, "0")}</option>)}
           </select>
         </div>
       )}

@@ -1,8 +1,46 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Building2, Landmark, Image, Percent, Sparkles, RefreshCw, AlertCircle, Clock, CalendarDays, ShieldCheck, Hash, Briefcase } from "lucide-react";
+import { CheckCircle2, Building2, Landmark, Image, Percent, Sparkles, RefreshCw, AlertCircle, Clock, CalendarDays, ShieldCheck, Hash, Briefcase, Users, Plus, X, RotateCcw } from "lucide-react";
 import { FormPendingFeedback } from "@/components/form-pending-feedback";
+
+const DEFAULT_DEPARTMENTS = [
+  "Accounts & Finance",
+  "Engineering & Tech",
+  "Executive & Management",
+  "Sales & Marketing",
+  "Operations",
+  "Human Resources",
+  "Administration",
+  "Customer Support",
+  "Procurement & Supply Chain"
+];
+
+const DEFAULT_DESIGNATIONS = [
+  "Director",
+  "Managing Director",
+  "Chief Executive Officer (CEO)",
+  "Chief Technology Officer (CTO)",
+  "Finance Manager",
+  "Senior Accountant",
+  "Junior Accountant",
+  "Software Engineer",
+  "Full Stack Developer",
+  "Sales Executive",
+  "HR Lead",
+  "Operations Associate",
+  "Office Administrator"
+];
+
+function parseArrayOrList(raw?: string | null, defaults: string[] = []): string[] {
+  if (!raw || !raw.trim()) return defaults;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed.map(String).map((s) => s.trim()).filter(Boolean);
+  } catch {}
+  const split = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  return split.length > 0 ? split : defaults;
+}
 
 interface OrganizationData {
   id: string;
@@ -28,6 +66,8 @@ interface OrganizationData {
   initialReceiptCount?: number | null;
   initialDebitNoteCount?: number | null;
   initialCreditNoteCount?: number | null;
+  departments?: string | null;
+  designations?: string | null;
 }
 
 const PRESET_LOGOS = [
@@ -72,6 +112,41 @@ export function CompanySettingsForm({
   const [taxPercent, setTaxPercent] = useState<number>(
     org.defaultTaxPercent ? Number(org.defaultTaxPercent) : 13
   );
+
+  const [departments, setDepartments] = useState<string[]>(() =>
+    parseArrayOrList(org.departments, DEFAULT_DEPARTMENTS)
+  );
+  const [designations, setDesignations] = useState<string[]>(() =>
+    parseArrayOrList(org.designations, DEFAULT_DESIGNATIONS)
+  );
+  const [newDept, setNewDept] = useState("");
+  const [newDesig, setNewDesig] = useState("");
+
+  const handleAddDept = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const trimmed = newDept.trim();
+    if (trimmed && !departments.includes(trimmed)) {
+      setDepartments([...departments, trimmed]);
+      setNewDept("");
+    }
+  };
+
+  const handleRemoveDept = (d: string) => {
+    setDepartments(departments.filter((item) => item !== d));
+  };
+
+  const handleAddDesig = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const trimmed = newDesig.trim();
+    if (trimmed && !designations.includes(trimmed)) {
+      setDesignations([...designations, trimmed]);
+      setNewDesig("");
+    }
+  };
+
+  const handleRemoveDesig = (d: string) => {
+    setDesignations(designations.filter((item) => item !== d));
+  };
 
   return (
     <form action={action}>
@@ -433,6 +508,161 @@ export function CompanySettingsForm({
                     defaultValue={org.tdsRate ? Number(org.tdsRate) : 1.5}
                   />
                 </label>
+              </div>
+            </div>
+
+            {/* Departments & Designations Management */}
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+              <input type="hidden" name="departments" value={JSON.stringify(departments)} />
+              <input type="hidden" name="designations" value={JSON.stringify(designations)} />
+              
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <Users size={16} style={{ color: "#8b5cf6" }} />
+                  <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
+                    Organization Departments &amp; Designations
+                  </h4>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDepartments(DEFAULT_DEPARTMENTS);
+                    setDesignations(DEFAULT_DESIGNATIONS);
+                  }}
+                  className="outline-btn"
+                  style={{ fontSize: 11, padding: "3px 8px", display: "inline-flex", alignItems: "center", gap: 4 }}
+                >
+                  <RotateCcw size={12} /> Reset Standard Defaults
+                </button>
+              </div>
+              <p style={{ margin: "0 0 14px", fontSize: 12, color: "var(--text-muted)" }}>
+                Preconfigured departments and job designations will automatically populate dropdown selectors when onboarding team members, issuing payslips, or filtering reports.
+              </p>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
+                {/* Departments */}
+                <div style={{ background: "var(--surface-subtle, rgba(255,255,255,0.02))", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", padding: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text)" }}>
+                      Departments ({departments.length})
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+                    <input
+                      type="text"
+                      placeholder="Add department name..."
+                      value={newDept}
+                      onChange={(e) => setNewDept(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddDept(e as any); } }}
+                      style={{ fontSize: 12, padding: "5px 8px", flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddDept}
+                      className="outline-btn"
+                      style={{ fontSize: 12, padding: "5px 10px", display: "inline-flex", alignItems: "center", gap: 4 }}
+                    >
+                      <Plus size={13} /> Add
+                    </button>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, maxHeight: 160, overflowY: "auto", paddingRight: 4 }}>
+                    {departments.map((dept) => (
+                      <span
+                        key={dept}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          fontSize: 11.5,
+                          background: "var(--badge-bg, rgba(99, 102, 241, 0.1))",
+                          color: "var(--text)",
+                          border: "1px solid var(--border)",
+                          borderRadius: 14,
+                          padding: "2px 8px 2px 10px",
+                        }}
+                      >
+                        {dept}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveDept(dept)}
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            padding: 0,
+                            cursor: "pointer",
+                            color: "var(--text-muted)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Designations */}
+                <div style={{ background: "var(--surface-subtle, rgba(255,255,255,0.02))", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", padding: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text)" }}>
+                      Job Designations / Roles ({designations.length})
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+                    <input
+                      type="text"
+                      placeholder="Add designation role..."
+                      value={newDesig}
+                      onChange={(e) => setNewDesig(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddDesig(e as any); } }}
+                      style={{ fontSize: 12, padding: "5px 8px", flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddDesig}
+                      className="outline-btn"
+                      style={{ fontSize: 12, padding: "5px 10px", display: "inline-flex", alignItems: "center", gap: 4 }}
+                    >
+                      <Plus size={13} /> Add
+                    </button>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, maxHeight: 160, overflowY: "auto", paddingRight: 4 }}>
+                    {designations.map((desig) => (
+                      <span
+                        key={desig}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          fontSize: 11.5,
+                          background: "var(--badge-bg, rgba(99, 102, 241, 0.1))",
+                          color: "var(--text)",
+                          border: "1px solid var(--border)",
+                          borderRadius: 14,
+                          padding: "2px 8px 2px 10px",
+                        }}
+                      >
+                        {desig}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveDesig(desig)}
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            padding: 0,
+                            cursor: "pointer",
+                            color: "var(--text-muted)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 

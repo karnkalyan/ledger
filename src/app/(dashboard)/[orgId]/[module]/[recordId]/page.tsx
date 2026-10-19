@@ -1290,6 +1290,12 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
     const totalCustomerReceipts = totalCollected + totalIncomeReceived;
     const customerReceivables = Math.max(0, totalSales - totalCustomerReceipts);
     const totalDirectExpenses = vendorExpenses.reduce((s, x) => s + Number(x.amount), 0);
+    const totalBankDisbursed = contact.bankTransactions
+      .filter((t) => t.type === "WITHDRAWAL")
+      .reduce((s, t) => s + Number(t.amount), 0);
+    const totalBankReceived = contact.bankTransactions
+      .filter((t) => t.type === "DEPOSIT")
+      .reduce((s, t) => s + Number(t.amount), 0);
 
     // Build unified chronological statement entries
     type StatementRow = {
@@ -1384,11 +1390,11 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
         id: `btx-${tx.id}`,
         date: tx.transactionDate,
         type: "BANK_TX" as const,
-        typeLabel: tx.type === "DEPOSIT" ? "Bank Deposit" : "Bank Withdrawal",
+        typeLabel: tx.type === "DEPOSIT" ? "Bank Deposit (Inflow)" : "Bank Payment (Outlay)",
         reference: `${tx.bankAccount.bankName} (${tx.reference || "N/A"})`,
         description: tx.description || `${tx.type} transaction`,
-        debit: tx.type === "WITHDRAWAL" ? Number(tx.amount) : 0,
-        credit: tx.type === "DEPOSIT" ? Number(tx.amount) : 0,
+        debit: 0,
+        credit: Number(tx.amount),
       })),
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -1412,6 +1418,13 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
             <p>Complete enterprise vendor &amp; customer statement, payment receipts, orders, and ledger history.</p>
           </div>
           <div className="page-actions" style={{ flexWrap: "wrap", gap: 8 }}>
+            <Link
+              href={`/${orgId}/statement?contactId=${contact.id}`}
+              className="outline-btn"
+              style={{ fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}
+            >
+              <FileText size={14} /> Cross-Role Statement &rarr;
+            </Link>
             <PrintButton label="Print Statement / Profile" />
             <Link
               href={`/${orgId}/income/new?type=record-income&contactId=${contact.id}`}
@@ -1460,6 +1473,28 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
                   <strong style={{ fontSize: 18, color: vendorDues > 0 ? "var(--danger)" : "var(--success)" }}>
                     {money(vendorDues, organization.currency)}
                   </strong>
+                </div>
+              )}
+              {totalBankDisbursed > 0 && (
+                <div>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)" }}>Paid via Bank Wire</div>
+                  <strong style={{ fontSize: 18, color: "#10b981" }}>
+                    {money(totalBankDisbursed, organization.currency)}
+                  </strong>
+                  <div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>
+                    {contact.bankTransactions.filter((t) => t.type === "WITHDRAWAL").length} bank wires
+                  </div>
+                </div>
+              )}
+              {totalBankReceived > 0 && (
+                <div>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)" }}>Received via Bank Inflow</div>
+                  <strong style={{ fontSize: 18, color: "#8b5cf6" }}>
+                    {money(totalBankReceived, organization.currency)}
+                  </strong>
+                  <div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>
+                    {contact.bankTransactions.filter((t) => t.type === "DEPOSIT").length} bank deposits
+                  </div>
                 </div>
               )}
               {(contact.type === "CUSTOMER" || contact.type === "BOTH") && (

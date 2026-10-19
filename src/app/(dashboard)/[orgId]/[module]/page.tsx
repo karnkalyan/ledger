@@ -32,6 +32,10 @@ import {
   UserRoundSearch,
   Banknote,
   Wallet2,
+  Scale,
+  ArrowUpRight,
+  ArrowDownLeft,
+  ArrowLeft,
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireOrganizationAccess, canAccessModule } from "@/lib/session";
@@ -53,10 +57,10 @@ import { BankingClientSection } from "@/components/banking-client-section";
 import { FormPendingFeedback } from "@/components/form-pending-feedback";
 import { RentalHouseSection } from "@/components/rental-house-section";
 import { MonthlyGeneratorModal } from "@/components/monthly-generator-modal";
-import { CompanyPrintLogo } from "@/components/company-print-logo";
+import { CompanyPrintLogo, CompanyPrintBanner } from "@/components/company-print-logo";
 import { CompanyAuditReport } from "@/components/company-audit-report";
 import { cookies } from "next/headers";
-import { resolveActiveFiscalYear, buildFiscalYearFromStart } from "@/lib/fiscal-year";
+import { resolveActiveFiscalYear, buildFiscalYearFromStart, getAvailableFiscalYears } from "@/lib/fiscal-year";
 import {
   adToBs,
   getBsMonthRange,
@@ -93,8 +97,8 @@ function formatBsMonthDisplay(mStr: string | null | undefined) {
   return mStr;
 }
 
-const officeOnly = new Set(["sales","purchase","stock","crm","leads","staff","payroll","leaves","invoices","quotes","licenses","projects","wallets","worklogs"]);
-const allModules = new Set(["sales","purchase","stock","crm","leads","staff","payroll","leaves","invoices","quotes","licenses","income","expenses","banking","bank","tasks","reminders","reports","loans","settings","projects","wallets","worklogs","menu"]);
+const officeOnly = new Set(["sales","purchase","stock","crm","leads","staff","payroll","leaves","invoices","quotes","licenses","projects","wallets","worklogs","statement"]);
+const allModules = new Set(["sales","purchase","stock","crm","leads","staff","payroll","leaves","invoices","quotes","licenses","income","expenses","banking","bank","tasks","reminders","reports","loans","settings","projects","wallets","worklogs","menu","statement"]);
 
 function highlightMatch(text: string | null | undefined, queryStr: string) {
   if (!text) return "";
@@ -385,15 +389,16 @@ export default async function ModulePage({
     if (!Number.isNaN(maxAmount) && maxAmount > 0) {
       expenseWhere.amount = { ...(expenseWhere.amount || {}), lte: maxAmount };
     }
+    const isAllRecords = query.fy === "all" || query.all === "true";
     if (selectedMonth) {
       const mStart = new Date(`${selectedMonth}-01T00:00:00`);
       const mEnd = endOfMonth(mStart);
       expenseWhere.occurredAt = { gte: mStart, lte: mEnd };
-    } else if (activeFy) {
+    } else if (!isAllRecords && activeFy) {
       expenseWhere.occurredAt = { gte: activeFy.startDate, lte: activeFy.endDate };
     }
 
-    const isExpenseFiltered = Boolean(selectedCategoryId || selectedType || searchQ || !Number.isNaN(minAmount) || !Number.isNaN(maxAmount) || selectedMonth || activeFy);
+    const isExpenseFiltered = Boolean(selectedCategoryId || selectedType || searchQ || !Number.isNaN(minAmount) || !Number.isNaN(maxAmount) || selectedMonth || (activeFy && !isAllRecords));
 
     const expenseFilterHref = (newParams: {
       categoryId?: string | null;
@@ -402,6 +407,7 @@ export default async function ModulePage({
       minAmount?: number | string | null;
       maxAmount?: number | string | null;
       month?: string | null;
+      fy?: string | null;
     }) => {
       const p = new URLSearchParams();
       const cat = newParams.categoryId !== undefined ? newParams.categoryId : selectedCategoryId;
@@ -410,6 +416,7 @@ export default async function ModulePage({
       const minVal = newParams.minAmount !== undefined ? (newParams.minAmount ? String(newParams.minAmount) : null) : (query.minAmount || null);
       const maxVal = newParams.maxAmount !== undefined ? (newParams.maxAmount ? String(newParams.maxAmount) : null) : (query.maxAmount || null);
       const mVal = newParams.month !== undefined ? newParams.month : selectedMonth;
+      const fyVal = newParams.fy !== undefined ? newParams.fy : (query.fy || (isAllRecords ? "all" : null));
 
       if (cat) p.set("categoryId", cat);
       if (tp) p.set("type", tp);
@@ -417,6 +424,7 @@ export default async function ModulePage({
       if (minVal) p.set("minAmount", minVal);
       if (maxVal) p.set("maxAmount", maxVal);
       if (mVal) p.set("month", mVal);
+      if (fyVal) p.set("fy", fyVal);
       return `/${orgId}/expenses${p.size ? `?${p.toString()}` : ""}`;
     };
 
@@ -431,7 +439,11 @@ export default async function ModulePage({
       db.expense.aggregate({
         where: {
           organizationId: orgId,
-          occurredAt: activeFy && !selectedMonth ? { gte: activeFy.startDate, lte: activeFy.endDate } : { gte: ms, lte: me },
+          ...(selectedMonth
+            ? { occurredAt: { gte: new Date(`${selectedMonth}-01T00:00:00`), lte: endOfMonth(new Date(`${selectedMonth}-01T00:00:00`)) } }
+            : !isAllRecords && activeFy
+            ? { occurredAt: { gte: activeFy.startDate, lte: activeFy.endDate } }
+            : {}),
           isEstimated: false,
         },
         _sum: { amount: true },
@@ -439,7 +451,11 @@ export default async function ModulePage({
       db.expense.aggregate({
         where: {
           organizationId: orgId,
-          occurredAt: activeFy && !selectedMonth ? { gte: activeFy.startDate, lte: activeFy.endDate } : { gte: ms, lte: me },
+          ...(selectedMonth
+            ? { occurredAt: { gte: new Date(`${selectedMonth}-01T00:00:00`), lte: endOfMonth(new Date(`${selectedMonth}-01T00:00:00`)) } }
+            : !isAllRecords && activeFy
+            ? { occurredAt: { gte: activeFy.startDate, lte: activeFy.endDate } }
+            : {}),
           isEstimated: true,
         },
         _sum: { amount: true },
@@ -501,9 +517,19 @@ export default async function ModulePage({
         <Kpis
           items={[
             {
-              label: activeFy && !selectedMonth ? `FY ${activeFy.code} Total` : "Actual This Month",
+              label: selectedMonth
+                ? "Actual This Month"
+                : isAllRecords
+                ? "All-Time Actual Expenses"
+                : activeFy
+                ? `FY ${activeFy.code} Total`
+                : "Actual Expenses",
               value: money(actual, currency),
-              meta: activeFy && !selectedMonth ? `BS ${activeFy.startBsYear}/${activeFy.endBsYear.toString().slice(-2)} Ledger` : "Recorded paid entries",
+              meta: isAllRecords
+                ? `${totalExpenseCount} total recorded entries`
+                : activeFy && !selectedMonth
+                ? `BS ${activeFy.startBsYear}/${activeFy.endBsYear.toString().slice(-2)} Ledger (${expenses.length} entries)`
+                : "Recorded paid entries",
             },
             { label: "Recurring Commitment", value: money(recurringEstimate, currency), meta: "Active recurring rules" },
             { label: "Materialized Estimates", value: money(generated, currency), meta: "Planned monthly estimates" },
@@ -514,6 +540,43 @@ export default async function ModulePage({
         {/* EXPENSES FILTRATION CONTROLS */}
         <div className="table-card no-print" style={{ padding: "18px 20px", marginBottom: 20 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {/* Period / Fiscal Year Filter Chips */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "var(--text-muted)", marginBottom: 8 }}>
+                <CalendarDays size={13} />
+                <span>Accounting Period / Fiscal Year:</span>
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <Link
+                  href={expenseFilterHref({ fy: null, month: null })}
+                  className={`filter-tab ${!isAllRecords && !selectedMonth && (!query.fy || query.fy === activeFy?.slug) ? "active" : ""}`}
+                  style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+                >
+                  Active FY ({activeFy ? activeFy.code : "Current"})
+                </Link>
+                <Link
+                  href={expenseFilterHref({ fy: "all", month: null })}
+                  className={`filter-tab ${isAllRecords ? "active" : ""}`}
+                  style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+                >
+                  All Records ({totalExpenseCount} total)
+                </Link>
+                {getAvailableFiscalYears().slice(0, 4).map((f) => {
+                  const isSelected = !isAllRecords && query.fy === f.slug;
+                  return (
+                    <Link
+                      key={f.slug}
+                      href={expenseFilterHref({ fy: f.slug, month: null })}
+                      className={`filter-tab ${isSelected ? "active" : ""}`}
+                      style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+                    >
+                      {f.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Category Filter Chips */}
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "var(--text-muted)", marginBottom: 8 }}>
@@ -1140,13 +1203,15 @@ export default async function ModulePage({
   }
 
   if (module === "income") {
+    const isAllRecords = query.fy === "all" || query.all === "true";
+    const effectiveIncomeFy = isAllRecords ? null : activeFy;
     const channelFilter = (query.channel as string) || "ALL";
 
-    const [rawItems, allItemsForKpi, agg, registeredBankAccounts] = await Promise.all([
+    const [rawItems, allItemsForKpi, agg, registeredBankAccounts, totalIncomeCount] = await Promise.all([
       db.income.findMany({
         where: {
           organizationId: orgId,
-          ...(activeFy ? { receivedAt: { gte: activeFy.startDate, lte: activeFy.endDate } } : {}),
+          ...(effectiveIncomeFy ? { receivedAt: { gte: effectiveIncomeFy.startDate, lte: effectiveIncomeFy.endDate } } : {}),
         },
         include: {
           contact: true,
@@ -1158,7 +1223,7 @@ export default async function ModulePage({
       db.income.findMany({
         where: {
           organizationId: orgId,
-          ...(activeFy ? { receivedAt: { gte: activeFy.startDate, lte: activeFy.endDate } } : {}),
+          ...(effectiveIncomeFy ? { receivedAt: { gte: effectiveIncomeFy.startDate, lte: effectiveIncomeFy.endDate } } : {}),
         },
         select: {
           id: true,
@@ -1174,7 +1239,7 @@ export default async function ModulePage({
       db.income.aggregate({
         where: {
           organizationId: orgId,
-          receivedAt: activeFy ? { gte: activeFy.startDate, lte: activeFy.endDate } : { gte: ms, lte: me },
+          ...(effectiveIncomeFy ? { receivedAt: { gte: effectiveIncomeFy.startDate, lte: effectiveIncomeFy.endDate } } : {}),
         },
         _sum: { amount: true },
       }),
@@ -1182,7 +1247,17 @@ export default async function ModulePage({
         where: { organizationId: orgId },
         select: { bankName: true },
       }),
+      db.income.count({ where: { organizationId: orgId } }),
     ]);
+
+    const incomeFilterHref = (newParams: { channel?: string | null; fy?: string | null }) => {
+      const p = new URLSearchParams();
+      const ch = newParams.channel !== undefined ? newParams.channel : channelFilter;
+      const fyVal = newParams.fy !== undefined ? newParams.fy : (query.fy || (isAllRecords ? "all" : null));
+      if (ch && ch !== "ALL") p.set("channel", ch);
+      if (fyVal) p.set("fy", fyVal);
+      return `/${orgId}/income${p.size ? `?${p.toString()}` : ""}`;
+    };
 
     const knownBankNames = registeredBankAccounts.map((b) => b.bankName);
 
@@ -1221,9 +1296,15 @@ export default async function ModulePage({
         <Kpis
           items={[
             {
-              label: activeFy ? `Total FY ${activeFy.code}` : "Total Receipts",
+              label: isAllRecords
+                ? "All-Time Inflow Receipts"
+                : effectiveIncomeFy
+                ? `Total FY ${effectiveIncomeFy.code}`
+                : "Total Receipts",
               value: money(agg._sum.amount || totalReceipts, currency),
-              meta: `${allItemsForKpi.length} total entries`,
+              meta: isAllRecords
+                ? `${totalIncomeCount} total lifetime entries`
+                : `${allItemsForKpi.length} entries in period`,
             },
             {
               label: "Cash in Hand Receipts",
@@ -1243,35 +1324,73 @@ export default async function ModulePage({
           ]}
         />
 
+        {/* Period / Fiscal Year Filter Card */}
+        <div className="table-card no-print" style={{ padding: "14px 18px", marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "var(--text-muted)", marginBottom: 8 }}>
+            <CalendarDays size={13} />
+            <span>Accounting Period / Fiscal Year:</span>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <Link
+              href={incomeFilterHref({ fy: null })}
+              className={`filter-tab ${!isAllRecords && (!query.fy || query.fy === activeFy?.slug) ? "active" : ""}`}
+              style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+            >
+              Active FY ({activeFy ? activeFy.code : "Current"})
+            </Link>
+            <Link
+              href={incomeFilterHref({ fy: "all" })}
+              className={`filter-tab ${isAllRecords ? "active" : ""}`}
+              style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+            >
+              All Records ({totalIncomeCount} total)
+            </Link>
+            {getAvailableFiscalYears().slice(0, 4).map((f) => {
+              const isSelected = !isAllRecords && query.fy === f.slug;
+              return (
+                <Link
+                  key={f.slug}
+                  href={incomeFilterHref({ fy: f.slug })}
+                  className={`filter-tab ${isSelected ? "active" : ""}`}
+                  style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+                >
+                  {f.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="table-card">
           <div className="table-toolbar" style={{ flexWrap: "wrap", gap: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <h3 style={{ margin: 0 }}>Income Inflows</h3>
-              {activeFy && <span className="badge cyan">FY {activeFy.code}</span>}
+              {effectiveIncomeFy && <span className="badge cyan">FY {effectiveIncomeFy.code}</span>}
+              {isAllRecords && <span className="badge purple">All Time</span>}
               <div style={{ display: "inline-flex", gap: 6, marginLeft: 10, flexWrap: "wrap" }}>
                 <Link
-                  href={`/${orgId}/income`}
+                  href={incomeFilterHref({ channel: "ALL" })}
                   className={`filter-preset-chip ${channelFilter === "ALL" ? "active" : ""}`}
                   style={{ fontSize: 11, padding: "3px 8px" }}
                 >
                   All ({allItemsForKpi.length})
                 </Link>
                 <Link
-                  href={`/${orgId}/income?channel=CASH`}
+                  href={incomeFilterHref({ channel: "CASH" })}
                   className={`filter-preset-chip ${channelFilter === "CASH" ? "active" : ""}`}
                   style={{ fontSize: 11, padding: "3px 8px", display: "inline-flex", alignItems: "center", gap: 4 }}
                 >
                   <Banknote size={12} /> Cash in Hand ({allItemsForKpi.filter((x) => resolveIncomeChannel(x, knownBankNames) === "CASH").length})
                 </Link>
                 <Link
-                  href={`/${orgId}/income?channel=BANK`}
+                  href={incomeFilterHref({ channel: "BANK" })}
                   className={`filter-preset-chip ${channelFilter === "BANK" ? "active" : ""}`}
                   style={{ fontSize: 11, padding: "3px 8px", display: "inline-flex", alignItems: "center", gap: 4 }}
                 >
                   <Landmark size={12} /> Bank Account ({allItemsForKpi.filter((x) => resolveIncomeChannel(x, knownBankNames) === "BANK").length})
                 </Link>
                 <Link
-                  href={`/${orgId}/income?channel=OTHER`}
+                  href={incomeFilterHref({ channel: "OTHER" })}
                   className={`filter-preset-chip ${channelFilter === "OTHER" ? "active" : ""}`}
                   style={{ fontSize: 11, padding: "3px 8px", display: "inline-flex", alignItems: "center", gap: 4 }}
                 >
@@ -1500,16 +1619,16 @@ export default async function ModulePage({
         <Kpis
           items={[
             {
-              label: activeAccount ? `${activeAccount.bankName} Balance` : "Total Bank Liquidity",
-              value: money(totalLiquidity, currency),
+              label: activeAccount ? `${activeAccount.bankName} Available Balance` : "Available Bank Liquidity",
+              value: money(availableLiquidity, currency),
               meta: totalHold > 0
-                ? `Available: ${money(availableLiquidity, currency)} · Hold: ${money(totalHold, currency)}`
+                ? `Total Balance: ${money(totalLiquidity, currency)} · Hold: ${money(totalHold, currency)}`
                 : (activeAccount ? `A/C: ${activeAccount.accountNumber}` : `${accounts.length} active account${accounts.length === 1 ? "" : "s"}`),
             },
             {
               label: activeAccount ? "Selected Account Hold / Lien" : "Total Hold / Lien",
               value: money(totalHold, currency),
-              meta: totalHold > 0 ? `Excluded from available liquidity (${money(availableLiquidity, currency)} available)` : "No held amount recorded",
+              meta: totalHold > 0 ? `Excluded from available liquidity (Total Ledger: ${money(totalLiquidity, currency)})` : "No held amount recorded",
             },
             {
               label: isFiltered ? "Filtered Inflows" : "Total Deposits (Inflows)",
@@ -5424,6 +5543,535 @@ export default async function ModulePage({
     );
   }
 
+  if (module === "statement") {
+    const requestedContactId = (query.contactId as string) || (query.partyId as string) || "";
+    const activeTab = ((query.tab as string) || "all").toLowerCase();
+
+    const [allContacts, bankAccounts] = await Promise.all([
+      db.contact.findMany({
+        where: { organizationId: orgId },
+        select: {
+          id: true,
+          name: true,
+          companyName: true,
+          type: true,
+          email: true,
+          phone: true,
+          taxNumber: true,
+          address: true,
+          _count: {
+            select: {
+              purchaseOrders: true,
+              invoices: true,
+              bankTransactions: true,
+              incomes: true,
+            },
+          },
+        },
+        orderBy: [{ companyName: "asc" }, { name: "asc" }],
+      }),
+      db.bankAccount.findMany({
+        where: { organizationId: orgId },
+        select: { id: true, bankName: true, accountNumber: true, accountType: true },
+        orderBy: { bankName: "asc" },
+      }),
+    ]);
+
+    const avBionicsContact = allContacts.find(
+      (c) =>
+        c.name.toLowerCase().includes("bionic") ||
+        c.companyName?.toLowerCase().includes("bionic")
+    );
+    const contactWithTxs = allContacts.find(
+      (c) =>
+        c._count.purchaseOrders > 0 ||
+        c._count.invoices > 0 ||
+        c._count.bankTransactions > 0
+    );
+    const selectedContactId =
+      requestedContactId ||
+      avBionicsContact?.id ||
+      contactWithTxs?.id ||
+      allContacts[0]?.id;
+
+    const contact = selectedContactId
+      ? await db.contact.findFirst({
+          where: { id: selectedContactId, organizationId: orgId },
+          include: {
+            purchaseOrders: {
+              include: { items: true, payments: true },
+              orderBy: { orderDate: "desc" },
+            },
+            invoices: {
+              include: { items: true, payments: true },
+              orderBy: { issueDate: "desc" },
+            },
+            salesOrders: {
+              include: { items: true },
+              orderBy: { orderDate: "desc" },
+            },
+            incomes: {
+              include: { bankAccount: true },
+              orderBy: { receivedAt: "desc" },
+            },
+            bankTransactions: {
+              include: { bankAccount: true },
+              orderBy: { transactionDate: "desc" },
+            },
+          },
+        })
+      : null;
+
+    if (!contact) {
+      return (
+        <main className="page-wrap">
+          <Header
+            title="Cross-Role Party Statement & Ledger"
+            description="Audit comprehensive party transaction history across Bank Statements, Invoices, Purchase Orders, and Payments."
+          />
+          <Empty>No parties/contacts registered yet. Add a customer or vendor in CRM.</Empty>
+        </main>
+      );
+    }
+
+    const directExpenses = await db.expense.findMany({
+      where: {
+        organizationId: orgId,
+        OR: [
+          { vendor: contact.name },
+          ...(contact.companyName ? [{ vendor: contact.companyName }] : []),
+        ],
+      },
+      include: { category: true },
+      orderBy: { occurredAt: "desc" },
+    });
+
+    const totalPurchases = contact.purchaseOrders.reduce((s, po) => s + Number(po.total), 0);
+    const totalDirectExpenses = directExpenses.reduce((s, e) => s + Number(e.amount), 0);
+    const totalVendorBills = totalPurchases + totalDirectExpenses;
+
+    const bankWithdrawals = contact.bankTransactions.filter((tx) => tx.type === "WITHDRAWAL");
+    const bankDeposits = contact.bankTransactions.filter((tx) => tx.type === "DEPOSIT");
+
+    const totalPaidViaBank = bankWithdrawals.reduce((s, tx) => s + Number(tx.amount), 0);
+    const totalPoPayments = contact.purchaseOrders
+      .flatMap((po) => po.payments)
+      .reduce((s, p) => s + Number(p.amount), 0);
+    const totalDisbursed = Math.max(totalPaidViaBank, totalPoPayments);
+    const remainingVendorDues = Math.max(0, totalVendorBills - totalDisbursed);
+
+    const totalSalesInvoices = contact.invoices.reduce((s, inv) => s + Number(inv.total), 0);
+    const totalReceivedViaBank = bankDeposits.reduce((s, tx) => s + Number(tx.amount), 0);
+    const totalIncomeReceipts = contact.incomes.reduce((s, inc) => s + Number(inc.amount), 0);
+    const totalCollected = Math.max(totalReceivedViaBank, totalIncomeReceipts);
+    const remainingReceivables = Math.max(0, totalSalesInvoices - totalCollected);
+
+    type UnifiedRow = {
+      id: string;
+      date: Date;
+      category: "PURCHASE" | "BANK_PAYMENT" | "INVOICE" | "BANK_COLLECTION" | "INCOME" | "EXPENSE";
+      nature: string;
+      badgeColor: "amber" | "emerald" | "sky" | "purple" | "red" | "gray";
+      reference: string;
+      description: string;
+      channel: string;
+      debit: number;
+      credit: number;
+    };
+
+    const rawRows: UnifiedRow[] = [
+      ...contact.purchaseOrders.map((po) => ({
+        id: `po-${po.id}`,
+        date: po.orderDate,
+        category: "PURCHASE" as const,
+        nature: "Procurement Bill",
+        badgeColor: "amber" as const,
+        reference: `PO #${po.orderNumber}`,
+        description: `Purchase order (${po.items.length} line items) - ${po.status}`,
+        channel: "Trade Payable",
+        debit: Number(po.total),
+        credit: 0,
+      })),
+      ...bankWithdrawals.map((tx) => ({
+        id: `btx-${tx.id}`,
+        date: tx.transactionDate,
+        category: "BANK_PAYMENT" as const,
+        nature: "Bank Payment to Vendor",
+        badgeColor: "emerald" as const,
+        reference: tx.reference || `SN-${tx.id.slice(-4)}`,
+        description: tx.description || "Disbursement from bank account",
+        channel: tx.bankAccount.bankName,
+        debit: 0,
+        credit: Number(tx.amount),
+      })),
+      ...contact.invoices.map((inv) => ({
+        id: `inv-${inv.id}`,
+        date: inv.issueDate,
+        category: "INVOICE" as const,
+        nature: "Sales Invoice",
+        badgeColor: "sky" as const,
+        reference: `INV #${inv.invoiceNumber}`,
+        description: `Commercial sales invoice (${inv.items.length} items) - ${inv.status}`,
+        channel: "Trade Receivable",
+        debit: Number(inv.total),
+        credit: 0,
+      })),
+      ...bankDeposits.map((tx) => ({
+        id: `btx-${tx.id}`,
+        date: tx.transactionDate,
+        category: "BANK_COLLECTION" as const,
+        nature: "Bank Deposit from Customer",
+        badgeColor: "purple" as const,
+        reference: tx.reference || `SN-${tx.id.slice(-4)}`,
+        description: tx.description || "Inflow into bank account",
+        channel: tx.bankAccount.bankName,
+        debit: 0,
+        credit: Number(tx.amount),
+      })),
+      ...contact.incomes.map((inc) => ({
+        id: `inc-${inc.id}`,
+        date: inc.receivedAt,
+        category: "INCOME" as const,
+        nature: "Income Receipt",
+        badgeColor: "purple" as const,
+        reference: inc.source || "Income",
+        description: inc.title,
+        channel: inc.bankAccount?.bankName || inc.paymentMethod || "Direct",
+        debit: 0,
+        credit: Number(inc.amount),
+      })),
+      ...directExpenses.map((exp) => ({
+        id: `exp-${exp.id}`,
+        date: exp.occurredAt,
+        category: "EXPENSE" as const,
+        nature: "Direct Operational Expense",
+        badgeColor: "red" as const,
+        reference: exp.category?.name || "Expense",
+        description: `${exp.title}${exp.notes ? ` (${exp.notes})` : ""}`,
+        channel: "Expense Ledger",
+        debit: Number(exp.amount),
+        credit: 0,
+      })),
+    ];
+
+    const filteredRows = rawRows.filter((r) => {
+      if (activeTab === "bank_outflows") return r.category === "BANK_PAYMENT";
+      if (activeTab === "bank_inflows") return r.category === "BANK_COLLECTION";
+      if (activeTab === "purchases") return r.category === "PURCHASE" || r.category === "EXPENSE";
+      if (activeTab === "sales") return r.category === "INVOICE" || r.category === "INCOME";
+      return true;
+    });
+
+    const sortedAsc = [...filteredRows].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    let runBal = 0;
+    const rowsWithRunBal = sortedAsc.map((r) => {
+      runBal += r.debit - r.credit;
+      return { ...r, runningBalance: runBal };
+    }).reverse();
+
+    const netPartyPosition = remainingReceivables - remainingVendorDues;
+
+    return (
+      <main className="page-wrap">
+        <div className="page-header no-print">
+          <div>
+            <Link href={`/${orgId}/crm`} className="topbar-kicker">
+              <ArrowLeft size={12} style={{ verticalAlign: "middle", marginRight: 4 }} />
+              Back to CRM Directory
+            </Link>
+            <h1 style={{ marginTop: 6 }}>Cross-Role Party Statement &amp; Ledger</h1>
+            <p>
+              Reconcile banking transactions, invoices, bills, and purchase orders for any party acting as customer, vendor, or dual-role commercial partner.
+            </p>
+          </div>
+          <div className="page-actions" style={{ flexWrap: "wrap", gap: 8 }}>
+            <PrintButton label="Print Statement / Save PDF" defaultOrientation="landscape" />
+            <Link href={`/${orgId}/crm/${contact.id}`} className="secondary-btn" style={{ fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <Building2 size={14} /> CRM Profile
+            </Link>
+          </div>
+        </div>
+
+        {/* Party Selector Toolbar */}
+        <div className="table-card no-print" style={{ padding: "16px 20px", marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14 }}>
+            <form method="GET" action={`/${orgId}/statement`} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
+                Select Contact / Party:
+              </span>
+              <select
+                name="contactId"
+                defaultValue={contact.id}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  window.location.href = `/${orgId}/statement?contactId=${val}`;
+                }}
+                style={{
+                  minWidth: 260,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  padding: "7px 12px",
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid var(--line)",
+                  background: "var(--surface)",
+                  color: "var(--text)",
+                }}
+              >
+                {allContacts.map((c) => {
+                  const txCount = c._count.purchaseOrders + c._count.invoices + c._count.bankTransactions + c._count.incomes;
+                  return (
+                    <option key={c.id} value={c.id}>
+                      {c.companyName || c.name} · [{c.type}] {txCount > 0 ? `(${txCount} txs)` : ""}
+                    </option>
+                  );
+                })}
+              </select>
+            </form>
+
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", marginRight: 4 }}>
+                Filter Ledger:
+              </span>
+              <Link
+                href={`/${orgId}/statement?contactId=${contact.id}&tab=all`}
+                className={`filter-tab ${activeTab === "all" ? "active" : ""}`}
+                style={{ textDecoration: "none", fontSize: 11, padding: "4px 9px" }}
+              >
+                All Records ({rawRows.length})
+              </Link>
+              <Link
+                href={`/${orgId}/statement?contactId=${contact.id}&tab=bank_outflows`}
+                className={`filter-tab ${activeTab === "bank_outflows" ? "active" : ""}`}
+                style={{ textDecoration: "none", fontSize: 11, padding: "4px 9px", display: "inline-flex", alignItems: "center", gap: 4 }}
+              >
+                <ArrowUpRight size={12} style={{ color: "#10b981" }} /> Paid via Bank ({bankWithdrawals.length})
+              </Link>
+              <Link
+                href={`/${orgId}/statement?contactId=${contact.id}&tab=bank_inflows`}
+                className={`filter-tab ${activeTab === "bank_inflows" ? "active" : ""}`}
+                style={{ textDecoration: "none", fontSize: 11, padding: "4px 9px", display: "inline-flex", alignItems: "center", gap: 4 }}
+              >
+                <ArrowDownLeft size={12} style={{ color: "#8b5cf6" }} /> Received via Bank ({bankDeposits.length})
+              </Link>
+              <Link
+                href={`/${orgId}/statement?contactId=${contact.id}&tab=purchases`}
+                className={`filter-tab ${activeTab === "purchases" ? "active" : ""}`}
+                style={{ textDecoration: "none", fontSize: 11, padding: "4px 9px" }}
+              >
+                Purchases ({contact.purchaseOrders.length + directExpenses.length})
+              </Link>
+              <Link
+                href={`/${orgId}/statement?contactId=${contact.id}&tab=sales`}
+                className={`filter-tab ${activeTab === "sales" ? "active" : ""}`}
+                style={{ textDecoration: "none", fontSize: 11, padding: "4px 9px" }}
+              >
+                Sales ({contact.invoices.length + contact.incomes.length})
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <CompanyPrintBanner
+          organization={organization}
+          title="Comprehensive Cross-Role Statement & Ledger"
+          subtitle={`${contact.companyName || contact.name} · Consolidated Financial Statement`}
+        />
+
+        {/* Contact Overview Card */}
+        <div className="table-card" style={{ padding: "20px 24px", marginBottom: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                <span className="badge purple" style={{ fontSize: 11 }}>
+                  PARTNER: {contact.type === "BOTH" ? "CUSTOMER & VENDOR (DUAL ROLE)" : contact.type}
+                </span>
+                {contact.taxNumber && (
+                  <span className="badge cyan" style={{ fontSize: 11 }}>
+                    PAN / VAT: <strong>{contact.taxNumber}</strong>
+                  </span>
+                )}
+              </div>
+              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>{contact.companyName || contact.name}</h2>
+              {contact.companyName && contact.name && contact.companyName.trim().toLowerCase() !== contact.name.trim().toLowerCase() && (
+                <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 2 }}>
+                  Contact Person: <strong>{contact.name}</strong>
+                </div>
+              )}
+              {contact.address && (
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
+                  Address: {contact.address}
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: 20, textAlign: "right", flexWrap: "wrap" }}>
+              <div>
+                <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>Total Purchases (Bills)</div>
+                <strong style={{ fontSize: 18, color: "var(--text)" }}>
+                  {money(totalPurchases, organization.currency)}
+                </strong>
+                <div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{contact.purchaseOrders.length} purchase orders</div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>Paid via Bank Wire</div>
+                <strong style={{ fontSize: 18, color: "#10b981" }}>
+                  {money(totalPaidViaBank, organization.currency)}
+                </strong>
+                <div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{bankWithdrawals.length} wire disbursements</div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>Vendor Dues (Remaining)</div>
+                <strong style={{ fontSize: 18, color: remainingVendorDues > 0 ? "var(--danger)" : "var(--success)" }}>
+                  {money(remainingVendorDues, organization.currency)}
+                </strong>
+                <div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>Payable balance</div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>Received via Bank Inflow</div>
+                <strong style={{ fontSize: 18, color: "#8b5cf6" }}>
+                  {money(totalReceivedViaBank, organization.currency)}
+                </strong>
+                <div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{bankDeposits.length} deposit postings</div>
+              </div>
+
+              <div style={{ paddingLeft: 12, borderLeft: "2px solid var(--line)" }}>
+                <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>Net Party Position</div>
+                <strong
+                  style={{
+                    fontSize: 18,
+                    color: netPartyPosition > 0 ? "#0284c7" : netPartyPosition < 0 ? "var(--danger)" : "var(--success)",
+                  }}
+                >
+                  {netPartyPosition > 0
+                    ? `+${money(netPartyPosition, organization.currency)} Dr`
+                    : netPartyPosition < 0
+                    ? `-${money(Math.abs(netPartyPosition), organization.currency)} Cr`
+                    : `${money(0, organization.currency)} (Balanced)`}
+                </strong>
+                <div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>
+                  {netPartyPosition > 0 ? "Net Receivable" : netPartyPosition < 0 ? "Net Payable" : "Fully Settled"}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Master Transaction Table */}
+        <div className="table-card">
+          <div className="table-toolbar" style={{ flexWrap: "wrap", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <h3 style={{ margin: 0 }}>Itemized Statement &amp; Posting History</h3>
+              <span className="badge purple">{rowsWithRunBal.length} entries</span>
+            </div>
+          </div>
+
+          <div className="table-scroll">
+            <DataTable className="responsive-table">
+              <thead>
+                <tr>
+                  <th style={{ width: 44 }}>#</th>
+                  <th style={{ minWidth: 120 }}>Date (BS / AD)</th>
+                  <th style={{ minWidth: 150 }}>Transaction Type</th>
+                  <th style={{ minWidth: 130 }}>Reference / Code</th>
+                  <th style={{ minWidth: 240 }}>Description / Particulars</th>
+                  <th style={{ minWidth: 140 }}>Channel / Bank</th>
+                  <th style={{ textAlign: "right", minWidth: 110 }}>Debit (Dr)</th>
+                  <th style={{ textAlign: "right", minWidth: 110 }}>Credit (Cr)</th>
+                  <th style={{ textAlign: "right", minWidth: 130 }}>Net Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rowsWithRunBal.map((r, idx) => {
+                  const bs = adToBs(new Date(r.date));
+                  return (
+                    <tr key={r.id}>
+                      <td style={{ color: "var(--text-muted)", fontSize: 11 }}>{idx + 1}</td>
+                      <td>
+                        <div style={{ fontWeight: 600, fontSize: 12.5 }}>{bs.formatted}</div>
+                        <div className="table-sub" style={{ fontSize: 10.5 }}>{shortDate(r.date)} AD</div>
+                      </td>
+                      <td>
+                        <span className={`badge ${r.badgeColor}`} style={{ fontSize: 11 }}>
+                          {r.nature}
+                        </span>
+                      </td>
+                      <td>
+                        <strong style={{ fontFamily: "Consolas, monospace", fontSize: 11.5 }}>
+                          {r.reference}
+                        </strong>
+                      </td>
+                      <td>
+                        <div style={{ fontSize: 12.5, fontWeight: 500 }}>{r.description}</div>
+                      </td>
+                      <td>
+                        <div style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{r.channel}</div>
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        {r.debit > 0 ? (
+                          <span style={{ fontWeight: 700, color: "var(--text)" }}>
+                            {money(r.debit, organization.currency)}
+                          </span>
+                        ) : (
+                          <span style={{ color: "var(--text-muted)" }}>—</span>
+                        )}
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        {r.credit > 0 ? (
+                          <span style={{ fontWeight: 700, color: "#10b981" }}>
+                            {money(r.credit, organization.currency)}
+                          </span>
+                        ) : (
+                          <span style={{ color: "var(--text-muted)" }}>—</span>
+                        )}
+                      </td>
+                      <td style={{ textAlign: "right", fontFamily: "Consolas, monospace", fontSize: 12 }}>
+                        <strong>
+                          {r.runningBalance >= 0
+                            ? `${money(r.runningBalance, organization.currency)} Dr`
+                            : `${money(Math.abs(r.runningBalance), organization.currency)} Cr`}
+                        </strong>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!rowsWithRunBal.length && (
+                  <tr>
+                    <td colSpan={9}>
+                      <Empty>No transactions recorded for this filter.</Empty>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </DataTable>
+          </div>
+
+          <footer className="report-footer" style={{ marginTop: 24, padding: "16px 20px", borderTop: "1px solid var(--line)" }}>
+            <div className="sign-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 24 }}>
+              <div className="sign-cell">
+                <div className="sign-line" style={{ borderBottom: "1px dashed var(--line)", height: 40, marginBottom: 6 }} />
+                <span style={{ fontWeight: 600, fontSize: 12 }}>Prepared By (Accounts Officer)</span>
+                <small style={{ color: "var(--text-muted)", display: "block" }}>Simulcast Technologies Pvt Ltd</small>
+              </div>
+              <div className="sign-cell">
+                <div className="sign-line" style={{ borderBottom: "1px dashed var(--line)", height: 40, marginBottom: 6 }} />
+                <span style={{ fontWeight: 600, fontSize: 12 }}>Verified &amp; Reconciled By</span>
+                <small style={{ color: "var(--text-muted)", display: "block" }}>Internal Audit / Controller</small>
+              </div>
+              <div className="sign-cell">
+                <div className="sign-line" style={{ borderBottom: "1px dashed var(--line)", height: 40, marginBottom: 6 }} />
+                <span style={{ fontWeight: 600, fontSize: 12 }}>Party Acknowledgment / Representative</span>
+                <small style={{ color: "var(--text-muted)", display: "block" }}>{contact.companyName || contact.name}</small>
+              </div>
+            </div>
+          </footer>
+        </div>
+      </main>
+    );
+  }
+
   if (module === "settings") {
     return (
       <main className="page-wrap">
@@ -5462,6 +6110,8 @@ export default async function ModulePage({
             initialReceiptCount: organization.initialReceiptCount,
             initialDebitNoteCount: organization.initialDebitNoteCount,
             initialCreditNoteCount: organization.initialCreditNoteCount,
+            departments: organization.departments,
+            designations: organization.designations,
           }}
           action={saveOrganizationSettingsAction}
           isSaved={query.saved === "true"}

@@ -41,7 +41,7 @@ export async function getSessionUser() {
     if (typeof payload.userId !== "string") return null;
     return db.user.findUnique({
       where: { id: payload.userId },
-      select: { id: true, name: true, email: true, role: true, status: true },
+      select: { id: true, name: true, email: true, phone: true, avatarUrl: true, role: true, status: true },
     });
   } catch {
     return null;

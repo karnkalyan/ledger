@@ -22,6 +22,8 @@ import {
   User,
   ArrowRight,
   Calendar,
+  GripVertical,
+  Move,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -439,6 +441,69 @@ export function AiChatAssistant({
     },
   ]);
 
+  // Movable / Draggable Launcher Button Position
+  const [btnPos, setBtnPos] = useState<{ bottom: number; right: number }>({ bottom: 24, right: 24 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef<{ x: number; y: number; startBottom: number; startRight: number }>({ x: 0, y: 0, startBottom: 24, startRight: 24 });
+  const hasMovedRef = useRef(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("flowledger_copilot_pos");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed.bottom === "number" && typeof parsed.right === "number") {
+          setBtnPos(parsed);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    setIsDragging(true);
+    hasMovedRef.current = false;
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      startBottom: btnPos.bottom,
+      startRight: btnPos.right,
+    };
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    const deltaX = dragStartRef.current.x - e.clientX;
+    const deltaY = dragStartRef.current.y - e.clientY;
+    if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
+      hasMovedRef.current = true;
+    }
+    const newBottom = Math.max(16, Math.min(window.innerHeight - 70, dragStartRef.current.startBottom + deltaY));
+    const newRight = Math.max(16, Math.min(window.innerWidth - 150, dragStartRef.current.startRight + deltaX));
+    setBtnPos({ bottom: newBottom, right: newRight });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+      localStorage.setItem("flowledger_copilot_pos", JSON.stringify(btnPos));
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleLauncherClick = () => {
+    if (hasMovedRef.current) {
+      hasMovedRef.current = false;
+      return;
+    }
+    setIsOpen((prev) => !prev);
+  };
+
   useEffect(() => {
     if (isOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -597,48 +662,62 @@ export function AiChatAssistant({
 
   return (
     <>
-      {/* Floating Launcher Button */}
-      <button
-        type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
-        aria-label="Open AI Financial Copilot"
-        title="Open AI Financial Copilot"
+      {/* Floating Draggable Launcher Button */}
+      <div
         className="ai-chat-assistant no-print"
         style={{
           position: "fixed",
-          bottom: 24,
-          right: 24,
+          bottom: btnPos.bottom,
+          right: btnPos.right,
           zIndex: 8888,
-          height: 48,
-          padding: "0 18px",
-          borderRadius: 24,
-          background: "linear-gradient(135deg, #4a086b 0%, #ef086f 100%)",
-          color: "#ffffff",
-          border: "none",
-          boxShadow: "0 8px 24px -4px rgba(74, 8, 107, 0.4), 0 2px 6px rgba(0, 0, 0, 0.1)",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 9,
-          cursor: "pointer",
-          fontWeight: 700,
-          fontSize: 13,
-          transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+          touchAction: "none",
+          userSelect: "none",
         }}
       >
-        <Sparkles size={17} />
-        <span>AI Copilot</span>
-        {attachedFile && (
-          <span
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              background: "#10b981",
-              border: "1.5px solid #ffffff",
-            }}
-          />
-        )}
-      </button>
+        <button
+          type="button"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onClick={handleLauncherClick}
+          aria-label="Drag to reposition or click to open AI Copilot"
+          title="Drag anywhere to reposition · Click to open AI Copilot"
+          style={{
+            height: 48,
+            padding: "0 16px 0 12px",
+            borderRadius: 24,
+            background: "linear-gradient(135deg, #4a086b 0%, #ef086f 100%)",
+            color: "#ffffff",
+            border: isDragging ? "2px solid #ffffff" : "none",
+            boxShadow: isDragging
+              ? "0 12px 32px rgba(74, 8, 107, 0.6), 0 4px 12px rgba(0, 0, 0, 0.2)"
+              : "0 8px 24px -4px rgba(74, 8, 107, 0.4), 0 2px 6px rgba(0, 0, 0, 0.1)",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 7,
+            cursor: isDragging ? "grabbing" : "grab",
+            fontWeight: 700,
+            fontSize: 13,
+            transition: isDragging ? "none" : "box-shadow 0.2s ease, transform 0.2s ease",
+            transform: isDragging ? "scale(1.04)" : "scale(1)",
+          }}
+        >
+          <GripVertical size={14} style={{ opacity: 0.65, marginRight: -2 }} />
+          <Sparkles size={16} />
+          <span>AI Copilot</span>
+          {attachedFile && (
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: 4,
+                background: "#10b981",
+                border: "1.5px solid #ffffff",
+              }}
+            />
+          )}
+        </button>
+      </div>
 
       {/* Floating Chat Panel */}
       {isOpen && (
@@ -646,8 +725,8 @@ export function AiChatAssistant({
           className="ai-chat-assistant no-print"
           style={{
             position: "fixed",
-            bottom: 84,
-            right: 24,
+            bottom: typeof window !== "undefined" ? Math.min(window.innerHeight - 580, Math.max(16, btnPos.bottom + 58)) : 84,
+            right: typeof window !== "undefined" ? Math.min(window.innerWidth - (isExpanded ? 660 : 420), Math.max(16, btnPos.right)) : 24,
             zIndex: 8889,
             width: isExpanded ? 640 : 400,
             height: isExpanded ? 700 : 560,

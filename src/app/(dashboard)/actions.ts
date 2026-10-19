@@ -3,6 +3,7 @@
 import { Prisma, Recurrence, WorkspaceKind } from "@/generated/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { requireOrganizationAccess } from "@/lib/session";
 import { estimateRecurringExpense } from "@/lib/expense-engine";
@@ -2230,6 +2231,8 @@ export async function saveOrganizationSettingsAction(formData: FormData) {
   const initialReceiptCount = n(formData, "initialReceiptCount", 1);
   const initialDebitNoteCount = n(formData, "initialDebitNoteCount", 1);
   const initialCreditNoteCount = n(formData, "initialCreditNoteCount", 1);
+  const departments = s(formData, "departments") || null;
+  const designations = s(formData, "designations") || null;
 
   await db.organization.update({
     where: { id: orgId },
@@ -2255,6 +2258,8 @@ export async function saveOrganizationSettingsAction(formData: FormData) {
       initialReceiptCount,
       initialDebitNoteCount,
       initialCreditNoteCount,
+      departments,
+      designations,
     },
   });
 
@@ -2989,4 +2994,74 @@ export async function updateWalletTransactionStatusAction(formData: FormData) {
 
   revalidatePath(`/${orgId}/wallets`);
   revalidatePath(`/${orgId}/projects`);
+}
+
+export async function updateUserProfileAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  const { user } = await requireOrganizationAccess(orgId);
+  const name = s(formData, "name");
+  const email = s(formData, "email").toLowerCase();
+  const phone = s(formData, "phone") || null;
+  const avatarUrl = s(formData, "avatarUrl") || null;
+
+  if (!name || !email) throw new Error("Name and email are required");
+
+  // Check email uniqueness if email changed
+  if (email !== user.email.toLowerCase()) {
+    const existing = await db.user.findFirst({
+      where: { email, id: { not: user.id } },
+    });
+    if (existing) throw new Error("A user with this email address already exists.");
+  }
+
+  await db.user.update({
+    where: { id: user.id },
+    data: {
+      name,
+      email,
+      phone,
+      avatarUrl,
+    },
+  });
+
+  revalidatePath(`/${orgId}/profile`);
+  revalidatePath(`/${orgId}`);
+}
+
+export async function changeUserPasswordAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  const { user } = await requireOrganizationAccess(orgId);
+  const currentPassword = s(formData, "currentPassword");
+  const newPassword = s(formData, "newPassword");
+  const confirmPassword = s(formData, "confirmPassword");
+
+  if (!currentPassword || !newPassword) {
+    throw new Error("Current and new passwords are required");
+  }
+  if (newPassword.length < 6) {
+    throw new Error("New password must be at least 6 characters long");
+  }
+  if (newPassword !== confirmPassword) {
+    throw new Error("New password and confirm password do not match");
+  }
+
+  // Verify current password
+  const fullUser = await db.user.findUnique({
+    where: { id: user.id },
+    select: { passwordHash: true },
+  });
+  if (!fullUser) throw new Error("User record not found");
+
+  const valid = await bcrypt.compare(currentPassword, fullUser.passwordHash);
+  if (!valid) {
+    throw new Error("Incorrect current password. Please verify and try again.");
+  }
+
+  const newHash = await bcrypt.hash(newPassword, 12);
+  await db.user.update({
+    where: { id: user.id },
+    data: { passwordHash: newHash },
+  });
+
+  revalidatePath(`/${orgId}/profile`);
 }

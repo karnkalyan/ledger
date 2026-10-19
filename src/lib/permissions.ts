@@ -21,6 +21,7 @@ export const ROLE_ALLOWED_MODULES: Record<string, string[]> = {
     "tasks",
     "reminders",
     "menu",
+    "statement",
   ],
   SALES: [
     "crm",
@@ -37,6 +38,7 @@ export const ROLE_ALLOWED_MODULES: Record<string, string[]> = {
     "wallets",
     "reminders",
     "menu",
+    "statement",
   ],
   HR: [
     "staff",

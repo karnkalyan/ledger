@@ -141,6 +141,7 @@ model User {
   passwordHash String
   role         UserRole      @default(USER)
   status       AccountStatus @default(APPROVED)
+  avatarUrl    String?       @db.Text
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   memberships  Membership[]
@@ -176,6 +177,8 @@ model Organization {
   initialReceiptCount Int?         @default(1)
   initialDebitNoteCount Int?       @default(1)
   initialCreditNoteCount Int?      @default(1)
+  departments     String?          @db.Text
+  designations    String?          @db.Text
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   memberships     Membership[]

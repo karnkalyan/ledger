@@ -24,6 +24,7 @@ export const officeNav: NavItem[] = [
   { href: "/crm?type=CUSTOMER", label: "Customers", icon: UsersRound, color: "#3b82f6" }, // Blue
   { href: "/crm?type=VENDOR", label: "Vendors", icon: Building2, color: "#8b5cf6" }, // Purple
   { href: "/crm", label: "All Contacts (CRM)", icon: UserRoundSearch, color: "#7c3aed" }, // Violet
+  { href: "/statement", label: "Party Statement", icon: FileText, color: "#0284c7" }, // Sky
   { href: "/leads", label: "Leads", icon: BriefcaseBusiness, color: "#f43f5e" }, // Rose
   { href: "/invoices", label: "Invoices", icon: ReceiptText, color: "#0d9488" }, // Teal
   { href: "/quotes", label: "Quotes", icon: FileText, color: "#0284c7" }, // Sky

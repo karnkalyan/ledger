@@ -143,13 +143,29 @@ export function AppShell({
               <ArrowLeftRight size={13} style={{ verticalAlign: "middle", marginRight: 4 }} />
               <span>Switch</span>
             </Link>
-            <div className="user-pill">
-              <div className="avatar">{user.name.slice(0, 1).toUpperCase()}</div>
+            <Link
+              href={`/${org.id}/profile`}
+              className="user-pill"
+              title="Manage your profile, email, password & avatar"
+              style={{ textDecoration: "none" }}
+            >
+              <div className="avatar" style={{ overflow: "hidden" }}>
+                {(user as any).avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={(user as any).avatarUrl}
+                    alt={user.name}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                ) : (
+                  user.name.slice(0, 1).toUpperCase()
+                )}
+              </div>
               <div className="hide-mobile">
                 <strong>{user.name}</strong>
                 <small>{user.email}</small>
               </div>
-            </div>
+            </Link>
             <form action={logoutAction}>
               <button className="ghost-btn icon-btn" title="Sign out" aria-label="Sign out">
                 <LogOut size={14} />
