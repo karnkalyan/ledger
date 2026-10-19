@@ -895,6 +895,7 @@ export default async function ModulePage({
                     otherAmount: Number(bill.otherAmount),
                     totalAmount: Number(bill.totalAmount),
                     dueDate: bill.dueDate?.toISOString() || null,
+                    notes: bill.notes,
                     payments: bill.payments.map((payment) => ({
                       id: payment.id,
                       amount: Number(payment.amount),

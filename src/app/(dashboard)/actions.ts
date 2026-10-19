@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { requireOrganizationAccess } from "@/lib/session";
 import { estimateRecurringExpense } from "@/lib/expense-engine";
 import { getDaysInMonth, startOfMonth, endOfMonth } from "date-fns";
-import { getBsMonthRange, bsToAd } from "@/lib/nepali-calendar";
+import { getBsMonthRange, bsToAd, adToBs, NEPALI_MONTHS_EN, NEPALI_MONTHS_NE } from "@/lib/nepali-calendar";
 
 type Line = { description: string; quantity: number; unitPrice: number; taxRate?: number; productId?: string };
 
@@ -1607,18 +1607,32 @@ export async function recordRentalPaymentAction(formData: FormData) {
       });
     }
 
+    const isBs = Number(billingMonth.slice(0, 4)) >= 2070;
+    let monthDisplay = billingMonth;
+    if (isBs) {
+      const [bYr, bMo] = billingMonth.split("-").map(Number);
+      const mIdx = Math.max(0, Math.min(11, bMo - 1));
+      const mNameEn = NEPALI_MONTHS_EN[mIdx] || `Month ${bMo}`;
+      const mNameNe = NEPALI_MONTHS_NE[mIdx] || "";
+      monthDisplay = `${mNameEn} (${mNameNe}) ${bYr} BS`;
+    } else {
+      const [aYr, aMo] = billingMonth.split("-").map(Number);
+      const dObj = new Date(aYr, aMo - 1, 15);
+      monthDisplay = `${dObj.toLocaleString("default", { month: "long" })} ${aYr} AD`;
+    }
+
     const expense = await tx.expense.create({
       data: {
         organizationId: orgId,
         categoryId: category.id,
-        title: `Rental payment - ${house.title} (${billingMonth})`,
+        title: `Rental payment - ${house.title} (${monthDisplay})`,
         vendor: house.ownerName,
         type: "ONE_TIME",
         amount: paidAmount,
         occurredAt: paidAt,
         isEstimated: false,
         notes: [
-          `Bill ${billingMonth}: rent ${rentAmount}, electricity ${electricityAmount}, water/CAM ${waterAmount}, other ${otherAmount}.`,
+          `Rent/Utility Bill for ${monthDisplay}: Rent ${rentAmount}, Electricity ${electricityAmount}, Water/CAM ${waterAmount}, Other ${otherAmount}.`,
           reference ? `Reference: ${reference}.` : "",
           notes || "",
         ].filter(Boolean).join(" "),
@@ -1653,7 +1667,7 @@ export async function recordRentalPaymentAction(formData: FormData) {
           type: "WITHDRAWAL",
           amount: paidAmount,
           balance: updated.currentBalance,
-          description: `Rental payment - ${house.title} (${billingMonth})`,
+          description: `Rental payment - ${house.title} (${monthDisplay})`,
           reference,
           category: "Rent & Premises",
           expenseId: expense.id,
