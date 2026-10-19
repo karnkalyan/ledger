@@ -745,10 +745,16 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
     const discount = Number(so.discount);
 
     // Check if an invoice has already been converted/created for this sales order
+    const soNumClean = so.orderNumber.replace(/^(SO|NO)-/i, "");
     const existingInvoice = await db.invoice.findFirst({
       where: {
         organizationId: orgId,
-        notes: { contains: so.orderNumber },
+        OR: [
+          { notes: { contains: so.orderNumber } },
+          { invoiceNumber: `INV-${so.orderNumber}` },
+          { invoiceNumber: { contains: so.orderNumber } },
+          ...(soNumClean.length >= 2 ? [{ invoiceNumber: `INV-${soNumClean}` }, { invoiceNumber: `INV-NO-${soNumClean}` }] : []),
+        ],
       },
     });
 
@@ -1250,18 +1256,30 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
     const vendorDues = Math.max(0, totalPurchases - totalPaidToVendor);
 
     // Track which sales orders already have an official invoice generated to avoid duplicate debiting
-    const invoicedSalesOrderNumbers = new Set(
-      contact.invoices
-        .map((inv) => {
-          const match = inv.notes?.match(/SO-\d+/);
-          return match ? match[0] : null;
-        })
-        .filter(Boolean)
-    );
+    const invoicedSalesOrderNumbers = new Set<string>();
+    const invoicedSalesOrderIds = new Set<string>();
+
+    for (const inv of contact.invoices) {
+      for (const so of contact.salesOrders) {
+        const soNumClean = so.orderNumber.replace(/^(SO|NO)-/i, "");
+        const invNumClean = inv.invoiceNumber.replace(/^INV-(SO|NO)-?/i, "").replace(/^INV-/i, "");
+        const isMatched =
+          inv.notes?.includes(so.orderNumber) ||
+          inv.notes?.includes(soNumClean) ||
+          inv.invoiceNumber === `INV-${so.orderNumber}` ||
+          inv.invoiceNumber.includes(so.orderNumber) ||
+          (soNumClean.length >= 2 && invNumClean === soNumClean);
+
+        if (isMatched) {
+          invoicedSalesOrderNumbers.add(so.orderNumber);
+          invoicedSalesOrderIds.add(so.id);
+        }
+      }
+    }
 
     const totalInvoicesAmount = contact.invoices.reduce((s, x) => s + Number(x.total), 0);
     const totalNonInvoicedSalesOrdersAmount = contact.salesOrders
-      .filter((so) => !invoicedSalesOrderNumbers.has(so.orderNumber) && so.status !== "CANCELLED")
+      .filter((so) => !invoicedSalesOrderNumbers.has(so.orderNumber) && !invoicedSalesOrderIds.has(so.id) && so.status !== "CANCELLED")
       .reduce((s, x) => s + Number(x.total), 0);
 
     const totalSales = totalInvoicesAmount + totalNonInvoicedSalesOrdersAmount;
@@ -1307,7 +1325,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
         }))
       ),
       ...contact.salesOrders
-        .filter((so) => !invoicedSalesOrderNumbers.has(so.orderNumber) && so.status !== "CANCELLED")
+        .filter((so) => !invoicedSalesOrderNumbers.has(so.orderNumber) && !invoicedSalesOrderIds.has(so.id) && so.status !== "CANCELLED")
         .map((so) => ({
           id: `so-${so.id}`,
           date: so.orderDate,
@@ -1453,8 +1471,13 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
               <div>
                 <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)" }}>Total Payments Received</div>
                 <strong style={{ fontSize: 18, color: "var(--success)" }}>
-                  {money(totalIncomeReceived, organization.currency)}
+                  {money(totalCollected + totalIncomeReceived, organization.currency)}
                 </strong>
+                {totalCollected > 0 && totalIncomeReceived > 0 && (
+                  <div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>
+                    {money(totalCollected, organization.currency)} invoice collections + {money(totalIncomeReceived, organization.currency)} direct
+                  </div>
+                )}
               </div>
               {totalDirectExpenses > 0 && (
                 <div>
@@ -1782,10 +1805,18 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
                 </thead>
                 <tbody>
                   {contact.salesOrders.map((so) => {
-                    const isInvoiced = invoicedSalesOrderNumbers.has(so.orderNumber);
-                    const matchedInvoice = isInvoiced
-                      ? contact.invoices.find((inv) => inv.notes?.includes(so.orderNumber))
-                      : null;
+                    const soNumClean = so.orderNumber.replace(/^(SO|NO)-/i, "");
+                    const matchedInvoice = contact.invoices.find((inv) => {
+                      const invNumClean = inv.invoiceNumber.replace(/^INV-(SO|NO)-?/i, "").replace(/^INV-/i, "");
+                      return (
+                        inv.notes?.includes(so.orderNumber) ||
+                        inv.notes?.includes(soNumClean) ||
+                        inv.invoiceNumber === `INV-${so.orderNumber}` ||
+                        inv.invoiceNumber.includes(so.orderNumber) ||
+                        (soNumClean.length >= 2 && invNumClean === soNumClean)
+                      );
+                    });
+                    const isInvoiced = Boolean(matchedInvoice) || invoicedSalesOrderNumbers.has(so.orderNumber) || invoicedSalesOrderIds.has(so.id);
                     return (
                       <tr key={so.id}>
                         <td data-label="SO #">

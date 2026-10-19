@@ -905,10 +905,16 @@ export async function convertSalesOrderToInvoiceAction(formData: FormData) {
   if (!so) return;
 
   // Check if an invoice for this sales order already exists
+  const soNumClean = so.orderNumber.replace(/^(SO|NO)-/i, "");
   const existingInv = await db.invoice.findFirst({
     where: {
       organizationId: orgId,
-      notes: { contains: `Tax invoice for order ${so.orderNumber}` },
+      OR: [
+        { notes: { contains: so.orderNumber } },
+        { invoiceNumber: `INV-${so.orderNumber}` },
+        { invoiceNumber: { contains: so.orderNumber } },
+        ...(soNumClean.length >= 2 ? [{ invoiceNumber: `INV-${soNumClean}` }, { invoiceNumber: `INV-NO-${soNumClean}` }] : []),
+      ],
     },
   });
   if (existingInv) {
