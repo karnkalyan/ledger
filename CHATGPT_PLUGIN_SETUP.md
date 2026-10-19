@@ -123,7 +123,7 @@ Once connected, test these exact prompts in ChatGPT:
    ```
    @Kashtrix ERP get all companies details
    ```
-   *Returns Simulcast Technologies Pvt Ltd (PAN: 601928374), My House, and live Siddhartha Bank balances.*
+   *Returns Simulcast Technologies Pvt Ltd (PAN: 609670271), My House, and live Siddhartha Bank balances.*
 
 3. **Bank Transactions (Ashoj / Monthly statements)**:
    ```

@@ -244,7 +244,7 @@ export function CompanyAuditReport({
           {
             name: "Kalyan Kumar Karna",
             designation: "Managing Director / Software Architect",
-            pan: organization.taxNumber || organization.panVatNumber || "601928374",
+            pan: organization.taxNumber || organization.panVatNumber || "609670271",
             monthlySalary: 30000,
             grossSalary: 360000,
             sst: 3600,
@@ -254,7 +254,7 @@ export function CompanyAuditReport({
           {
             name: "Diwakar Karna",
             designation: "Accountant / Operations Lead",
-            pan: organization.taxNumber || organization.panVatNumber || "601928374",
+            pan: organization.taxNumber || organization.panVatNumber || "609670271",
             monthlySalary: 20000,
             grossSalary: 240000,
             sst: 2400,
@@ -286,7 +286,7 @@ export function CompanyAuditReport({
       {
         name: "New Staff Member",
         designation: "Associate / Analyst",
-        pan: organization.taxNumber || organization.panVatNumber || "601928374",
+        pan: organization.taxNumber || organization.panVatNumber || "609670271",
         monthlySalary: 25000,
         grossSalary: 300000,
         sst: 3000,
@@ -355,7 +355,7 @@ export function CompanyAuditReport({
             {organization.address || "Sankhamul, Kathmandu, Nepal"}
             {organization.email ? ` · ${organization.email}` : ""}
             {organization.phone ? ` · ${organization.phone}` : ""}<br />
-            <strong>PAN / VAT No:</strong> {organization.taxNumber || organization.panVatNumber || "601928374"}
+            <strong>PAN / VAT No:</strong> {organization.taxNumber || organization.panVatNumber || "609670271"}
           </div>
         </div>
       </div>
@@ -1728,7 +1728,7 @@ export function CompanyAuditReport({
                   <td>{idx + 1}</td>
                   <td><strong>{emp.name}</strong></td>
                   <td>{emp.designation}</td>
-                  <td>{emp.pan || "601928374"}</td>
+                  <td>{emp.pan || "609670271"}</td>
                   <td style={{ textAlign: "right" }}>{money(emp.monthlySalary, currency)}</td>
                   <td style={{ textAlign: "right" }}>{money(emp.grossSalary, currency)}</td>
                   <td style={{ textAlign: "right", color: "var(--red)" }}>{money(emp.sst, currency)}</td>
@@ -1772,7 +1772,7 @@ export function CompanyAuditReport({
               1. Corporate Information
             </h4>
             <p>
-              <strong>{organization.name}</strong> is a private limited company incorporated under the Companies Act, 2063 of Nepal with PAN/VAT Registration No. {organization.taxNumber || organization.panVatNumber || "601928374"}. The registered office is located at {organization.address || "Sankhamul-31, Kathmandu, Nepal"}. The company is engaged in information technology, cloud solutions, and software services.
+              <strong>{organization.name}</strong> is a private limited company incorporated under the Companies Act, 2063 of Nepal with PAN/VAT Registration No. {organization.taxNumber || organization.panVatNumber || "609670271"}. The registered office is located at {organization.address || "Sankhamul-31, Kathmandu, Nepal"}. The company is engaged in information technology, cloud solutions, and software services.
             </p>
 
             <h4 style={{ fontSize: "9.5pt", fontWeight: 800, margin: "10px 0 4px", color: "#0f172a" }}>

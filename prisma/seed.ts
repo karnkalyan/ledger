@@ -131,8 +131,8 @@ async function main() {
     update: {
       name: "Simulcast Technologies Pvt Ltd",
       status: AccountStatus.APPROVED,
-      panVatNumber: "601928374",
-      taxNumber: "601928374",
+      panVatNumber: "609670271",
+      taxNumber: "609670271",
       vendorCategory: "IT & Software",
       address: "Kathmandu, Nepal",
       email: "accounts@simulcast.local",
@@ -148,8 +148,8 @@ async function main() {
       currency: "NPR",
       address: "Kathmandu, Nepal",
       email: "accounts@simulcast.local",
-      panVatNumber: "601928374",
-      taxNumber: "601928374",
+      panVatNumber: "609670271",
+      taxNumber: "609670271",
       vendorCategory: "IT & Software",
       logoUrl: "/logo-mark.png",
       defaultTaxPercent: 13.00,
@@ -618,34 +618,8 @@ async function main() {
     },
   });
 
-  // 6. OFFICE SETUP PURCHASE AT NPR 300,000 WITH DUES MANAGEMENT
-  console.log("\n--- SEEDING OFFICE SETUP PURCHASE (NPR 300,000) WITH DUES ---");
-  const officeVendor = await prisma.contact.upsert({
-    where: { id: "c-office-interiors-vendor" },
-    update: {
-      name: "Commercial Tech & Office Interiors Pvt Ltd",
-      companyName: null,
-      taxNumber: null,
-      address: null,
-      phone: null,
-      email: null,
-      notes: null,
-    },
-    create: {
-      id: "c-office-interiors-vendor",
-      organizationId: company.id,
-      type: ContactType.VENDOR,
-      name: "Commercial Tech & Office Interiors Pvt Ltd",
-      companyName: null,
-      taxNumber: null,
-      address: null,
-      phone: null,
-      email: null,
-      notes: null,
-    },
-  });
-
-  // Delete prior instance if exists
+  // 6. CLEANUP OFFICE SETUP PURCHASE & UNWANTED PROCUREMENT DUES
+  console.log("\n--- REMOVING OFFICE SETUP PURCHASE PO-OFFICE-SETUP-300K & DUES ---");
   const existingOfficePO = await prisma.purchaseOrder.findFirst({
     where: { organizationId: company.id, orderNumber: "PO-OFFICE-SETUP-300K" },
   });
@@ -655,78 +629,29 @@ async function main() {
     await prisma.purchaseOrder.delete({ where: { id: existingOfficePO.id } });
   }
 
-  const officePO = await prisma.purchaseOrder.create({
-    data: {
-      organizationId: company.id,
-      orderNumber: "PO-OFFICE-SETUP-300K",
-      contactId: officeVendor.id,
-      status: OrderStatus.PROCESSING,
-      orderDate: new Date("2026-09-01T10:00:00Z"),
-      subtotal: 300000,
-      tax: 0,
-      discount: 0,
-      total: 300000,
-      paidAmount: 100000, // 100k paid, 200k remaining dues
-      notes: "Complete office setup purchase package. Total NPR 300,000 with phased milestone dues.",
-      stockPostedAt: new Date("2026-09-01T10:00:00Z"),
-      items: {
-        create: [
-          {
-            description: "Executive Ergonomic Desks & Workstations (Set of 4)",
-            quantity: 4,
-            unitPrice: 35000,
-            amount: 140000,
-          },
-          {
-            description: "IT Server Rack, Structured Cabling & Networking Patch Panel",
-            quantity: 1,
-            unitPrice: 90000,
-            amount: 90000,
-          },
-          {
-            description: "Acoustic Partitioning, Conference Chairs & LED Overhead Fixtures",
-            quantity: 1,
-            unitPrice: 70000,
-            amount: 70000,
-          },
-        ],
-      },
-    },
-  });
-
-  // Record initial payment against dues
-  await prisma.purchasePayment.create({
-    data: {
-      purchaseOrderId: officePO.id,
-      amount: 100000,
-      paidAt: new Date("2026-09-15T14:30:00Z"),
-      method: "Bank Transfer (Siddhartha Bank)",
-      reference: "CHQ-029108",
-      notes: "Initial advance disbursement for office setup. Remaining dues: NPR 200,000.",
-    },
-  });
-
-  // Log linked expense so it shows in monthly reports (idempotent check)
-  const existingOfficeSetupExp = await prisma.expense.findFirst({
+  // Delete any linked expenses for PO-OFFICE-SETUP-300K or Commercial Tech
+  await prisma.expense.deleteMany({
     where: {
       organizationId: company.id,
-      title: `Payment for PO #${officePO.orderNumber} (${officeVendor.name})`,
+      OR: [
+        { title: { contains: "PO-OFFICE-SETUP-300K" } },
+        { title: { contains: "Commercial Tech" } },
+        { vendor: { contains: "Commercial Tech" } },
+      ],
     },
   });
-  if (!existingOfficeSetupExp) {
-    await prisma.expense.create({
-      data: {
-        organizationId: company.id,
-        title: `Payment for PO #${officePO.orderNumber} (${officeVendor.name})`,
-        vendor: officeVendor.name,
-        type: ExpenseType.ONE_TIME,
-        amount: 100000,
-        occurredAt: new Date("2026-09-15T14:30:00Z"),
-        notes: `Payment towards office setup purchase dues. Remaining order balance: NPR 200,000.`,
-      },
-    });
-  }
-  console.log(`Created/Verified Office Purchase Order PO-OFFICE-SETUP-300K: Total 300,000, Paid 100,000, Dues 200,000.`);
+
+  // Delete office vendor contact if exists
+  await prisma.contact.deleteMany({
+    where: {
+      organizationId: company.id,
+      OR: [
+        { id: "c-office-interiors-vendor" },
+        { name: { contains: "Commercial Tech & Office Interiors" } },
+      ],
+    },
+  });
+  console.log("Successfully removed PO-OFFICE-SETUP-300K, payments, items, and linked expenses.");
 
   // 7. LOAN CLEANUP (Office Loans Removed per user requirements)
   console.log("\n--- CLEANING PREVIOUS DUMMY LOANS ---");
@@ -807,8 +732,9 @@ async function main() {
     await prisma.invoice.deleteMany({ where: { organizationId: company.id } });
     await prisma.salesOrderItem.deleteMany({ where: { salesOrder: { organizationId: company.id } } });
     await prisma.salesOrder.deleteMany({ where: { organizationId: company.id } });
-    await prisma.purchaseOrderItem.deleteMany({ where: { purchaseOrder: { organizationId: company.id, orderNumber: { not: "PO-OFFICE-SETUP-300K" } } } });
-    await prisma.purchaseOrder.deleteMany({ where: { organizationId: company.id, orderNumber: { not: "PO-OFFICE-SETUP-300K" } } });
+    await prisma.purchasePayment.deleteMany({ where: { purchaseOrder: { organizationId: company.id } } });
+    await prisma.purchaseOrderItem.deleteMany({ where: { purchaseOrder: { organizationId: company.id } } });
+    await prisma.purchaseOrder.deleteMany({ where: { organizationId: company.id } });
     await prisma.quoteItem.deleteMany({ where: { quote: { organizationId: company.id } } });
     await prisma.quote.deleteMany({ where: { organizationId: company.id } });
     await prisma.lead.deleteMany({ where: { organizationId: company.id } });
@@ -817,7 +743,6 @@ async function main() {
     await prisma.contact.deleteMany({
       where: {
         organizationId: company.id,
-        id: { not: "c-office-interiors-vendor" },
       },
     });
 
@@ -838,7 +763,6 @@ async function main() {
       "cloud tech": { name: "Cloud Tech", type: ContactType.VENDOR },
       "lokesh agarwal": { name: "Lokesh Agarwal", type: ContactType.VENDOR },
       "vianet": { name: "Vianet", type: ContactType.VENDOR },
-      "commercial tech": { name: "Commercial Tech & Office Interiors Pvt Ltd", type: ContactType.VENDOR },
       "riddhi siddhi": { name: "Riddhi Siddhi Multipurpose", type: ContactType.CUSTOMER },
       "aashi traders": { name: "Aashi Traders", type: ContactType.CUSTOMER },
       "sujay": { name: "Sujay", type: ContactType.CUSTOMER },
@@ -852,6 +776,7 @@ async function main() {
       "7 star tv": { name: "7 Star TV", type: ContactType.CUSTOMER },
       "dim movies": { name: "DIM Movies", type: ContactType.CUSTOMER },
       "fewa tv": { name: "Fewa TV Ltd", type: ContactType.CUSTOMER },
+      "mediko": { name: "Mediko Life", type: ContactType.CUSTOMER },
     };
 
     function matchCanonicalKey(rawName: string): string | null {
@@ -863,13 +788,13 @@ async function main() {
       if (lower.includes("dhulukhel") || lower.includes("dhulikhel")) return "dhulikhel";
       if (lower.includes("primeminister") || lower.includes("prime minister")) return "prime minister";
       if (lower === "max" || lower.includes("max tech")) return "nepal max tech";
-      if (lower.includes("comp.pvt") || lower.includes("comp pvt") || lower.includes("commercial tech") || lower.includes("office interiors")) return "commercial tech";
       if (lower.includes("riddhi siddhi")) return "riddhi siddhi";
       if (lower.includes("aashi")) return "aashi traders";
       if (lower.includes("sujay")) return "sujay";
       if (lower.includes("illya")) return "illya";
       if (lower.includes("quick")) return "quick";
       if (lower.includes("air")) return "air";
+      if (lower.includes("mediko")) return "mediko";
 
       for (const k of Object.keys(CANONICAL_CONTACTS)) {
         if (lower.includes(k)) return k;
@@ -878,8 +803,6 @@ async function main() {
     }
 
     const contactMap = new Map<string, string>();
-    contactMap.set("commercial tech", "c-office-interiors-vendor");
-    contactMap.set("commercial tech & office interiors pvt ltd", "c-office-interiors-vendor");
 
     // Process clients
     for (const clientName of data.clients) {
@@ -1089,7 +1012,7 @@ async function main() {
         accountType: sBankData.accountType,
         branch: "Kathmandu Branch",
         currency: "NPR",
-        currentBalance: 27944.68,
+        currentBalance: 87944.68,
         holdAmount: 2500,
       },
       create: {
@@ -1101,7 +1024,7 @@ async function main() {
         branch: "Kathmandu Branch",
         currency: "NPR",
         openingBalance: sBankData.openingBalance,
-        currentBalance: 27944.68,
+        currentBalance: 87944.68,
         holdAmount: 2500,
       },
     });
@@ -1139,13 +1062,24 @@ async function main() {
 
       let incomeId: string | null = null;
       let expenseId: string | null = null;
+      let linkedContactId: string | null = null;
 
       if (tx.type === "DEPOSIT") {
+        let depositSource = "Siddhartha Bank Ltd (02017249683)";
+        let depositTitle = tx.description || "Bank Deposit Receipt";
+
+        if (descLower.includes("mediko")) {
+          depositSource = "Mediko Life";
+          depositTitle = "Client Revenue (Mediko Life) - " + (tx.description || "cIPS Fund Trf");
+          linkedContactId = contactMap.get("mediko") || null;
+        }
+
         const inc = await prisma.income.create({
           data: {
             organizationId: company.id,
-            title: tx.description || "Bank Deposit Receipt",
-            source: "Siddhartha Bank Ltd (02017249683)",
+            contactId: linkedContactId,
+            title: depositTitle,
+            source: depositSource,
             amount,
             receivedAt: txDate,
             paymentMethod: "BANK",
@@ -1181,6 +1115,7 @@ async function main() {
             description: tx.description,
             reference: tx.reference,
             category,
+            contactId: linkedContactId ?? undefined,
             incomeId: incomeId ?? undefined,
             expenseId: expenseId ?? undefined,
           },
@@ -1264,10 +1199,10 @@ async function main() {
 
     await prisma.bankAccount.update({
       where: { id: sBank.id },
-      data: { currentBalance: 12944.68 },
+      data: { currentBalance: 87944.68, holdAmount: 2500 },
     });
 
-    console.log(`Imported Siddhartha Bank transactions. Verified closing balance set to NPR 12,944.68.`);
+    console.log(`Imported Siddhartha Bank transactions. Verified closing balance set to NPR 87,944.68 (Available: NPR 85,444.68, Hold: NPR 2,500.00).`);
   }
 
   // 9. Staff Clean Directory (No dummy employees seeded per request)

@@ -7,8 +7,8 @@ async function main() {
     data: {
       logoUrl: "/logo-mark.png",
       defaultTaxPercent: 13.00,
-      taxNumber: "601928374",
-      panVatNumber: "601928374",
+      taxNumber: "609670271",
+      panVatNumber: "609670271",
     },
   });
 

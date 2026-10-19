@@ -3633,7 +3633,7 @@ export default async function ModulePage({
             return {
               name: emp.name,
               designation: emp.designation || "Staff Member",
-              pan: organization.taxNumber || organization.panVatNumber || "601928374",
+              pan: organization.taxNumber || organization.panVatNumber || "609670271",
               monthlySalary: Number(emp.basicSalary || 0),
               grossSalary: annualGross,
               sst,
@@ -3645,7 +3645,7 @@ export default async function ModulePage({
             {
               name: "Kalyan Kumar Karna",
               designation: "Managing Director / Software Architect",
-              pan: organization.taxNumber || organization.panVatNumber || "601928374",
+              pan: organization.taxNumber || organization.panVatNumber || "609670271",
               monthlySalary: 30000,
               grossSalary: 360000,
               sst: 3600,
@@ -3655,7 +3655,7 @@ export default async function ModulePage({
             {
               name: "Diwakar Karna",
               designation: "Accountant / Operations Lead",
-              pan: organization.taxNumber || organization.panVatNumber || "601928374",
+              pan: organization.taxNumber || organization.panVatNumber || "609670271",
               monthlySalary: 20000,
               grossSalary: 240000,
               sst: 2400,
@@ -4206,8 +4206,7 @@ export default async function ModulePage({
       const totalCurrentAssets = liquidCash + accountsReceivable + loansGivenPrincipal + inventoryValuation;
 
       // 2. Fixed & Capital Assets
-      const officeSetupPO = purchaseOrders.find((p) => p.orderNumber === "PO-OFFICE-SETUP-300K");
-      const fixedAssets = officeSetupPO ? Number(officeSetupPO.total) : 300000;
+      const fixedAssets = purchaseOrders.reduce((s, p) => s + Number(p.total), 0);
       const totalAssets = totalCurrentAssets + fixedAssets;
 
       // 3. Current Liabilities
