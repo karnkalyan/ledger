@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeftRight, LogOut, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ArrowLeftRight, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Search } from "lucide-react";
 import { Sidebar } from "@/components/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { logoutAction } from "@/app/login/actions";
@@ -12,11 +12,13 @@ import { TodayTasksNav, PendingItem } from "@/components/today-tasks-nav";
 import { NepaliCalendarNav } from "@/components/nepali-calendar-nav";
 import { MobileAppBottomNav } from "@/components/mobile-nav";
 import { AiChatAssistant } from "@/components/ai-chat-assistant";
+import { GlobalSearchModal } from "@/components/global-search-modal";
 
 export function AppShell({
   children,
   org,
   user,
+  memberRole,
   fiscalInfo,
   pendingTasks = [],
   pendingReminders = [],
@@ -24,6 +26,7 @@ export function AppShell({
   children: React.ReactNode;
   org: { id: string; name: string; kind: string; logoUrl?: string | null; taxNumber?: string | null };
   user: { name: string; email: string };
+  memberRole?: string;
   fiscalInfo?: {
     availableYears: FiscalYearInfo[];
     currentFiscalYear: FiscalYearInfo;
@@ -34,12 +37,25 @@ export function AppShell({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("sidebar_collapsed");
     if (saved === "true") {
       setSidebarCollapsed(true);
     }
+  }, []);
+
+  // Global Ctrl+K / Cmd+K keyboard shortcut listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchModalOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const toggleSidebarCollapsed = () => {
@@ -58,6 +74,7 @@ export function AppShell({
         kind={org.kind}
         logoUrl={org.logoUrl}
         taxNumber={org.taxNumber}
+        memberRole={memberRole}
         isOpen={sidebarOpen}
         isCollapsed={sidebarCollapsed}
         onToggleCollapse={toggleSidebarCollapsed}
@@ -91,6 +108,22 @@ export function AppShell({
               <h2 className="topbar-title">{org.name}</h2>
             </div>
           </div>
+
+          {/* GLOBAL SEARCH NAVBAR BUTTON / TRIGGER */}
+          <div className="topbar-search-wrap">
+            <button
+              type="button"
+              className="topbar-search-trigger"
+              onClick={() => setSearchModalOpen(true)}
+              title="Search customers, vendors, sales, invoices, accounts (Ctrl+K)"
+              aria-label="Search records"
+            >
+              <Search size={14} className="search-icon" />
+              <span className="search-placeholder">Search customers, vendors, sales, invoices...</span>
+              <kbd className="search-kbd">Ctrl K</kbd>
+            </button>
+          </div>
+
           <div className="topbar-actions">
             <div className="topbar-extra-desktop">
               <NepaliCalendarNav />
@@ -126,6 +159,13 @@ export function AppShell({
         </header>
         {children}
       </div>
+
+      {/* GLOBAL SEARCH COMMAND PALETTE MODAL (CTRL + K) */}
+      <GlobalSearchModal
+        orgId={org.id}
+        isOpen={searchModalOpen}
+        onClose={() => setSearchModalOpen(false)}
+      />
 
       {/* MOBILE APPLICATION APP-LIKE BOTTOM NAVIGATION BAR */}
       <div className="no-print">

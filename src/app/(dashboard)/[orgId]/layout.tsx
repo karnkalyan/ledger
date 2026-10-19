@@ -13,7 +13,7 @@ export default async function DashboardLayout({
   params: Promise<{ orgId: string }>;
 }) {
   const { orgId } = await params;
-  const { user, organization } = await requireOrganizationAccess(orgId);
+  const { user, organization, membership } = await requireOrganizationAccess(orgId);
   const cookieStore = await cookies();
   const fyCookie = cookieStore.get("flowledger_fy")?.value || null;
   const customFyCookie = cookieStore.get("flowledger_custom_fy")?.value || "";
@@ -64,6 +64,7 @@ export default async function DashboardLayout({
           taxNumber: organization.taxNumber || organization.panVatNumber,
         }}
         user={user}
+        memberRole={membership.role}
         fiscalInfo={{
           availableYears,
           currentFiscalYear,

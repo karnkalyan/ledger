@@ -46,7 +46,7 @@ export default async function AdminVendorsPage({
   }
 
   const query = await searchParams;
-  const tab = query.tab === "transactions" ? "transactions" : "vendors";
+  const tab = query.tab === "transactions" ? "transactions" : query.tab === "users" ? "users" : "vendors";
   const filterStatus = Object.values(AccountStatus).includes(query.status as AccountStatus)
     ? (query.status as AccountStatus)
     : undefined;
@@ -108,6 +108,29 @@ export default async function AdminVendorsPage({
   const approvedCount = allVendors.filter((v) => v.status === "APPROVED").length;
   const rejectedCount = allVendors.filter((v) => v.status === "REJECTED").length;
   const suspendedCount = allVendors.filter((v) => v.status === "SUSPENDED").length;
+
+  const allUsersCount = await db.user.count();
+  const systemUsers =
+    tab === "users"
+      ? await db.user.findMany({
+          where: search
+            ? {
+                OR: [
+                  { name: { contains: search } },
+                  { email: { contains: search } },
+                ],
+              }
+            : {},
+          include: {
+            memberships: {
+              include: {
+                organization: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        })
+      : [];
 
   // 2. TRANSACTION AUDIT & MODIFICATION QUERY (if on transactions tab)
   type UnifiedTx = {
@@ -288,6 +311,14 @@ export default async function AdminVendorsPage({
           >
             <Receipt size={15} style={{ verticalAlign: "middle", marginRight: 6 }} />
             All Transactions &amp; Ledger Audit (Modify / Edit)
+          </Link>
+          <Link
+            href="/admin?tab=users"
+            className={`filter-tab ${tab === "users" ? "active" : ""}`}
+            style={{ fontSize: 13, padding: "8px 16px" }}
+          >
+            <Users size={15} style={{ verticalAlign: "middle", marginRight: 6 }} />
+            User Management &amp; Workspaces ({allUsersCount})
           </Link>
         </div>
 
@@ -630,7 +661,245 @@ export default async function AdminVendorsPage({
             </div>
           </>
         )}
+
+        {tab === "users" && (
+          <>
+            <div className="admin-title-row">
+              <div>
+                <h2>Platform User Management &amp; Workspace Access</h2>
+                <p>
+                  Audit system users, assign operational roles (CRM, Accounts, Admin, HR), and control which company workspaces each user can access.
+                </p>
+              </div>
+            </div>
+
+            {/* KPI METRICS OVERVIEW */}
+            <div className="admin-kpi-grid">
+              <div className="kpi-metric-card">
+                <span className="kpi-label">Total Platform Users</span>
+                <div className="kpi-value">{allUsersCount}</div>
+                <div className="kpi-sub">Registered accounts</div>
+              </div>
+              <div className="kpi-metric-card">
+                <span className="kpi-label">Super Administrators</span>
+                <div className="kpi-value" style={{ color: "var(--purple)" }}>
+                  {systemUsers.filter((u) => u.role === "SUPER_ADMIN").length}
+                </div>
+                <div className="kpi-sub">Master platform access</div>
+              </div>
+              <div className="kpi-metric-card">
+                <span className="kpi-label">Workspace Memberships</span>
+                <div className="kpi-value" style={{ color: "var(--brand)" }}>
+                  {systemUsers.reduce((sum, u) => sum + u.memberships.length, 0)}
+                </div>
+                <div className="kpi-sub">Company &amp; household bindings</div>
+              </div>
+              <div className="kpi-metric-card">
+                <span className="kpi-label">Operational CRM &amp; Accounts</span>
+                <div className="kpi-value" style={{ color: "var(--success)" }}>
+                  {
+                    systemUsers.filter((u) =>
+                      u.memberships.some((m) =>
+                        ["ACCOUNTANT", "SALES", "HR", "ADMIN"].includes(m.role)
+                      )
+                    ).length
+                  }
+                </div>
+                <div className="kpi-sub">Specialized department users</div>
+              </div>
+            </div>
+
+            {/* SEARCH & FILTERS BAR */}
+            <div className="admin-filter-bar">
+              <form
+                method="GET"
+                action="/admin"
+                style={{ display: "flex", gap: 8, alignItems: "center", flex: 1, maxWidth: 500 }}
+              >
+                <input type="hidden" name="tab" value="users" />
+                <div style={{ position: "relative", flex: 1 }}>
+                  <Search
+                    size={15}
+                    style={{
+                      position: "absolute",
+                      left: 10,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      color: "var(--text-muted)",
+                    }}
+                  />
+                  <input
+                    type="search"
+                    name="search"
+                    defaultValue={search}
+                    placeholder="Filter by user name or email address..."
+                    style={{ width: "100%", paddingLeft: 32 }}
+                  />
+                </div>
+                <button type="submit" className="secondary-btn" style={{ minHeight: 34 }}>
+                  Filter
+                </button>
+                {search && (
+                  <Link href="/admin?tab=users" className="ghost-btn" style={{ minHeight: 34 }}>
+                    Clear
+                  </Link>
+                )}
+              </form>
+            </div>
+
+            {/* USERS & WORKSPACES DIRECTORY TABLE */}
+            <div className="table-card">
+              <div className="table-wrap">
+                <DataTable>
+                  <thead>
+                    <tr>
+                      <th>User Account</th>
+                      <th>Email Address</th>
+                      <th>System Role</th>
+                      <th>Status</th>
+                      <th>Permitted Workspaces &amp; Roles</th>
+                      <th>Joined Date</th>
+                      <th style={{ textAlign: "center" }}>Workspace Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {systemUsers.map((u) => (
+                      <tr key={u.id}>
+                        <td data-label="User Account">
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <div
+                              style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: "50%",
+                                background: u.role === "SUPER_ADMIN" ? "var(--purple)" : "var(--brand)",
+                                color: "#ffffff",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontWeight: 700,
+                                fontSize: 13,
+                                flexShrink: 0,
+                              }}
+                            >
+                              {u.name.slice(0, 1).toUpperCase()}
+                            </div>
+                            <div>
+                              <strong style={{ fontSize: 13 }}>{u.name}</strong>
+                              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>ID: {u.id}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td data-label="Email Address">
+                          <span style={{ fontSize: 12.5, fontFamily: "monospace" }}>{u.email}</span>
+                        </td>
+                        <td data-label="System Role">
+                          <span className={`badge ${u.role === "SUPER_ADMIN" ? "purple" : "slate"}`}>
+                            {u.role === "SUPER_ADMIN" ? "Master Super Admin" : "Company User"}
+                          </span>
+                        </td>
+                        <td data-label="Status">
+                          <span
+                            className={`badge ${
+                              u.status === "APPROVED"
+                                ? "green"
+                                : u.status === "PENDING"
+                                ? "amber"
+                                : "red"
+                            }`}
+                          >
+                            {u.status}
+                          </span>
+                        </td>
+                        <td data-label="Permitted Workspaces & Roles">
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                            {u.memberships.map((m) => (
+                              <Link
+                                key={m.id}
+                                href={`/${m.organizationId}/users`}
+                                className="panel-link"
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 5,
+                                  fontSize: 11.5,
+                                  padding: "3px 8px",
+                                  borderRadius: 6,
+                                  background: "var(--soft)",
+                                  border: "1px solid var(--line)",
+                                  textDecoration: "none",
+                                }}
+                                title={`Manage in ${m.organization.name}`}
+                              >
+                                <span style={{ fontWeight: 600, color: "var(--text)" }}>
+                                  {m.organization.name}
+                                </span>
+                                <span
+                                  className={`badge ${
+                                    m.role === "OWNER"
+                                      ? "purple"
+                                      : m.role === "ADMIN"
+                                      ? "blue"
+                                      : m.role === "ACCOUNTANT"
+                                      ? "green"
+                                      : m.role === "SALES"
+                                      ? "amber"
+                                      : "slate"
+                                  }`}
+                                  style={{ fontSize: 9.5, padding: "1px 5px" }}
+                                >
+                                  {m.role}
+                                </span>
+                              </Link>
+                            ))}
+                            {!u.memberships.length && (
+                              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                                No assigned workspaces
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td data-label="Joined Date">
+                          <div style={{ fontSize: 12 }}>{formatDualDate(u.createdAt)}</div>
+                        </td>
+                        <td data-label="Workspace Action" style={{ textAlign: "center" }}>
+                          {u.memberships[0] ? (
+                            <Link
+                              href={`/${u.memberships[0].organizationId}/users`}
+                              className="secondary-btn"
+                              style={{
+                                fontSize: 11,
+                                padding: "4px 10px",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                              }}
+                              title="Manage workspace membership & role"
+                            >
+                              <Users size={11} />
+                              Manage Roles
+                            </Link>
+                          ) : (
+                            <span style={{ fontSize: 11, color: "var(--text-dim)" }}>—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {!systemUsers.length && (
+                      <tr>
+                        <td colSpan={7} style={{ textAlign: "center", padding: "32px", color: "var(--text-muted)" }}>
+                          No users found matching the filter criteria.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </DataTable>
+              </div>
+            </div>
+          </>
+        )}
       </main>
+
     </div>
   );
 }

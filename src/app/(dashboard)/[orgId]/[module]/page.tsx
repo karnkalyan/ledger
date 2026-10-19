@@ -34,7 +34,7 @@ import {
   Wallet2,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { requireOrganizationAccess } from "@/lib/session";
+import { requireOrganizationAccess, canAccessModule } from "@/lib/session";
 import { estimateRecurringExpense, expenseFormulaText } from "@/lib/expense-engine";
 import { money, shortDate, monthKey, dualDateText } from "@/lib/format";
 import { PrintButton } from "@/components/print-button";
@@ -322,9 +322,13 @@ export default async function ModulePage({
 }) {
   const { orgId, module } = await params;
   const query = await searchParams;
+  if (module === "users") {
+    redirect(`/${orgId}/users`);
+  }
   if (!allModules.has(module)) notFound();
-  const { organization, user } = await requireOrganizationAccess(orgId);
+  const { organization, user, membership } = await requireOrganizationAccess(orgId);
   if (organization.kind !== "COMPANY" && officeOnly.has(module)) redirect(`/${orgId}`);
+  if (!canAccessModule(membership.role, module)) redirect(`/${orgId}`);
   const currency = organization.currency;
   const Header = (props: Omit<React.ComponentProps<typeof HeaderView>, "organization">) => (
     <HeaderView {...props} organization={organization} />

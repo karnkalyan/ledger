@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { officeNav, personalNav } from "@/lib/nav";
+import { canAccessModule } from "@/lib/permissions";
 import { ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 
 export function Sidebar({
@@ -11,6 +12,7 @@ export function Sidebar({
   kind,
   logoUrl,
   taxNumber,
+  memberRole,
   isOpen = false,
   isCollapsed = false,
   onToggleCollapse,
@@ -21,6 +23,7 @@ export function Sidebar({
   kind: string;
   logoUrl?: string | null;
   taxNumber?: string | null;
+  memberRole?: string;
   isOpen?: boolean;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -29,7 +32,20 @@ export function Sidebar({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentType = searchParams.get("type");
-  const nav = kind === "COMPANY" ? officeNav : personalNav;
+  const baseNav = kind === "COMPANY" ? officeNav : personalNav;
+  const nav =
+    kind === "COMPANY" && memberRole
+      ? baseNav.filter((item) => {
+          const [basePath] = item.href.split("?");
+          const mod = basePath.replace(/^\//, "");
+          if (!mod) return true;
+          if (mod === "users" || mod === "settings") {
+            return memberRole === "OWNER" || memberRole === "ADMIN" || memberRole === "MANAGER";
+          }
+          return canAccessModule(memberRole, mod);
+        })
+      : baseNav;
+
 
   return (
     <>

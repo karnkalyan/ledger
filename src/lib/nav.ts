@@ -37,6 +37,7 @@ export const officeNav: NavItem[] = [
   { href: "/loans", label: "Loans & Lending", icon: HandCoins, color: "#db2777" }, // Pink
   { href: "/reminders", label: "Reminders", icon: ClipboardCheck, color: "#eab308" }, // Yellow
   { href: "/reports", label: "Reports", icon: BadgeDollarSign, color: "#059669" }, // Emerald
+  { href: "/users", label: "User Management", icon: UsersRound, color: "#6366f1" }, // Indigo
   { href: "/settings", label: "Company Settings", icon: Settings, color: "#64748b" }, // Slate
 ];
 
