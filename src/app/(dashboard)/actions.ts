@@ -902,6 +902,9 @@ export async function createBankAccountAction(formData: FormData) {
 
   const openingBalance = n(formData, "openingBalance", 0);
   const holdAmount = n(formData, "holdAmount", 0);
+  const creditLimit = n(formData, "creditLimit", 0);
+  const statementDay = n(formData, "statementDay", 0);
+  const paymentDueDay = n(formData, "paymentDueDay", 0);
   await db.bankAccount.create({
     data: {
       organizationId: orgId,
@@ -914,6 +917,9 @@ export async function createBankAccountAction(formData: FormData) {
       openingBalance,
       currentBalance: openingBalance,
       holdAmount,
+      creditLimit: creditLimit > 0 ? creditLimit : null,
+      statementDay: statementDay >= 1 && statementDay <= 31 ? statementDay : null,
+      paymentDueDay: paymentDueDay >= 1 && paymentDueDay <= 31 ? paymentDueDay : null,
       notes: s(formData, "notes") || null,
     },
   });
@@ -1545,6 +1551,118 @@ export async function saveRentalHouseAction(formData: FormData) {
   revalidatePath(`/${orgId}`);
   revalidatePath(`/${orgId}/expenses`);
   revalidatePath(`/${orgId}/reports`);
+}
+
+export async function recordRentalPaymentAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  await orgAccess(orgId);
+  const rentalHouseId = s(formData, "rentalHouseId");
+  const billingMonth = s(formData, "billingMonth");
+  const paidAmount = n(formData, "paidAmount", 0);
+  if (!rentalHouseId || !/^\d{4}-\d{2}$/.test(billingMonth) || paidAmount <= 0) {
+    throw new Error("House, billing month, and a positive payment amount are required.");
+  }
+
+  const house = await db.rentalHouse.findFirst({
+    where: { id: rentalHouseId, organizationId: orgId },
+  });
+  if (!house) throw new Error("Rental property not found.");
+
+  const rentAmount = n(formData, "rentAmount", Number(house.monthlyRent));
+  const electricityAmount = n(formData, "electricityAmount", 0);
+  const waterAmount = n(formData, "waterAmount", Number(house.waterGarbageFee));
+  const otherAmount = n(formData, "otherAmount", 0);
+  const totalAmount = rentAmount + electricityAmount + waterAmount + otherAmount;
+  const paidAt = d(formData, "paidAt") ?? new Date();
+  const dueDate = d(formData, "dueDate");
+  const paymentMethod = (s(formData, "paymentMethod") || "CASH").toUpperCase();
+  const bankAccountId = s(formData, "bankAccountId");
+  const reference = s(formData, "reference") || null;
+  const notes = s(formData, "notes") || null;
+
+  await db.$transaction(async (tx) => {
+    const bill = await tx.rentalBill.upsert({
+      where: { rentalHouseId_billingMonth: { rentalHouseId, billingMonth } },
+      update: { rentAmount, electricityAmount, waterAmount, otherAmount, totalAmount, dueDate, notes },
+      create: {
+        organizationId: orgId,
+        rentalHouseId,
+        billingMonth,
+        rentAmount,
+        electricityAmount,
+        waterAmount,
+        otherAmount,
+        totalAmount,
+        dueDate,
+        notes,
+      },
+    });
+
+    let category = await tx.expenseCategory.findFirst({
+      where: { organizationId: orgId, name: { contains: "Rent" } },
+    });
+    if (!category) {
+      category = await tx.expenseCategory.create({
+        data: { organizationId: orgId, name: "Rent & Premises", icon: "home" },
+      });
+    }
+
+    const expense = await tx.expense.create({
+      data: {
+        organizationId: orgId,
+        categoryId: category.id,
+        title: `Rental payment - ${house.title} (${billingMonth})`,
+        vendor: house.ownerName,
+        type: "ONE_TIME",
+        amount: paidAmount,
+        occurredAt: paidAt,
+        isEstimated: false,
+        notes: [
+          `Bill ${billingMonth}: rent ${rentAmount}, electricity ${electricityAmount}, water/CAM ${waterAmount}, other ${otherAmount}.`,
+          reference ? `Reference: ${reference}.` : "",
+          notes || "",
+        ].filter(Boolean).join(" "),
+      },
+    });
+
+    await tx.rentalPayment.create({
+      data: {
+        organizationId: orgId,
+        rentalBillId: bill.id,
+        amount: paidAmount,
+        paidAt,
+        paymentMethod,
+        reference,
+        notes,
+        expenseId: expense.id,
+      },
+    });
+
+    if (paymentMethod === "BANK" && bankAccountId) {
+      const account = await tx.bankAccount.findFirst({ where: { id: bankAccountId, organizationId: orgId } });
+      if (!account) throw new Error("Selected payment account was not found.");
+      const updated = await tx.bankAccount.update({
+        where: { id: account.id },
+        data: { currentBalance: { decrement: paidAmount } },
+      });
+      await tx.bankTransaction.create({
+        data: {
+          organizationId: orgId,
+          bankAccountId: account.id,
+          transactionDate: paidAt,
+          type: "WITHDRAWAL",
+          amount: paidAmount,
+          balance: updated.currentBalance,
+          description: `Rental payment - ${house.title} (${billingMonth})`,
+          reference,
+          category: "Rent & Premises",
+          expenseId: expense.id,
+        },
+      });
+    }
+  });
+
+  refreshModules(orgId, "expenses", "banking", "reports");
 }
 
 export async function setActiveRentalHouseAction(formData: FormData) {

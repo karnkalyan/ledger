@@ -53,6 +53,8 @@ import { BankingClientSection } from "@/components/banking-client-section";
 import { FormPendingFeedback } from "@/components/form-pending-feedback";
 import { RentalHouseSection } from "@/components/rental-house-section";
 import { MonthlyGeneratorModal } from "@/components/monthly-generator-modal";
+import { CompanyPrintLogo } from "@/components/company-print-logo";
+import { CompanyAuditReport } from "@/components/company-audit-report";
 import { cookies } from "next/headers";
 import { resolveActiveFiscalYear, buildFiscalYearFromStart } from "@/lib/fiscal-year";
 import {
@@ -172,32 +174,46 @@ export function resolveIncomeChannel(
   return "CASH";
 }
 
-function Header({
+function HeaderView({
   title,
   description,
-  orgName,
-  orgTax,
-  orgAddress,
+  organization,
   hidePrintBanner = false,
   children,
 }: {
   title: string;
   description: string;
-  orgName?: string;
-  orgTax?: string | null;
-  orgAddress?: string | null;
+  organization: {
+    name: string;
+    logoUrl?: string | null;
+    taxNumber?: string | null;
+    panVatNumber?: string | null;
+    address?: string | null;
+    email?: string | null;
+    phone?: string | null;
+  };
   hidePrintBanner?: boolean;
   children?: React.ReactNode;
 }) {
+  const taxNumber = organization.taxNumber || organization.panVatNumber;
   return (
     <>
       {!hidePrintBanner && (
         <div className="table-print-header-banner">
-          <div>
-            <h2 style={{ margin: 0, fontSize: "15pt", fontWeight: 800 }}>{orgName || "Kashtrix ERP"}</h2>
-            <div style={{ fontSize: "8.5pt", color: "#475569", marginTop: 2 }}>
-              {orgTax ? `PAN / VAT: ${orgTax} · ` : ""}
-              {orgAddress || "Nepal"} · Financial & Audit Ledger
+          <div className="print-company-header-left">
+            <CompanyPrintLogo organization={organization} compact />
+            <div>
+              <h2 style={{ margin: 0, fontSize: "15pt", fontWeight: 800 }}>{organization.name}</h2>
+              <div style={{ fontSize: "8.5pt", color: "#475569", marginTop: 2 }}>
+                {organization.address || "Nepal"}
+                {organization.email ? ` · ${organization.email}` : ""}
+                {organization.phone ? ` · ${organization.phone}` : ""}
+              </div>
+              {taxNumber && (
+                <div style={{ fontSize: "8.5pt", color: "#475569", marginTop: 2 }}>
+                  PAN / VAT: {taxNumber}
+                </div>
+              )}
             </div>
           </div>
           <div style={{ textAlign: "right" }}>
@@ -310,6 +326,9 @@ export default async function ModulePage({
   const { organization, user } = await requireOrganizationAccess(orgId);
   if (organization.kind !== "COMPANY" && officeOnly.has(module)) redirect(`/${orgId}`);
   const currency = organization.currency;
+  const Header = (props: Omit<React.ComponentProps<typeof HeaderView>, "organization">) => (
+    <HeaderView {...props} organization={organization} />
+  );
 
   if (module === "menu") {
     return (
@@ -397,7 +416,7 @@ export default async function ModulePage({
       return `/${orgId}/expenses${p.size ? `?${p.toString()}` : ""}`;
     };
 
-    const [categories, expenses, recurring, actualAgg, estimatedAgg, rentalHouses, milkLogs, electricityLogs, latestElectricityReading, totalExpenseCount] = await Promise.all([
+    const [categories, expenses, recurring, actualAgg, estimatedAgg, rentalHouses, milkLogs, electricityLogs, latestElectricityReading, totalExpenseCount, paymentAccounts] = await Promise.all([
       db.expenseCategory.findMany({ where: { organizationId: orgId }, orderBy: { name: "asc" } }),
       db.expense.findMany({
         where: expenseWhere,
@@ -421,11 +440,21 @@ export default async function ModulePage({
         },
         _sum: { amount: true },
       }),
-      db.rentalHouse.findMany({ where: { organizationId: orgId }, orderBy: [{ isActive: "desc" }, { createdAt: "desc" }] }),
+      db.rentalHouse.findMany({
+        where: { organizationId: orgId },
+        include: {
+          bills: {
+            include: { payments: { orderBy: { paidAt: "desc" } } },
+            orderBy: { billingMonth: "desc" },
+          },
+        },
+        orderBy: [{ isActive: "desc" }, { createdAt: "desc" }],
+      }),
       db.milkMonthlyLog.findMany({ where: { organizationId: orgId }, orderBy: { month: "desc" } }),
       db.electricityReadingLog.findMany({ where: { organizationId: orgId }, orderBy: [{ readingDate: "desc" }, { createdAt: "desc" }], take: 12 }),
       db.electricityReadingLog.findFirst({ where: { organizationId: orgId }, orderBy: [{ readingDate: "desc" }, { createdAt: "desc" }] }),
       db.expense.count({ where: { organizationId: orgId } }),
+      db.bankAccount.findMany({ where: { organizationId: orgId, isActive: true }, orderBy: { bankName: "asc" } }),
     ]);
     const recurringEstimate = recurring.filter((r) => r.active).reduce((sum, r) => sum + estimateRecurringExpense(r, now), 0);
     const actual = Number(actualAgg._sum.amount || 0), generated = Number(estimatedAgg._sum.amount || 0);
@@ -857,6 +886,27 @@ export default async function ModulePage({
                   waterGarbageFee: Number(h.waterGarbageFee),
                   notes: h.notes,
                   isActive: h.isActive,
+                  bills: h.bills.map((bill) => ({
+                    id: bill.id,
+                    billingMonth: bill.billingMonth,
+                    rentAmount: Number(bill.rentAmount),
+                    electricityAmount: Number(bill.electricityAmount),
+                    waterAmount: Number(bill.waterAmount),
+                    otherAmount: Number(bill.otherAmount),
+                    totalAmount: Number(bill.totalAmount),
+                    dueDate: bill.dueDate?.toISOString() || null,
+                    payments: bill.payments.map((payment) => ({
+                      id: payment.id,
+                      amount: Number(payment.amount),
+                      paidAt: payment.paidAt.toISOString(),
+                      paymentMethod: payment.paymentMethod,
+                      reference: payment.reference,
+                    })),
+                  })),
+                }))}
+                paymentAccounts={paymentAccounts.map((account) => ({
+                  id: account.id,
+                  label: `${account.bankName} - ${account.accountNumber}`,
                 }))}
               />
             </div>
@@ -1412,15 +1462,12 @@ export default async function ModulePage({
     return (
       <main className="page-wrap">
         <Header
-          title={organization.kind === "COMPANY" ? "Corporate Banking & Statements" : "Personal Bank Accounts"}
+          title={organization.kind === "COMPANY" ? "Corporate Banking & Financial Accounts" : "Personal Financial Accounts"}
           description={
             organization.kind === "COMPANY"
               ? "Reconcile corporate bank statements, Siddhartha Bank transaction logs, deposits & withdrawals with live sync to Income and Expenses."
-              : "Manage personal bank accounts, deposits, and family expenditures with direct ledger sync."
+              : "Manage banks, cash, wallets, credit cards, family/person accounts, taken/given money, and expenses with direct ledger sync."
           }
-          orgName={organization.name}
-          orgTax={organization.taxNumber}
-          orgAddress={organization.address}
           hidePrintBanner={true}
         >
           {organization.kind === "COMPANY" && (
@@ -1433,7 +1480,7 @@ export default async function ModulePage({
             </Link>
           )}
           <Link href={"/" + orgId + "/banking/new?type=new-account"} className="secondary-btn">
-            <Plus size={14} /> Add Bank Account
+            <Plus size={14} /> Add Account
           </Link>
           <Link href={"/" + orgId + "/banking/new?type=record-deposit"} className="success-btn">
             <Plus size={14} /> Record Deposit
@@ -1451,6 +1498,11 @@ export default async function ModulePage({
               meta: totalHold > 0
                 ? `Available: ${money(availableLiquidity, currency)} · Hold: ${money(totalHold, currency)}`
                 : (activeAccount ? `A/C: ${activeAccount.accountNumber}` : `${accounts.length} active account${accounts.length === 1 ? "" : "s"}`),
+            },
+            {
+              label: activeAccount ? "Selected Account Hold / Lien" : "Total Hold / Lien",
+              value: money(totalHold, currency),
+              meta: totalHold > 0 ? `Excluded from available liquidity (${money(availableLiquidity, currency)} available)` : "No held amount recorded",
             },
             {
               label: isFiltered ? "Filtered Inflows" : "Total Deposits (Inflows)",
@@ -1484,6 +1536,9 @@ export default async function ModulePage({
               currency: a.currency,
               currentBalance: Number(a.currentBalance),
               holdAmount: Number(a.holdAmount || 0),
+              creditLimit: a.creditLimit ? Number(a.creditLimit) : null,
+              statementDay: a.statementDay,
+              paymentDueDay: a.paymentDueDay,
               _count: a._count,
               filterHref: filterHref({ accountId: isSelected ? null : a.id }),
             };
@@ -1729,14 +1784,19 @@ export default async function ModulePage({
         {/* Dedicated Official Bank Statement Print Header */}
         <div className="bank-statement-print-header">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div>
-              <h2 style={{ margin: "0 0 2px 0", fontSize: "16pt", fontWeight: 800 }}>{organization.name}</h2>
-              <div style={{ fontSize: "8.5pt", color: "#475569" }}>
-                {organization.address || "Kathmandu, Nepal"} · Corporate Financial &amp; Audit Ledger
-                {organization.taxNumber ? ` · PAN/VAT: ${organization.taxNumber}` : ""}
-              </div>
-              <div style={{ marginTop: 4, fontSize: "9.5pt", fontWeight: 700, color: "#0f172a" }}>
-                BANK ACCOUNT: {activeAccount ? `${activeAccount.bankName.toUpperCase()} · A/C: ${activeAccount.accountNumber}` : "ALL CORPORATE BANK ACCOUNTS"}
+            <div className="print-company-header-left">
+              <CompanyPrintLogo organization={organization} compact />
+              <div>
+                <h2 style={{ margin: "0 0 2px 0", fontSize: "16pt", fontWeight: 800 }}>{organization.name}</h2>
+                <div style={{ fontSize: "8.5pt", color: "#475569" }}>
+                  {organization.address || "Kathmandu, Nepal"}
+                  {organization.email ? ` · ${organization.email}` : ""}
+                  {organization.phone ? ` · ${organization.phone}` : ""}
+                  {(organization.taxNumber || organization.panVatNumber) ? ` · PAN/VAT: ${organization.taxNumber || organization.panVatNumber}` : ""}
+                </div>
+                <div style={{ marginTop: 4, fontSize: "9.5pt", fontWeight: 700, color: "#0f172a" }}>
+                  BANK ACCOUNT: {activeAccount ? `${activeAccount.bankName.toUpperCase()} · A/C: ${activeAccount.accountNumber}` : "ALL CORPORATE BANK ACCOUNTS"}
+                </div>
               </div>
             </div>
             <div style={{ textAlign: "right" }}>
@@ -3313,9 +3373,6 @@ export default async function ModulePage({
         <Header
           title="Loan &amp; Debt Management"
           description="Manage borrowings (loans taken), lendings (loans given), daily/monthly/yearly interest calculations, and settlement tracking."
-          orgName={organization.name}
-          orgTax={organization.taxNumber}
-          orgAddress={organization.address}
         >
           <Link href={`/${orgId}/loans/new?type=new-loan`} className="primary-btn">
             <Plus size={14} /> Record Loan
@@ -3506,16 +3563,100 @@ export default async function ModulePage({
             >
               <FileText size={14} /> 4. Balance Sheet &amp; P&amp;L
             </Link>
+            <Link
+              href={`/${orgId}/reports?reportType=audit${activeFy ? `&fy=${activeFy.slug}` : ""}`}
+              className={`report-nav-tab ${reportType === "audit" ? "active" : ""}`}
+            >
+              <FileCheck size={14} /> 5. Company Audit Report
+            </Link>
           </>
         )}
         <Link
           href={`/${orgId}/reports?reportType=annual`}
           className={`report-nav-tab ${reportType === "annual" ? "active" : ""}`}
         >
-          <TrendingUp size={14} /> 5. Fiscal Year Summary
+          <TrendingUp size={14} /> {organization.kind === "COMPANY" ? "6." : "5."} Fiscal Year Summary
         </Link>
       </div>
     );
+
+    if (reportType === "audit" && organization.kind === "COMPANY") {
+      const currentBs = adToBs(now);
+      const auditFy = activeFy || buildFiscalYearFromStart(currentBs.month >= 4 ? currentBs.year : currentBs.year - 1);
+      const period = { gte: auditFy.startDate, lte: auditFy.endDate };
+      const [auditIncomes, auditExpenses, auditAccounts, auditTransactions, auditInvoices, auditPurchases, auditProducts, auditLoans, auditRentalBills] = await Promise.all([
+        db.income.findMany({ where: { organizationId: orgId, receivedAt: period } }),
+        db.expense.findMany({ where: { organizationId: orgId, occurredAt: period, isEstimated: false }, include: { category: true } }),
+        db.bankAccount.findMany({ where: { organizationId: orgId, isActive: true }, orderBy: { bankName: "asc" } }),
+        db.bankTransaction.findMany({ where: { organizationId: orgId, transactionDate: period } }),
+        db.invoice.findMany({ where: { organizationId: orgId, issueDate: { lte: auditFy.endDate } } }),
+        db.purchaseOrder.findMany({ where: { organizationId: orgId, orderDate: { lte: auditFy.endDate } } }),
+        db.product.findMany({ where: { organizationId: orgId, active: true } }),
+        db.loan.findMany({ where: { organizationId: orgId, startDate: { lte: auditFy.endDate }, status: { not: "SETTLED" } } }),
+        db.rentalBill.findMany({
+          where: {
+            organizationId: orgId,
+            OR: [{ dueDate: period }, { createdAt: period }],
+          },
+          include: { payments: true },
+        }),
+      ]);
+
+      const categoryMap = new Map<string, number>();
+      for (const expense of auditExpenses) {
+        const label = expense.category?.name || "Uncategorized";
+        categoryMap.set(label, (categoryMap.get(label) || 0) + Number(expense.amount));
+      }
+      const categoryExpenses = Array.from(categoryMap.entries())
+        .map(([label, amount]) => ({ label, amount }))
+        .sort((a, b) => b.amount - a.amount);
+      const income = auditIncomes.reduce((sum, item) => sum + Number(item.amount), 0);
+      const expenses = auditExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
+      const receivables = auditInvoices.reduce((sum, invoice) => sum + Math.max(0, Number(invoice.total) - Number(invoice.paidAmount)), 0);
+      const payables = auditPurchases.reduce((sum, purchase) => sum + Math.max(0, Number(purchase.total) - Number(purchase.paidAmount)), 0);
+      const inventory = auditProducts.reduce((sum, product) => sum + Number(product.stockQty) * Number(product.purchasePrice), 0);
+      const loansTaken = auditLoans.filter((loan) => loan.type === "TAKEN").reduce((sum, loan) => sum + Math.max(0, Number(loan.principalAmount) - Number(loan.totalPrincipalPaid)), 0);
+      const loansGiven = auditLoans.filter((loan) => loan.type === "GIVEN").reduce((sum, loan) => sum + Math.max(0, Number(loan.principalAmount) - Number(loan.totalPrincipalPaid)), 0);
+      const rentBilled = auditRentalBills.reduce((sum, bill) => sum + Number(bill.totalAmount), 0);
+      const rentPaid = auditRentalBills.reduce((sum, bill) => sum + bill.payments.reduce((paymentSum, payment) => paymentSum + Number(payment.amount), 0), 0);
+      const invoiceTax = auditInvoices.filter((invoice) => invoice.issueDate >= auditFy.startDate).reduce((sum, invoice) => sum + Number(invoice.tax), 0);
+
+      return (
+        <>
+          <div className="page-wrap no-print" style={{ paddingBottom: 0 }}>{renderNavTabs()}</div>
+          <CompanyAuditReport
+            organization={organization}
+            currency={currency}
+            fiscalYear={{ label: auditFy.label, start: `${auditFy.startDateBs} BS (${auditFy.startDateAdFormatted})`, end: `${auditFy.endDateBs} BS (${auditFy.endDateAdFormatted})` }}
+            generatedAt={now}
+            income={income}
+            expenses={expenses}
+            categoryExpenses={categoryExpenses}
+            cashFlow={{
+              deposits: auditTransactions.filter((transaction) => transaction.type === "DEPOSIT").reduce((sum, transaction) => sum + Number(transaction.amount), 0),
+              withdrawals: auditTransactions.filter((transaction) => transaction.type === "WITHDRAWAL").reduce((sum, transaction) => sum + Number(transaction.amount), 0),
+            }}
+            accounts={auditAccounts.map((account) => ({
+              name: `${account.bankName} - ${account.accountName}`,
+              number: account.accountNumber,
+              type: account.accountType || "CUSTOM",
+              balance: Number(account.currentBalance),
+              hold: Number(account.holdAmount || 0),
+              available: Number(account.currentBalance) - Number(account.holdAmount || 0),
+              cycle: account.statementDay || account.paymentDueDay ? `Statement day ${account.statementDay || "-"}; due day ${account.paymentDueDay || "-"}` : undefined,
+            }))}
+            receivables={receivables}
+            payables={payables}
+            inventory={inventory}
+            loansTaken={loansTaken}
+            loansGiven={loansGiven}
+            rentBilled={rentBilled}
+            rentPaid={rentPaid}
+            invoiceTax={invoiceTax}
+          />
+        </>
+      );
+    }
 
     // ==========================================
     // REPORT TYPE: DIRECTOR CURRENT ACCOUNT
@@ -3593,13 +3734,17 @@ export default async function ModulePage({
           <article className="report-document-sheet">
             <header className="report-sheet-header">
               <div className="report-brand-col">
+                <CompanyPrintLogo organization={organization} compact />
                 <div className="report-company-name">{organization.name}</div>
                 <div className="report-company-meta">
-                  {organization.address || "Kathmandu, Nepal"} · Corporate Bank: Siddhartha Bank Ltd (A/C: 02017249683)
+                  {organization.address || "Nepal"}
+                  {organization.email ? ` · ${organization.email}` : ""}
+                  {organization.phone ? ` · ${organization.phone}` : ""}<br />
+                  Corporate Bank: Siddhartha Bank Ltd (A/C: 02017249683)
                 </div>
-                {organization.taxNumber && (
+                {(organization.taxNumber || organization.panVatNumber) && (
                   <div className="report-company-tax">
-                    <strong>PAN / VAT No:</strong> {organization.taxNumber}
+                    <strong>PAN / VAT No:</strong> {organization.taxNumber || organization.panVatNumber}
                   </div>
                 )}
               </div>
@@ -3800,13 +3945,17 @@ export default async function ModulePage({
           <article className="report-document-sheet">
             <header className="report-sheet-header">
               <div className="report-brand-col">
+                <CompanyPrintLogo organization={organization} compact />
                 <div className="report-company-name">{organization.name}</div>
                 <div className="report-company-meta">
+                  {organization.address || "Nepal"}
+                  {organization.email ? ` · ${organization.email}` : ""}
+                  {organization.phone ? ` · ${organization.phone}` : ""}<br />
                   Bank: Siddhartha Bank Ltd · CANR A/C: 02017249683 · Currency: NPR
                 </div>
-                {organization.taxNumber && (
+                {(organization.taxNumber || organization.panVatNumber) && (
                   <div className="report-company-tax">
-                    <strong>PAN / VAT No:</strong> {organization.taxNumber}
+                    <strong>PAN / VAT No:</strong> {organization.taxNumber || organization.panVatNumber}
                   </div>
                 )}
               </div>
@@ -4034,10 +4183,16 @@ export default async function ModulePage({
             {/* OFFICIAL PRINT HEADER */}
             <div className="bank-statement-print-header" style={{ display: "block", borderBottom: "2px solid #0f172a", paddingBottom: "3mm", marginBottom: "4mm" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div>
-                  <h1 style={{ margin: 0, fontSize: "16pt", fontWeight: 800 }}>{organization.name}</h1>
-                  <div style={{ fontSize: "9pt", color: "#475569", marginTop: 2 }}>
-                    Kathmandu, Nepal · {organization.taxNumber ? `PAN: ${organization.taxNumber} · ` : ""}Audited Business Balance Sheet
+                <div className="print-company-header-left">
+                  <CompanyPrintLogo organization={organization} compact />
+                  <div>
+                    <h1 style={{ margin: 0, fontSize: "16pt", fontWeight: 800 }}>{organization.name}</h1>
+                    <div style={{ fontSize: "9pt", color: "#475569", marginTop: 2 }}>
+                      {organization.address || "Nepal"}
+                      {organization.email ? ` · ${organization.email}` : ""}
+                      {organization.phone ? ` · ${organization.phone}` : ""}
+                      {(organization.taxNumber || organization.panVatNumber) ? ` · PAN: ${organization.taxNumber || organization.panVatNumber}` : ""}
+                    </div>
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
@@ -4304,13 +4459,17 @@ export default async function ModulePage({
           <article className="report-document-sheet">
             <header className="report-sheet-header">
               <div className="report-brand-col">
+                <CompanyPrintLogo organization={organization} compact />
                 <div className="report-company-name">{organization.name}</div>
                 <div className="report-company-meta">
-                  {organization.address || "Kathmandu, Nepal"} · Multi-Year Executive Overview
+                  {organization.address || "Nepal"}
+                  {organization.email ? ` · ${organization.email}` : ""}
+                  {organization.phone ? ` · ${organization.phone}` : ""}<br />
+                  Multi-Year Executive Overview
                 </div>
-                {organization.taxNumber && (
+                {(organization.taxNumber || organization.panVatNumber) && (
                   <div className="report-company-tax">
-                    <strong>PAN / VAT No:</strong> {organization.taxNumber}
+                    <strong>PAN / VAT No:</strong> {organization.taxNumber || organization.panVatNumber}
                   </div>
                 )}
               </div>
@@ -4729,13 +4888,17 @@ export default async function ModulePage({
           {/* REPORT HEADER */}
           <header className="report-sheet-header">
             <div className="report-brand-col">
+              <CompanyPrintLogo organization={organization} compact />
               <div className="report-company-name">{organization.name}</div>
               <div className="report-company-meta">
-                {organization.address || "Kathmandu, Nepal"} · Currency: {currency}
+                {organization.address || "Nepal"}
+                {organization.email ? ` · ${organization.email}` : ""}
+                {organization.phone ? ` · ${organization.phone}` : ""}<br />
+                Currency: {currency}
               </div>
-              {organization.taxNumber && (
+              {(organization.taxNumber || organization.panVatNumber) && (
                 <div className="report-company-tax">
-                  <strong>PAN / VAT No:</strong> {organization.taxNumber}
+                  <strong>PAN / VAT No:</strong> {organization.taxNumber || organization.panVatNumber}
                 </div>
               )}
             </div>

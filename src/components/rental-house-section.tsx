@@ -1,8 +1,28 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CheckCircle2, X } from "lucide-react";
-import { saveRentalHouseAction, setActiveRentalHouseAction, deleteRentalHouseAction } from "@/app/(dashboard)/actions";
+import { CheckCircle2, X, ReceiptText } from "lucide-react";
+import { saveRentalHouseAction, setActiveRentalHouseAction, deleteRentalHouseAction, recordRentalPaymentAction } from "@/app/(dashboard)/actions";
+
+interface RentalPaymentItem {
+  id: string;
+  amount: number;
+  paidAt: string;
+  paymentMethod: string;
+  reference: string | null;
+}
+
+interface RentalBillItem {
+  id: string;
+  billingMonth: string;
+  rentAmount: number;
+  electricityAmount: number;
+  waterAmount: number;
+  otherAmount: number;
+  totalAmount: number;
+  dueDate: string | null;
+  payments: RentalPaymentItem[];
+}
 
 export interface RentalHouseItem {
   id: string;
@@ -15,6 +35,7 @@ export interface RentalHouseItem {
   waterGarbageFee: number | string;
   notes: string | null;
   isActive: boolean;
+  bills: RentalBillItem[];
 }
 
 interface RentalHouseSectionProps {
@@ -22,6 +43,7 @@ interface RentalHouseSectionProps {
   orgKind: string;
   currency: string;
   rentalHouses: RentalHouseItem[];
+  paymentAccounts: { id: string; label: string }[];
 }
 
 export function RentalHouseSection({
@@ -29,11 +51,22 @@ export function RentalHouseSection({
   orgKind,
   currency,
   rentalHouses,
+  paymentAccounts,
 }: RentalHouseSectionProps) {
   const isCompany = orgKind === "COMPANY";
   const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
   const [selectedHouse, setSelectedHouse] = useState<RentalHouseItem | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const activeHouse = rentalHouses.find((house) => house.isActive) || rentalHouses[0];
+  const allBills = rentalHouses.flatMap((house) => house.bills);
+  const totalBilled = allBills.reduce((sum, bill) => sum + Number(bill.totalAmount), 0);
+  const totalPaid = allBills.reduce(
+    (sum, bill) => sum + bill.payments.reduce((paymentSum, payment) => paymentSum + Number(payment.amount), 0),
+    0,
+  );
+  const totalDue = Math.max(0, totalBilled - totalPaid);
+  const currentMonth = new Date().toISOString().slice(0, 7);
 
   const handleOpenCreate = () => {
     setSelectedHouse(null);
@@ -70,15 +103,53 @@ export function RentalHouseSection({
               : "Configure rented residences, landlord details, monthly rent, electricity unit rate, and water/garbage fee. The currently active house automatically drives household commitments."}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleOpenCreate}
-          className="primary-btn"
-          style={{ padding: "6px 12px", fontSize: 12 }}
-        >
-          {isCompany ? "+ Register Office Lease / Premises" : "+ Register Rental House"}
-        </button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          {activeHouse && (
+            <button type="button" onClick={() => setShowPaymentForm((value) => !value)} className="success-btn" style={{ padding: "6px 12px", fontSize: 12 }}>
+              <ReceiptText size={13} /> Record Rent / Utility Payment
+            </button>
+          )}
+          <button type="button" onClick={handleOpenCreate} className="primary-btn" style={{ padding: "6px 12px", fontSize: 12 }}>
+            {isCompany ? "+ Register Office Lease / Premises" : "+ Register Rental House"}
+          </button>
+        </div>
       </div>
+
+      {allBills.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 14 }}>
+          {[
+            ["Total billed", totalBilled, "var(--text)"],
+            ["Actual paid", totalPaid, "var(--success)"],
+            ["Remaining dues", totalDue, totalDue > 0 ? "var(--red)" : "var(--success)"],
+          ].map(([label, value, color]) => (
+            <div key={String(label)} style={{ padding: 12, border: "1px solid var(--line)", borderRadius: 8, background: "var(--soft)" }}>
+              <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>{label}</div>
+              <strong style={{ color: String(color), fontSize: 17 }}>{currency} {Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showPaymentForm && activeHouse && (
+        <form action={async (formData) => { setShowPaymentForm(false); await recordRentalPaymentAction(formData); }} style={{ background: "var(--soft)", border: "1px solid var(--line)", borderRadius: 8, padding: 14, marginBottom: 16 }}>
+          <input type="hidden" name="orgId" value={orgId} />
+          <div className="form-grid">
+            <label className="field full">Premises<select name="rentalHouseId" defaultValue={activeHouse.id}>{rentalHouses.map((house) => <option key={house.id} value={house.id}>{house.title} - {house.ownerName}</option>)}</select></label>
+            <label className="field">Billing Month<input name="billingMonth" type="month" defaultValue={currentMonth} required /></label>
+            <label className="field">Due Date<input name="dueDate" type="date" /></label>
+            <label className="field">Rent ({currency})<input name="rentAmount" type="number" min="0" step="0.01" defaultValue={Number(activeHouse.monthlyRent)} /></label>
+            <label className="field">Electricity ({currency})<input name="electricityAmount" type="number" min="0" step="0.01" defaultValue="0" /></label>
+            <label className="field">Water / CAM ({currency})<input name="waterAmount" type="number" min="0" step="0.01" defaultValue={Number(activeHouse.waterGarbageFee)} /></label>
+            <label className="field">Other Charges ({currency})<input name="otherAmount" type="number" min="0" step="0.01" defaultValue="0" /></label>
+            <label className="field">Amount Paid Now ({currency})<input name="paidAmount" type="number" min="0.01" step="0.01" required /></label>
+            <label className="field">Payment Method<select name="paymentMethod"><option value="CASH">Cash</option><option value="BANK">Bank / Wallet / Card</option><option value="OTHER">Other</option></select></label>
+            <label className="field full">Payment Account (when Bank / Wallet / Card)<select name="bankAccountId"><option value="">Select account</option>{paymentAccounts.map((account) => <option key={account.id} value={account.id}>{account.label}</option>)}</select></label>
+            <label className="field">Reference / Receipt<input name="reference" /></label>
+            <label className="field">Notes<input name="notes" /></label>
+          </div>
+          <div className="form-actions"><button type="button" className="secondary-btn" onClick={() => setShowPaymentForm(false)}>Cancel</button><button className="success-btn" type="submit">Save Actual Payment</button></div>
+        </form>
+      )}
 
       <div className="house-card-grid">
         {rentalHouses.map((h) => (
@@ -173,6 +244,31 @@ export function RentalHouseSection({
                 Modify Charges / Details
               </button>
             </div>
+
+            {h.bills.length > 0 && (
+              <div style={{ marginTop: 12, borderTop: "1px solid var(--line)", paddingTop: 10 }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 6 }}>Rent &amp; utility payment history</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {h.bills.slice(0, 12).map((bill) => {
+                    const paid = bill.payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
+                    const due = Math.max(0, Number(bill.totalAmount) - paid);
+                    return (
+                      <details key={bill.id} style={{ background: "var(--soft)", borderRadius: 6, padding: "7px 9px" }}>
+                        <summary style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", gap: 8, fontSize: 11 }}>
+                          <strong>{bill.billingMonth}</strong>
+                          <span>Bill {currency} {bill.totalAmount.toLocaleString()} · Paid <strong style={{ color: "var(--success)" }}>{currency} {paid.toLocaleString()}</strong> · Due <strong style={{ color: due > 0 ? "var(--red)" : "var(--success)" }}>{currency} {due.toLocaleString()}</strong></span>
+                        </summary>
+                        <div style={{ fontSize: 10.5, marginTop: 7, color: "var(--text-muted)" }}>
+                          Rent {bill.rentAmount.toLocaleString()} · Electricity {bill.electricityAmount.toLocaleString()} · Water/CAM {bill.waterAmount.toLocaleString()} · Other {bill.otherAmount.toLocaleString()}
+                          {bill.dueDate ? ` · Due date ${new Date(bill.dueDate).toLocaleDateString()}` : ""}
+                          {bill.payments.map((payment) => <div key={payment.id} style={{ marginTop: 4 }}>Payment: {currency} {payment.amount.toLocaleString()} on {new Date(payment.paidAt).toLocaleDateString()} via {payment.paymentMethod}{payment.reference ? ` · Ref ${payment.reference}` : ""}</div>)}
+                        </div>
+                      </details>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         ))}
 

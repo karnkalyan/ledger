@@ -102,6 +102,30 @@ export function PrintButton({
     `;
     document.body.dataset.printOrientation = orient;
 
+    // Use the legal company identity for browser print/PDF headers instead of
+    // the application metadata title (for example, "Kashtrix ERP").
+    const originalTitle = document.title;
+    const companyName = [
+      ".invoice-company-details h2",
+      ".report-company-name",
+      ".table-print-header-banner h2",
+      ".bank-statement-print-header h2",
+      ".bank-statement-print-header h1",
+    ]
+      .map((selector) => document.querySelector<HTMLElement>(selector)?.textContent?.trim())
+      .find(Boolean);
+    const documentName = [
+      ".invoice-doc-type",
+      ".report-doc-title",
+      ".bank-statement-print-header [style*='text-transform: uppercase']",
+    ]
+      .map((selector) => document.querySelector<HTMLElement>(selector)?.textContent?.trim())
+      .find(Boolean);
+
+    if (companyName) {
+      document.title = documentName ? `${companyName} - ${documentName}` : companyName;
+    }
+
     // 2. Await full web font resolution (Poppins & Inter)
     if (typeof document !== "undefined" && "fonts" in document) {
       try {
@@ -111,12 +135,51 @@ export function PrintButton({
       }
     }
 
+    // Remote and uploaded company logos may still be decoding when print is
+    // requested. Wait for every printable image so browser PDF output does not
+    // silently omit the company identity.
+    const printableImages = Array.from(document.querySelectorAll<HTMLImageElement>("img"));
+    await Promise.all(printableImages.map(async (img) => {
+      if (!img.complete) {
+        await new Promise<void>((resolve) => {
+          const timeoutId = window.setTimeout(resolve, 3000);
+          const finish = () => { window.clearTimeout(timeoutId); resolve(); };
+          img.addEventListener("load", finish, { once: true });
+          img.addEventListener("error", finish, { once: true });
+        });
+      }
+      if (typeof img.decode === "function") {
+        try { await img.decode(); } catch { /* retain fallback rendering */ }
+      }
+    }));
+
+    // A logo can come from an uploaded data URL or a remote URL. Wait for it
+    // before opening the print dialog so PDF snapshots never miss branding.
+    const companyLogos = Array.from(document.querySelectorAll<HTMLImageElement>(".company-print-logo"));
+    await Promise.all(
+      companyLogos.map(
+        (logo) =>
+          logo.complete
+            ? Promise.resolve()
+            : new Promise<void>((resolve) => {
+                const finish = () => {
+                  window.clearTimeout(timeoutId);
+                  resolve();
+                };
+                const timeoutId = window.setTimeout(finish, 2500);
+                logo.addEventListener("load", finish, { once: true });
+                logo.addEventListener("error", finish, { once: true });
+              })
+      )
+    );
+
     // 3. Reset scroll so print begins cleanly from top
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
 
     // 4. Trigger browser print / PDF export
     setTimeout(() => {
       window.print();
+      document.title = originalTitle;
     }, 120);
   };
 

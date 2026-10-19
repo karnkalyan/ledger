@@ -64,6 +64,8 @@ async function main() {
   } catch {}
 
   console.log("\n--- PURGING ALL EXISTING DATABASE DATA (FRESH CLEAN PURGE) ---");
+  await prisma.rentalPayment.deleteMany();
+  await prisma.rentalBill.deleteMany();
   await prisma.bankTransaction.deleteMany();
   await prisma.income.deleteMany();
   await prisma.expense.deleteMany();
@@ -258,6 +260,8 @@ async function main() {
   // Electricity: 15 rupees per unit (100 units = 1,500)
   // Milk: 115 per liter (1.5 ltr × 115 × 30 days = 5,175)
   console.log("\n--- CONFIGURING HOUSEHOLD COMMITMENTS (MY HOUSE) ---");
+  await prisma.rentalPayment.deleteMany({ where: { organizationId: household.id } });
+  await prisma.rentalBill.deleteMany({ where: { organizationId: household.id } });
   await prisma.expense.deleteMany({ where: { organizationId: household.id } });
   await prisma.income.deleteMany({ where: { organizationId: household.id } });
   await prisma.recurringExpense.deleteMany({ where: { organizationId: household.id } });
@@ -537,6 +541,8 @@ async function main() {
 
   // 5. COMPLETE CLEAN TRUNCATE OF ALL PREVIOUS COMPANY DATA (FRESH SLATE FOR SEED & IMPORT)
   console.log("\n--- CLEANING ALL PREVIOUS COMPANY DATA (FRESH SLATE FOR NEW IMPORT) ---");
+  await prisma.rentalPayment.deleteMany({ where: { organizationId: company.id } });
+  await prisma.rentalBill.deleteMany({ where: { organizationId: company.id } });
   await prisma.bankTransaction.deleteMany({ where: { organizationId: company.id } });
   await prisma.invoicePayment.deleteMany({ where: { invoice: { organizationId: company.id } } });
   await prisma.invoiceItem.deleteMany({ where: { invoice: { organizationId: company.id } } });
@@ -1084,6 +1090,7 @@ async function main() {
         branch: "Kathmandu Branch",
         currency: "NPR",
         currentBalance: 27944.68,
+        holdAmount: 2500,
       },
       create: {
         organizationId: company.id,
@@ -1095,6 +1102,7 @@ async function main() {
         currency: "NPR",
         openingBalance: sBankData.openingBalance,
         currentBalance: 27944.68,
+        holdAmount: 2500,
       },
     });
 
@@ -1277,6 +1285,75 @@ async function main() {
       expiryDate: new Date(Date.now() + 45 * 86400000),
     },
   });
+
+  // Materialize historical rent/electricity payments into the dedicated
+  // tenancy reconciliation ledger so seeded reports show billed, paid, and due.
+  let rentalPaymentsImported = 0;
+  for (const organizationId of [company.id, household.id]) {
+    const house = await prisma.rentalHouse.findFirst({
+      where: { organizationId },
+      orderBy: [{ isActive: "desc" }, { createdAt: "desc" }],
+    });
+    if (!house) continue;
+    const rentExpenses = await prisma.expense.findMany({
+      where: {
+        organizationId,
+        isEstimated: false,
+        OR: [
+          { title: { contains: "rent" } },
+          { title: { contains: "Rent" } },
+          { title: { contains: "electricity" } },
+          { title: { contains: "Electricity" } },
+        ],
+      },
+      include: { bankTransactions: true },
+      orderBy: { occurredAt: "asc" },
+    });
+    for (const expense of rentExpenses) {
+      const billingMonth = expense.occurredAt.toISOString().slice(0, 7);
+      const amount = Number(expense.amount);
+      const isElectricity = expense.title.toLowerCase().includes("electricity");
+      let bill = await prisma.rentalBill.findUnique({
+        where: { rentalHouseId_billingMonth: { rentalHouseId: house.id, billingMonth } },
+      });
+      if (!bill) {
+        bill = await prisma.rentalBill.create({
+          data: {
+            organizationId,
+            rentalHouseId: house.id,
+            billingMonth,
+            rentAmount: isElectricity ? 0 : amount,
+            electricityAmount: isElectricity ? amount : 0,
+            totalAmount: amount,
+            notes: "Seeded from an actual historical expense.",
+          },
+        });
+      } else {
+        bill = await prisma.rentalBill.update({
+          where: { id: bill.id },
+          data: {
+            rentAmount: isElectricity ? undefined : { increment: amount },
+            electricityAmount: isElectricity ? { increment: amount } : undefined,
+            totalAmount: { increment: amount },
+          },
+        });
+      }
+      await prisma.rentalPayment.create({
+        data: {
+          organizationId,
+          rentalBillId: bill.id,
+          amount,
+          paidAt: expense.occurredAt,
+          paymentMethod: expense.bankTransactions.length ? "BANK" : "OTHER",
+          reference: expense.bankTransactions[0]?.reference || null,
+          notes: "Seeded from the existing expense ledger.",
+          expenseId: expense.id,
+        },
+      });
+      rentalPaymentsImported++;
+    }
+  }
+  console.log(`Rental reconciliation populated with ${rentalPaymentsImported} actual payments.`);
 
   console.log("\n=== MASTER SEED COMPLETED SUCCESSFULLY ===");
   console.log("Credentials:");

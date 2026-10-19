@@ -207,6 +207,8 @@ model Organization {
   rentalHouses    RentalHouse[]
   milkLogs        MilkMonthlyLog[]
   electricityLogs ElectricityReadingLog[]
+  rentalBills     RentalBill[]
+  rentalPayments  RentalPayment[]
 }
 
 model Membership {
@@ -497,6 +499,7 @@ model Expense {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   bankTransactions   BankTransaction[]
+  rentalPayment      RentalPayment?
   @@index([organizationId, occurredAt])
   @@index([recurringExpenseId, occurredAt])
 }
@@ -681,6 +684,9 @@ model BankAccount {
   openingBalance Decimal           @default(0) @db.Decimal(14,2)
   currentBalance Decimal           @default(0) @db.Decimal(14,2)
   holdAmount     Decimal           @default(0) @db.Decimal(14,2)
+  creditLimit    Decimal?          @db.Decimal(14,2)
+  statementDay  Int?
+  paymentDueDay Int?
   isActive       Boolean           @default(true)
   notes          String?           @db.Text
   createdAt      DateTime          @default(now())
@@ -810,8 +816,50 @@ model RentalHouse {
   isActive        Boolean      @default(false)
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
+  bills           RentalBill[]
 
   @@index([organizationId, isActive])
+}
+
+model RentalBill {
+  id                String          @id @default(cuid()) @db.VarChar(30)
+  organizationId    String          @db.VarChar(30)
+  organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  rentalHouseId     String          @db.VarChar(30)
+  rentalHouse       RentalHouse     @relation(fields: [rentalHouseId], references: [id], onDelete: Cascade)
+  billingMonth      String          @db.VarChar(20)
+  rentAmount        Decimal         @default(0) @db.Decimal(14,2)
+  electricityAmount Decimal         @default(0) @db.Decimal(14,2)
+  waterAmount       Decimal         @default(0) @db.Decimal(14,2)
+  otherAmount       Decimal         @default(0) @db.Decimal(14,2)
+  totalAmount       Decimal         @default(0) @db.Decimal(14,2)
+  dueDate           DateTime?
+  notes             String?         @db.Text
+  payments          RentalPayment[]
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@unique([rentalHouseId, billingMonth])
+  @@index([organizationId, billingMonth])
+}
+
+model RentalPayment {
+  id             String       @id @default(cuid()) @db.VarChar(30)
+  organizationId String       @db.VarChar(30)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  rentalBillId   String       @db.VarChar(30)
+  rentalBill     RentalBill   @relation(fields: [rentalBillId], references: [id], onDelete: Cascade)
+  amount         Decimal      @db.Decimal(14,2)
+  paidAt         DateTime     @default(now())
+  paymentMethod  String       @default("CASH")
+  reference      String?
+  notes          String?      @db.Text
+  expenseId      String?      @unique @db.VarChar(30)
+  expense        Expense?     @relation(fields: [expenseId], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, paidAt])
+  @@index([rentalBillId, paidAt])
 }
 
 model ElectricityReadingLog {
@@ -968,5 +1016,4 @@ model WalletTransaction {
   @@index([organizationId, type])
   @@index([organizationId, status])
 }
-
 

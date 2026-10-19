@@ -11,6 +11,7 @@ import { PrintButton } from "@/components/print-button";
 import { NepaliDatePicker } from "@/components/nepali-date-picker";
 import { LoanSettlementForm } from "@/components/loan-settlement-form";
 import { FormPendingFeedback } from "@/components/form-pending-feedback";
+import { CompanyPrintBanner, CompanyPrintLogo } from "@/components/company-print-logo";
 import { resolveIncomeChannel } from "../page";
 
 function Badge({ value }: { value: string }) {
@@ -22,6 +23,7 @@ function Badge({ value }: { value: string }) {
 export default async function DocumentDetailPage({ params }: { params: Promise<{ orgId: string; module: string; recordId: string }> }) {
   const { orgId, module, recordId } = await params;
   const { organization } = await requireOrganizationAccess(orgId);
+  const organizationTaxNumber = organization.taxNumber || organization.panVatNumber;
   const allowedModules = ["invoices", "quotes", "purchase", "crm", "contacts", "loans", "sales", "banking"];
   if (!allowedModules.includes(module)) notFound();
   if (organization.kind !== "COMPANY" && ["invoices", "quotes", "purchase", "sales"].includes(module)) notFound();
@@ -65,6 +67,12 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
             <PrintButton label="Print Voucher / PDF" />
           </div>
         </div>
+
+        <CompanyPrintBanner
+          organization={organization}
+          title={bankTx.type === "DEPOSIT" ? "Bank Deposit Receipt" : "Bank Withdrawal Voucher"}
+          subtitle={`${bankTx.bankAccount.bankName} · A/C ${bankTx.bankAccount.accountNumber} · ${formatDualDate(bankTx.transactionDate)}`}
+        />
 
         {/* SUMMARY STAT CARDS */}
         <section className="grid-kpis" style={{ marginBottom: 20 }}>
@@ -249,19 +257,13 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
         <div className="invoice-print-container">
           <div className="invoice-brand-row">
             <div className="invoice-company-details">
-              <div className="brand-mark" style={{ marginBottom: 10 }}>
-                <span className="brand-symbol">K</span>
-                <div>
-                  <span>KASHTRIX</span>
-                  <div className="brand-sub">LEDGER</div>
-                </div>
-              </div>
+              <CompanyPrintLogo organization={organization} />
               <h2>{organization.name}</h2>
               <p>
                 {organization.address && <>{organization.address}<br /></>}
                 {organization.email && <span>{organization.email} </span>}
                 {organization.phone && <span>· {organization.phone}</span>}
-                {organization.taxNumber && <><br /><strong>Tax / PAN / VAT ID:</strong> {organization.taxNumber}</>}
+                {organizationTaxNumber && <><br /><strong>Tax / PAN / VAT ID:</strong> {organizationTaxNumber}</>}
               </p>
             </div>
             <div className="invoice-meta-col">
@@ -555,18 +557,13 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
       <div className="invoice-print-container">
         <div className="invoice-brand-row">
           <div className="invoice-company-details">
-            <div className="brand-mark" style={{ marginBottom: 10 }}>
-              <span className="brand-symbol">K</span>
-              <div>
-                <span>KASHTRIX</span>
-                <div className="brand-sub">LEDGER</div>
-              </div>
-            </div>
+            <CompanyPrintLogo organization={organization} />
             <h2>{organization.name}</h2>
             <p>
               {organization.address && <>{organization.address}<br /></>}
               {organization.email && <span>{organization.email} </span>}
               {organization.phone && <span>· {organization.phone}</span>}
+              {organizationTaxNumber && <><br /><strong>Tax / PAN / VAT ID:</strong> {organizationTaxNumber}</>}
             </p>
           </div>
           <div className="invoice-meta-col">
@@ -763,19 +760,13 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
         <div className="invoice-print-container">
           <div className="invoice-brand-row">
             <div className="invoice-company-details">
-              <div className="brand-mark" style={{ marginBottom: 10 }}>
-                <span className="brand-symbol">K</span>
-                <div>
-                  <span>KASHTRIX</span>
-                  <div className="brand-sub">SALES &amp; COMMERCIAL LEDGER</div>
-                </div>
-              </div>
+              <CompanyPrintLogo organization={organization} />
               <h2>{organization.name}</h2>
               <p>
                 {organization.address && <>{organization.address}<br /></>}
                 {organization.email && <span>{organization.email} </span>}
                 {organization.phone && <span>· {organization.phone}</span>}
-                {organization.taxNumber && <><br /><strong>Tax / PAN ID:</strong> {organization.taxNumber}</>}
+                {organizationTaxNumber && <><br /><strong>Tax / PAN ID:</strong> {organizationTaxNumber}</>}
               </p>
             </div>
             <div className="invoice-meta-col">
@@ -971,19 +962,13 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
         <div className="invoice-print-container">
           <div className="invoice-brand-row">
             <div className="invoice-company-details">
-              <div className="brand-mark" style={{ marginBottom: 10 }}>
-                <span className="brand-symbol">K</span>
-                <div>
-                  <span>KASHTRIX</span>
-                  <div className="brand-sub">PROCUREMENT LEDGER</div>
-                </div>
-              </div>
+              <CompanyPrintLogo organization={organization} />
               <h2>{organization.name}</h2>
               <p>
                 {organization.address && <>{organization.address}<br /></>}
                 {organization.email && <span>{organization.email} </span>}
                 {organization.phone && <span>· {organization.phone}</span>}
-                {organization.taxNumber && <><br /><strong>Tax / PAN ID:</strong> {organization.taxNumber}</>}
+                {organizationTaxNumber && <><br /><strong>Tax / PAN ID:</strong> {organizationTaxNumber}</>}
               </p>
             </div>
             <div className="invoice-meta-col">
@@ -1362,6 +1347,12 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
             )}
           </div>
         </div>
+
+        <CompanyPrintBanner
+          organization={organization}
+          title="Customer / Vendor Account Statement"
+          subtitle={contact.companyName || contact.name}
+        />
 
         {/* Company Profile Header Card */}
         <div className="table-card" style={{ padding: "20px 24px", marginBottom: 20 }}>
@@ -1772,18 +1763,13 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
         <div className="invoice-print-container">
           <div className="invoice-brand-row">
             <div className="invoice-company-details">
-              <div className="brand-mark" style={{ marginBottom: 10 }}>
-                <span className="brand-symbol">K</span>
-                <div>
-                  <span>KASHTRIX</span>
-                  <div className="brand-sub">FINANCIAL &amp; LOAN LEDGER</div>
-                </div>
-              </div>
+              <CompanyPrintLogo organization={organization} />
               <h2>{organization.name}</h2>
               <p>
                 {organization.address && <>{organization.address}<br /></>}
                 {organization.email && <span>{organization.email} </span>}
                 {organization.phone && <span>· {organization.phone}</span>}
+                {organizationTaxNumber && <><br /><strong>Tax / PAN / VAT ID:</strong> {organizationTaxNumber}</>}
               </p>
             </div>
             <div className="invoice-meta-col">

@@ -2727,6 +2727,16 @@ button.filter-tab.active * {
 }
 
 .invoice-print-container { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 32px; margin-bottom: 24px; }
+.company-print-logo { display: block; width: auto; max-width: 190px; height: auto; max-height: 64px; object-fit: contain; object-position: left center; margin: 0 0 10px; }
+.company-print-logo.compact { max-width: 120px; max-height: 42px; margin: 0; flex: 0 0 auto; }
+.company-print-logo-fallback { display: inline-flex; align-items: center; justify-content: center; width: 54px; height: 54px; border-radius: 10px; background: #312e81; color: #fff; font-size: 18px; font-weight: 800; letter-spacing: 0.04em; margin: 0 0 10px; }
+.company-print-logo-fallback.compact { width: 40px; height: 40px; margin: 0; font-size: 13px; }
+.audit-sheet { max-width: 980px; margin-inline: auto; }
+.audit-sheet p, .audit-notes { font-size: 12px; line-height: 1.65; color: var(--text-secondary); }
+.audit-notes { padding-left: 22px; }
+.audit-notes li { margin-bottom: 9px; }
+.audit-avoid-break { break-inside: avoid; page-break-inside: avoid; }
+.print-company-header-left { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
 .invoice-brand-row { display: flex; justify-content: space-between; gap: 24px; padding-bottom: 24px; border-bottom: 2px solid var(--line-strong); }
 .invoice-meta-col { text-align: right; }
 .invoice-doc-type { font-size: 20px; font-weight: 700; color: var(--brand); }
@@ -2746,6 +2756,13 @@ button.filter-tab.active * {
   .invoice-party-grid, .invoice-calculation-wrap { grid-template-columns: 1fr; gap: 16px; }
 }
 @media print {
+  .audit-report-page { padding: 0 !important; }
+  .audit-sheet { max-width: none !important; box-shadow: none !important; }
+  .audit-sheet .report-section-block { break-inside: auto; }
+  .audit-sheet .audit-avoid-break { break-inside: avoid; page-break-inside: avoid; }
+  .company-print-logo { max-width: 48mm !important; max-height: 17mm !important; object-fit: contain !important; }
+  .company-print-logo.compact { max-width: 32mm !important; max-height: 12mm !important; }
+  .company-print-logo-fallback { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
   .invoice-print-container { border: none !important; padding: 0 !important; color: #0f172a !important; background: white !important; }
   .invoice-brand-row { flex-direction: row !important; break-inside: avoid; }
   .invoice-meta-col { text-align: right !important; }

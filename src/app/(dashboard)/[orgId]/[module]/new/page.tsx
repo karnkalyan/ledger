@@ -14,7 +14,7 @@ const entries = [
   { module: "expenses", type: "recurring-rule", title: "Add Recurring Commitment", subtitle: "Configure recurring expenses like office rent, internet, milk, utilities." },
   { module: "expenses", type: "new-expense", title: "Record Actual Expense", subtitle: "Record a paid expense or calculate it from quantity × rate × days." },
   { module: "income", type: "record-income", title: "Record Income / Receipt", subtitle: "Save a received amount with its source and date." },
-  { module: "banking", type: "new-account", title: "Add Bank Account", subtitle: "Register bank branch and account number for corporate or household ledger." },
+  { module: "banking", type: "new-account", title: "Add Financial Account", subtitle: "Create a bank, cash, wallet, credit card, person, family, or fully custom account." },
   { module: "banking", type: "record-deposit", title: "Record Bank Deposit", subtitle: "Record funds deposited into bank account; automatically reflects in Income." },
   { module: "banking", type: "record-withdrawal", title: "Record Bank Withdrawal", subtitle: "Record funds withdrawn or paid from bank account; automatically reflects in Expenses." },
   { module: "crm", type: "add-contact", title: "Create Contact Record", subtitle: "Create a customer, vendor or partner profile." },
@@ -105,8 +105,8 @@ export default async function NewEntryPage({params, searchParams}: {
               <input type="hidden" name="orgId" value={orgId} />
               <div className="form-grid">
                 <label className="field full">
-                  Bank Name
-                  <input name="bankName" required placeholder="Siddhartha Bank Ltd / Everest Bank / Nabil Bank" />
+                  Account Provider / Person / Name
+                  <input name="bankName" required placeholder="Siddhartha Bank / eSewa / Kashvi / Kalyan / Custom" />
                 </label>
                 <label className="field">
                   Account Name
@@ -124,6 +124,11 @@ export default async function NewEntryPage({params, searchParams}: {
                     <option value="DIGITAL_WALLET">Digital Wallet (eSewa / Khalti / IME Pay)</option>
                     <option value="OVERDRAFT">Overdraft Facility (OD)</option>
                     <option value="FIXED">Fixed Deposit</option>
+                    <option value="CREDIT_CARD">Credit Card</option>
+                    <option value="CASH">Cash in Hand</option>
+                    <option value="PARTY_ACCOUNT">Person / Party Account (Taken / Given)</option>
+                    <option value="FAMILY_ACCOUNT">Family Member Account</option>
+                    <option value="CUSTOM">Other / Custom Account</option>
                   </select>
                 </label>
                 <label className="field">
@@ -141,6 +146,18 @@ export default async function NewEntryPage({params, searchParams}: {
                 <label className="field">
                   Hold / Lien Amount (Account Opening Charge / Minimum Lien)
                   <input name="holdAmount" type="number" step="0.01" defaultValue="0" placeholder="2500" />
+                </label>
+                <label className="field">
+                  Credit Limit (for Credit Card)
+                  <input name="creditLimit" type="number" min="0" step="0.01" defaultValue="0" />
+                </label>
+                <label className="field">
+                  Monthly Statement Day
+                  <input name="statementDay" type="number" min="1" max="31" placeholder="26" />
+                </label>
+                <label className="field">
+                  Monthly Payment Due Day
+                  <input name="paymentDueDay" type="number" min="1" max="31" placeholder="10" />
                 </label>
                 <label className="field full">
                   Notes / Remarks
@@ -239,12 +256,12 @@ export default async function NewEntryPage({params, searchParams}: {
                       <span className="field-label" style={{ fontWeight: 700, color: "var(--brand)" }}>
                         Withdrawal Purpose / Transfer Destination
                       </span>
-                      <select name="transferTarget" defaultValue="ATM_CASH">
+                      <select name="transferTarget" defaultValue="">
+                        <option value="">Direct Expense / Money Given / Card Payment</option>
                         <option value="ATM_CASH">ATM Withdrawal → Cash in Hand (No double expense; enables cash market spending)</option>
                         <option value="ESEWA">Bank Transfer → eSewa Digital Wallet (Inflow to eSewa)</option>
                         <option value="KHALTI">Bank Transfer → Khalti Wallet (Inflow to Khalti)</option>
                         <option value="OTHER_WALLET">Bank Transfer → Other Digital Wallet</option>
-                        <option value="">Direct Expense / Vendor Disbursement (Records as direct expense)</option>
                       </select>
                       <small style={{ color: "var(--text-muted)", fontSize: 11, marginTop: 4, display: "block" }}>
                         Tip: Selecting ATM Withdrawal or Wallet Transfer moves funds to Cash in Hand or Digital Wallet. It prevents double-counting when you subsequently record grocery, market, or office cash expenses!
@@ -256,6 +273,20 @@ export default async function NewEntryPage({params, searchParams}: {
                 <label className="field full">
                   Description / Particulars
                   <input name="description" required placeholder={entry.type === "record-deposit" ? "Client payment / Cash deposit / Account remittance" : "Vendor payment / Office rent / Transfer"} />
+                </label>
+                <label className="field">
+                  Record Classification
+                  <select name="category" defaultValue={entry.type === "record-deposit" ? "Money Received / Taken" : "Expense / Money Given"}>
+                    {entry.type === "record-deposit" ? (
+                      <>
+                        <option>Money Received / Taken</option><option>Loan Taken</option><option>Income / Receipt</option><option>Refund Received</option><option>Custom Inflow</option>
+                      </>
+                    ) : (
+                      <>
+                        <option>Expense / Money Given</option><option>Loan Given</option><option>Credit Card Payment</option><option>Family / Person Advance</option><option>Custom Outflow</option>
+                      </>
+                    )}
+                  </select>
                 </label>
                 <label className="field">
                   Amount ({organization.currency})

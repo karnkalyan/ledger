@@ -27,6 +27,9 @@ export interface BankAccountItem {
   currency?: string | null;
   currentBalance: string | number;
   holdAmount?: string | number | null;
+  creditLimit?: string | number | null;
+  statementDay?: number | null;
+  paymentDueDay?: number | null;
   _count?: {
     transactions: number;
   };
@@ -64,6 +67,7 @@ export function BankCardWidget({
   const balanceNum = Number(account.currentBalance || 0);
   const holdNum = Number(account.holdAmount || 0);
   const availableNum = balanceNum - holdNum;
+  const isCreditCard = (account.accountType || "").toUpperCase() === "CREDIT_CARD";
 
   const formattedBalance = moneyFormatter
     ? moneyFormatter(account.currentBalance, account.currency || currency)
@@ -248,11 +252,21 @@ export function BankCardWidget({
                 HOLD
               </span>
               <span style={{ fontSize: 11.5, color: "var(--text)", fontWeight: 650 }}>
-                Account Opening Charge: <strong>{account.currency || currency} {holdNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
+                Hold / Lien Amount: <strong>{account.currency || currency} {holdNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
               </span>
             </div>
             <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
               Available Liquidity: <strong style={{ color: "var(--success)" }}>{account.currency || currency} {availableNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
+            </div>
+          </div>
+        )}
+
+        {isCreditCard && (
+          <div style={{ margin: "10px 0 12px", padding: "9px 12px", borderRadius: 8, background: "rgba(79, 70, 229, 0.08)", border: "1px solid rgba(79, 70, 229, 0.24)", fontSize: 11.5 }}>
+            <strong>Credit card cycle</strong>
+            <div style={{ marginTop: 3, color: "var(--text-muted)" }}>
+              Statement closes every month on day {account.statementDay || "-"} · Payment due on day {account.paymentDueDay || "-"}
+              {Number(account.creditLimit || 0) > 0 ? ` · Credit limit ${account.currency || currency} ${Number(account.creditLimit).toLocaleString()}` : ""}
             </div>
           </div>
         )}
