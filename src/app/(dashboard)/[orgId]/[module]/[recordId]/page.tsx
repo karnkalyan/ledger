@@ -258,13 +258,15 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
           <div className="invoice-brand-row">
             <div className="invoice-company-details">
               <CompanyPrintLogo organization={organization} />
-              <h2>{organization.name}</h2>
-              <p>
-                {organization.address && <>{organization.address}<br /></>}
-                {organization.email && <span>{organization.email} </span>}
-                {organization.phone && <span>· {organization.phone}</span>}
-                {organizationTaxNumber && <><br /><strong>Tax / PAN / VAT ID:</strong> {organizationTaxNumber}</>}
-              </p>
+              <div className="invoice-company-info">
+                <h2>{organization.name}</h2>
+                <p>
+                  {organization.address && <>{organization.address}<br /></>}
+                  {organization.email && <span>{organization.email} </span>}
+                  {organization.phone && <span>· {organization.phone}</span>}
+                  {organizationTaxNumber && <><br /><strong>Tax / PAN / VAT ID:</strong> {organizationTaxNumber}</>}
+                </p>
+              </div>
             </div>
             <div className="invoice-meta-col">
               <div style={{ marginBottom: 6 }}><Badge value={invoice.status} /></div>
@@ -558,13 +560,15 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
         <div className="invoice-brand-row">
           <div className="invoice-company-details">
             <CompanyPrintLogo organization={organization} />
-            <h2>{organization.name}</h2>
-            <p>
-              {organization.address && <>{organization.address}<br /></>}
-              {organization.email && <span>{organization.email} </span>}
-              {organization.phone && <span>· {organization.phone}</span>}
-              {organizationTaxNumber && <><br /><strong>Tax / PAN / VAT ID:</strong> {organizationTaxNumber}</>}
-            </p>
+            <div className="invoice-company-info">
+              <h2>{organization.name}</h2>
+              <p>
+                {organization.address && <>{organization.address}<br /></>}
+                {organization.email && <span>{organization.email} </span>}
+                {organization.phone && <span>· {organization.phone}</span>}
+                {organizationTaxNumber && <><br /><strong>Tax / PAN / VAT ID:</strong> {organizationTaxNumber}</>}
+              </p>
+            </div>
           </div>
           <div className="invoice-meta-col">
             <div style={{ marginBottom: 6 }}><Badge value={quote.status} /></div>
@@ -761,13 +765,15 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
           <div className="invoice-brand-row">
             <div className="invoice-company-details">
               <CompanyPrintLogo organization={organization} />
-              <h2>{organization.name}</h2>
-              <p>
-                {organization.address && <>{organization.address}<br /></>}
-                {organization.email && <span>{organization.email} </span>}
-                {organization.phone && <span>· {organization.phone}</span>}
-                {organizationTaxNumber && <><br /><strong>Tax / PAN ID:</strong> {organizationTaxNumber}</>}
-              </p>
+              <div className="invoice-company-info">
+                <h2>{organization.name}</h2>
+                <p>
+                  {organization.address && <>{organization.address}<br /></>}
+                  {organization.email && <span>{organization.email} </span>}
+                  {organization.phone && <span>· {organization.phone}</span>}
+                  {organizationTaxNumber && <><br /><strong>Tax / PAN ID:</strong> {organizationTaxNumber}</>}
+                </p>
+              </div>
             </div>
             <div className="invoice-meta-col">
               <div style={{ marginBottom: 6 }}><Badge value={so.status} /></div>
@@ -963,13 +969,15 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
           <div className="invoice-brand-row">
             <div className="invoice-company-details">
               <CompanyPrintLogo organization={organization} />
-              <h2>{organization.name}</h2>
-              <p>
-                {organization.address && <>{organization.address}<br /></>}
-                {organization.email && <span>{organization.email} </span>}
-                {organization.phone && <span>· {organization.phone}</span>}
-                {organizationTaxNumber && <><br /><strong>Tax / PAN ID:</strong> {organizationTaxNumber}</>}
-              </p>
+              <div className="invoice-company-info">
+                <h2>{organization.name}</h2>
+                <p>
+                  {organization.address && <>{organization.address}<br /></>}
+                  {organization.email && <span>{organization.email} </span>}
+                  {organization.phone && <span>· {organization.phone}</span>}
+                  {organizationTaxNumber && <><br /><strong>Tax / PAN ID:</strong> {organizationTaxNumber}</>}
+                </p>
+              </div>
             </div>
             <div className="invoice-meta-col">
               <div style={{ marginBottom: 6 }}><Badge value={po.status} /></div>
@@ -1764,13 +1772,15 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
           <div className="invoice-brand-row">
             <div className="invoice-company-details">
               <CompanyPrintLogo organization={organization} />
-              <h2>{organization.name}</h2>
-              <p>
-                {organization.address && <>{organization.address}<br /></>}
-                {organization.email && <span>{organization.email} </span>}
-                {organization.phone && <span>· {organization.phone}</span>}
-                {organizationTaxNumber && <><br /><strong>Tax / PAN / VAT ID:</strong> {organizationTaxNumber}</>}
-              </p>
+              <div className="invoice-company-info">
+                <h2>{organization.name}</h2>
+                <p>
+                  {organization.address && <>{organization.address}<br /></>}
+                  {organization.email && <span>{organization.email} </span>}
+                  {organization.phone && <span>· {organization.phone}</span>}
+                  {organizationTaxNumber && <><br /><strong>Tax / PAN / VAT ID:</strong> {organizationTaxNumber}</>}
+                </p>
+              </div>
             </div>
             <div className="invoice-meta-col">
               <div style={{ marginBottom: 6 }}><Badge value={loan.status} /></div>

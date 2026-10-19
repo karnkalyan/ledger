@@ -8,6 +8,7 @@ import { IncomeForm } from "@/components/income-form";
 import { DocumentComposer } from "@/components/document-composer";
 import { NepaliDatePicker } from "@/components/nepali-date-picker";
 import { FormPendingFeedback } from "@/components/form-pending-feedback";
+import { FinancialAccountForm } from "@/components/financial-account-form";
 import { saveIncomeAction, saveContactAction, saveLeadAction, saveStockMovementAction, saveProductAction, saveEmployeeAction, savePayrollAction, saveLeaveAction, saveTaskAction, saveLicenseAction, saveReminderAction, saveExpenseAction, saveRecurringExpenseAction, saveCommerceDocumentAction, saveBankAccountAction, saveBankTransactionAction, saveLoanAction } from "./actions";
 const entries = [
   { module: "loans", type: "new-loan", title: "Record Loan (Taken / Given)", subtitle: "Configure borrower or lender, principal, daily/monthly/yearly interest rate, and due date." },
@@ -99,78 +100,14 @@ export default async function NewEntryPage({params, searchParams}: {
       action={saveIncomeAction}
     />
   ); break;
-  case "new-account": form = (<>
-            <form action={saveBankAccountAction}>
-              <FormPendingFeedback processingMessage="Saving the bank account..." successMessage="Bank account added successfully" />
-              <input type="hidden" name="orgId" value={orgId} />
-              <div className="form-grid">
-                <label className="field full">
-                  Account Provider / Person / Name
-                  <input name="bankName" required placeholder="Siddhartha Bank / eSewa / Kashvi / Kalyan / Custom" />
-                </label>
-                <label className="field">
-                  Account Name
-                  <input name="accountName" placeholder="Account Name / Business Name" defaultValue={organization.name} />
-                </label>
-                <label className="field">
-                  Account Number
-                  <input name="accountNumber" required placeholder="02017249683" />
-                </label>
-                <label className="field">
-                  Account Type
-                  <select name="accountType">
-                    <option value="CURRENT">Current Account (CANR)</option>
-                    <option value="SAVINGS">Savings Account</option>
-                    <option value="DIGITAL_WALLET">Digital Wallet (eSewa / Khalti / IME Pay)</option>
-                    <option value="OVERDRAFT">Overdraft Facility (OD)</option>
-                    <option value="FIXED">Fixed Deposit</option>
-                    <option value="CREDIT_CARD">Credit Card</option>
-                    <option value="CASH">Cash in Hand</option>
-                    <option value="PARTY_ACCOUNT">Person / Party Account (Taken / Given)</option>
-                    <option value="FAMILY_ACCOUNT">Family Member Account</option>
-                    <option value="CUSTOM">Other / Custom Account</option>
-                  </select>
-                </label>
-                <label className="field">
-                  Branch Name
-                  <input name="branch" placeholder="Kathmandu / New Road / Biratnagar" />
-                </label>
-                <label className="field">
-                  Currency
-                  <input name="currency" defaultValue={organization.currency || "NPR"} />
-                </label>
-                <label className="field">
-                  Opening Balance
-                  <input name="openingBalance" type="number" step="0.01" defaultValue="0" />
-                </label>
-                <label className="field">
-                  Hold / Lien Amount (Account Opening Charge / Minimum Lien)
-                  <input name="holdAmount" type="number" step="0.01" defaultValue="0" placeholder="2500" />
-                </label>
-                <label className="field">
-                  Credit Limit (for Credit Card)
-                  <input name="creditLimit" type="number" min="0" step="0.01" defaultValue="0" />
-                </label>
-                <label className="field">
-                  Monthly Statement Day
-                  <input name="statementDay" type="number" min="1" max="31" placeholder="26" />
-                </label>
-                <label className="field">
-                  Monthly Payment Due Day
-                  <input name="paymentDueDay" type="number" min="1" max="31" placeholder="10" />
-                </label>
-                <label className="field full">
-                  Notes / Remarks
-                  <textarea name="notes" placeholder="Optional notes about this bank account" />
-                </label>
-              </div>
-              <div className="form-actions">
-                <button className="primary-btn" type="submit">
-                  Save Bank Account
-                </button>
-              </div>
-            </form>
-          </>); break;
+  case "new-account": form = (
+    <FinancialAccountForm
+      orgId={orgId}
+      currency={organization.currency}
+      defaultName={organization.name}
+      action={saveBankAccountAction}
+    />
+  ); break;
   case "record-deposit":
   case "record-withdrawal": form = (<>
             <form action={saveBankTransactionAction}>

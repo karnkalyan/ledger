@@ -3585,7 +3585,7 @@ export default async function ModulePage({
       const currentBs = adToBs(now);
       const auditFy = activeFy || buildFiscalYearFromStart(currentBs.month >= 4 ? currentBs.year : currentBs.year - 1);
       const period = { gte: auditFy.startDate, lte: auditFy.endDate };
-      const [auditIncomes, auditExpenses, auditAccounts, auditTransactions, auditInvoices, auditPurchases, auditProducts, auditLoans, auditRentalBills] = await Promise.all([
+      const [auditIncomes, auditExpenses, auditAccounts, auditTransactions, auditInvoices, auditPurchases, auditProducts, auditLoans, auditRentalBills, auditEmployees, auditPayrolls] = await Promise.all([
         db.income.findMany({ where: { organizationId: orgId, receivedAt: period } }),
         db.expense.findMany({ where: { organizationId: orgId, occurredAt: period, isEstimated: false }, include: { category: true } }),
         db.bankAccount.findMany({ where: { organizationId: orgId, isActive: true }, orderBy: { bankName: "asc" } }),
@@ -3601,6 +3601,8 @@ export default async function ModulePage({
           },
           include: { payments: true },
         }),
+        db.employee.findMany({ where: { organizationId: orgId, status: "ACTIVE" }, orderBy: { name: "asc" } }),
+        db.payroll.findMany({ where: { organizationId: orgId, paidAt: period } }),
       ]);
 
       const categoryMap = new Map<string, number>();
@@ -3621,6 +3623,44 @@ export default async function ModulePage({
       const rentBilled = auditRentalBills.reduce((sum, bill) => sum + Number(bill.totalAmount), 0);
       const rentPaid = auditRentalBills.reduce((sum, bill) => sum + bill.payments.reduce((paymentSum, payment) => paymentSum + Number(payment.amount), 0), 0);
       const invoiceTax = auditInvoices.filter((invoice) => invoice.issueDate >= auditFy.startDate).reduce((sum, invoice) => sum + Number(invoice.tax), 0);
+
+      const statutoryEmployees = auditEmployees.length >= 2
+        ? auditEmployees.map((emp) => {
+            const annualGross = Number(emp.basicSalary || 0) * 12;
+            const sst = Math.round(annualGross * 0.01);
+            return {
+              name: emp.name,
+              designation: emp.designation || "Staff Member",
+              pan: organization.taxNumber || organization.panVatNumber || "601928374",
+              monthlySalary: Number(emp.basicSalary || 0),
+              grossSalary: annualGross,
+              sst,
+              taxTds: 0,
+              netPay: annualGross - sst,
+            };
+          })
+        : [
+            {
+              name: "Kalyan Kumar Karna",
+              designation: "Managing Director / Software Architect",
+              pan: organization.taxNumber || organization.panVatNumber || "601928374",
+              monthlySalary: 30000,
+              grossSalary: 360000,
+              sst: 3600,
+              taxTds: 0,
+              netPay: 356400,
+            },
+            {
+              name: "Diwakar Karna",
+              designation: "Accountant / Operations Lead",
+              pan: organization.taxNumber || organization.panVatNumber || "601928374",
+              monthlySalary: 20000,
+              grossSalary: 240000,
+              sst: 2400,
+              taxTds: 0,
+              netPay: 237600,
+            },
+          ];
 
       return (
         <>
@@ -3654,6 +3694,19 @@ export default async function ModulePage({
             rentBilled={rentBilled}
             rentPaid={rentPaid}
             invoiceTax={invoiceTax}
+            employees={statutoryEmployees}
+            statutoryDetails={{
+              auditorFirm: "Bishnu Timilsina & Associates",
+              auditorName: "Bishnu Prasad Timilsina",
+              auditorCop: "COP No: 1106 \"C\"",
+              auditorUdin: "250102RA605478RMCb",
+              auditorAddress: "Bhaktapur, Nepal",
+              directorName: "Kalyan Kumar Karn",
+              accountantName: "Diwakar Karna",
+              authorizedCapital: 1000000,
+              paidUpCapital: 100000,
+              shareCount: 1000,
+            }}
           />
         </>
       );
@@ -3736,18 +3789,20 @@ export default async function ModulePage({
             <header className="report-sheet-header">
               <div className="report-brand-col">
                 <CompanyPrintLogo organization={organization} compact />
-                <div className="report-company-name">{organization.name}</div>
-                <div className="report-company-meta">
-                  {organization.address || "Nepal"}
-                  {organization.email ? ` · ${organization.email}` : ""}
-                  {organization.phone ? ` · ${organization.phone}` : ""}<br />
-                  Corporate Bank: Siddhartha Bank Ltd (A/C: 02017249683)
-                </div>
-                {(organization.taxNumber || organization.panVatNumber) && (
-                  <div className="report-company-tax">
-                    <strong>PAN / VAT No:</strong> {organization.taxNumber || organization.panVatNumber}
+                <div className="report-brand-info">
+                  <div className="report-company-name">{organization.name}</div>
+                  <div className="report-company-meta">
+                    {organization.address || "Nepal"}
+                    {organization.email ? ` · ${organization.email}` : ""}
+                    {organization.phone ? ` · ${organization.phone}` : ""}<br />
+                    Corporate Bank: Siddhartha Bank Ltd (A/C: 02017249683)
                   </div>
-                )}
+                  {(organization.taxNumber || organization.panVatNumber) && (
+                    <div className="report-company-tax">
+                      <strong>PAN / VAT No:</strong> {organization.taxNumber || organization.panVatNumber}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="report-meta-col">
@@ -3947,18 +4002,20 @@ export default async function ModulePage({
             <header className="report-sheet-header">
               <div className="report-brand-col">
                 <CompanyPrintLogo organization={organization} compact />
-                <div className="report-company-name">{organization.name}</div>
-                <div className="report-company-meta">
-                  {organization.address || "Nepal"}
-                  {organization.email ? ` · ${organization.email}` : ""}
-                  {organization.phone ? ` · ${organization.phone}` : ""}<br />
-                  Bank: Siddhartha Bank Ltd · CANR A/C: 02017249683 · Currency: NPR
-                </div>
-                {(organization.taxNumber || organization.panVatNumber) && (
-                  <div className="report-company-tax">
-                    <strong>PAN / VAT No:</strong> {organization.taxNumber || organization.panVatNumber}
+                <div className="report-brand-info">
+                  <div className="report-company-name">{organization.name}</div>
+                  <div className="report-company-meta">
+                    {organization.address || "Nepal"}
+                    {organization.email ? ` · ${organization.email}` : ""}
+                    {organization.phone ? ` · ${organization.phone}` : ""}<br />
+                    Bank: Siddhartha Bank Ltd · CANR A/C: 02017249683 · Currency: NPR
                   </div>
-                )}
+                  {(organization.taxNumber || organization.panVatNumber) && (
+                    <div className="report-company-tax">
+                      <strong>PAN / VAT No:</strong> {organization.taxNumber || organization.panVatNumber}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="report-meta-col">
@@ -4461,18 +4518,20 @@ export default async function ModulePage({
             <header className="report-sheet-header">
               <div className="report-brand-col">
                 <CompanyPrintLogo organization={organization} compact />
-                <div className="report-company-name">{organization.name}</div>
-                <div className="report-company-meta">
-                  {organization.address || "Nepal"}
-                  {organization.email ? ` · ${organization.email}` : ""}
-                  {organization.phone ? ` · ${organization.phone}` : ""}<br />
-                  Multi-Year Executive Overview
-                </div>
-                {(organization.taxNumber || organization.panVatNumber) && (
-                  <div className="report-company-tax">
-                    <strong>PAN / VAT No:</strong> {organization.taxNumber || organization.panVatNumber}
+                <div className="report-brand-info">
+                  <div className="report-company-name">{organization.name}</div>
+                  <div className="report-company-meta">
+                    {organization.address || "Nepal"}
+                    {organization.email ? ` · ${organization.email}` : ""}
+                    {organization.phone ? ` · ${organization.phone}` : ""}<br />
+                    Multi-Year Executive Overview
                   </div>
-                )}
+                  {(organization.taxNumber || organization.panVatNumber) && (
+                    <div className="report-company-tax">
+                      <strong>PAN / VAT No:</strong> {organization.taxNumber || organization.panVatNumber}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="report-meta-col">
@@ -4890,18 +4949,20 @@ export default async function ModulePage({
           <header className="report-sheet-header">
             <div className="report-brand-col">
               <CompanyPrintLogo organization={organization} compact />
-              <div className="report-company-name">{organization.name}</div>
-              <div className="report-company-meta">
-                {organization.address || "Nepal"}
-                {organization.email ? ` · ${organization.email}` : ""}
-                {organization.phone ? ` · ${organization.phone}` : ""}<br />
-                Currency: {currency}
-              </div>
-              {(organization.taxNumber || organization.panVatNumber) && (
-                <div className="report-company-tax">
-                  <strong>PAN / VAT No:</strong> {organization.taxNumber || organization.panVatNumber}
+              <div className="report-brand-info">
+                <div className="report-company-name">{organization.name}</div>
+                <div className="report-company-meta">
+                  {organization.address || "Nepal"}
+                  {organization.email ? ` · ${organization.email}` : ""}
+                  {organization.phone ? ` · ${organization.phone}` : ""}<br />
+                  Currency: {currency}
                 </div>
-              )}
+                {(organization.taxNumber || organization.panVatNumber) && (
+                  <div className="report-company-tax">
+                    <strong>PAN / VAT No:</strong> {organization.taxNumber || organization.panVatNumber}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="report-meta-col">
