@@ -181,8 +181,8 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
             <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px dashed var(--line)", display: "flex", gap: 16, flexWrap: "wrap" }}>
               {bankTx.contact && (
                 <div style={{ flex: 1, minWidth: 220, padding: 14, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 10 }}>
-                  <span style={{ fontSize: 11, color: "var(--text-muted)", display: "block", marginBottom: 4 }}>
-                    👤 Linked CRM Entity
+                  <span style={{ fontSize: 11, color: "var(--text-muted)", display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
+                    <CheckCircle2 size={12} /> Linked CRM Entity
                   </span>
                   <Link href={`/${orgId}/crm/${bankTx.contact.id}`} className="table-clickable-title" style={{ fontSize: 14, fontWeight: 700 }}>
                     {bankTx.contact.companyName || bankTx.contact.name}
@@ -195,8 +195,8 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
 
               {bankTx.income && (
                 <div style={{ flex: 1, minWidth: 220, padding: 14, background: "var(--success-soft)", border: "1px solid rgba(22, 163, 74, 0.2)", borderRadius: 10 }}>
-                  <span style={{ fontSize: 11, color: "var(--success)", display: "block", marginBottom: 4, fontWeight: 700 }}>
-                    ✓ Linked Income Inflow Record
+                  <span style={{ fontSize: 11, color: "var(--success)", display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 4, fontWeight: 700 }}>
+                    <CheckCircle2 size={12} /> Linked Income Inflow Record
                   </span>
                   <div style={{ fontSize: 13.5, fontWeight: 700 }}>{bankTx.income.title}</div>
                   <div style={{ fontSize: 11.5, color: "var(--text-secondary)", marginTop: 4 }}>
@@ -207,8 +207,8 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
 
               {bankTx.expense && (
                 <div style={{ flex: 1, minWidth: 220, padding: 14, background: "var(--danger-soft)", border: "1px solid rgba(239, 68, 68, 0.2)", borderRadius: 10 }}>
-                  <span style={{ fontSize: 11, color: "var(--danger)", display: "block", marginBottom: 4, fontWeight: 700 }}>
-                    ✓ Linked Expense Outlay Record
+                  <span style={{ fontSize: 11, color: "var(--danger)", display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 4, fontWeight: 700 }}>
+                    <CheckCircle2 size={12} /> Linked Expense Outlay Record
                   </span>
                   <div style={{ fontSize: 13.5, fontWeight: 700 }}>{bankTx.expense.title}</div>
                   <div style={{ fontSize: 11.5, color: "var(--text-secondary)", marginTop: 4 }}>

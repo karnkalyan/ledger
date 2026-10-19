@@ -207,7 +207,7 @@ export function MonthlyGeneratorModal({
                     )}
                   </select>
                   <span className="badge green" style={{ fontSize: 10, fontWeight: 700 }}>
-                    🇳🇵 BIKRAM SAMBAT
+                    BIKRAM SAMBAT (BS)
                   </span>
                 </div>
 

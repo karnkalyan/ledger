@@ -161,7 +161,7 @@ export function DualBillingMonthPicker({
       const range = getBsMonthRange(bsYear, bsMonth);
       const startStr = `${range.startDate.getDate()} ${range.startDate.toLocaleString("default", { month: "short" })}`;
       const endStr = `${range.endDate.getDate()} ${range.endDate.toLocaleString("default", { month: "short" })} ${range.endDate.getFullYear()}`;
-      previewText = `Nepali BS: ${bsName} (${bsNe}) ${bsYear} BS ↔ AD: ${startStr} – ${endStr} AD`;
+      previewText = `Nepali BS: ${bsName} (${bsNe}) ${bsYear} BS | AD: ${startStr} – ${endStr} AD`;
     } catch {
       previewText = `Nepali BS: ${bsName} ${bsYear} BS`;
     }
@@ -170,7 +170,7 @@ export function DualBillingMonthPicker({
     const adName = d.toLocaleString("default", { month: "long" });
     try {
       const bs = adToBs(d);
-      previewText = `English AD: ${adName} ${adYear} AD ↔ BS: ${bs.monthName} (${bs.monthNameNe}) ${bs.year} BS`;
+      previewText = `English AD: ${adName} ${adYear} AD | BS: ${bs.monthName} (${bs.monthNameNe}) ${bs.year} BS`;
     } catch {
       previewText = `English AD: ${adName} ${adYear} AD`;
     }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Save, Landmark, Banknote, Calendar, Tag, User, Receipt } from "lucide-react";
+import { ArrowLeft, Save, Landmark, Banknote, Calendar, Tag, User, Receipt, ShieldCheck } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireOrganizationAccess } from "@/lib/session";
 import { DocumentComposer } from "@/components/document-composer";
@@ -351,7 +351,9 @@ export default async function EditDocumentPage({
                     defaultChecked={Boolean(income.source?.toLowerCase().includes("director") || income.notes?.toLowerCase().includes("director") || income.title.toLowerCase().includes("director"))}
                     style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
                   />
-                  <span>💼 Director Current Account (Capital Injection / Loan Inflow)</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <ShieldCheck size={14} style={{ color: "var(--brand)" }} /> Director Current Account (Capital Injection / Loan Inflow)
+                  </span>
                 </label>
                 <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   <label className="field" style={{ margin: 0 }}>
@@ -539,7 +541,9 @@ export default async function EditDocumentPage({
                     defaultChecked={Boolean(txRecord.category?.toLowerCase().includes("director") || txRecord.description.toLowerCase().includes("director"))}
                     style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
                   />
-                  <span>💼 Categorize under Director Current Account (Capital / Personal Drawings)</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <ShieldCheck size={14} style={{ color: "var(--brand)" }} /> Categorize under Director Current Account (Capital / Personal Drawings)
+                  </span>
                 </label>
                 <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   <label className="field" style={{ margin: 0 }}>

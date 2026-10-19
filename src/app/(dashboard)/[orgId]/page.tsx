@@ -271,8 +271,12 @@ export default async function DashboardPage({
         }}
       >
         <div>
-          <strong style={{ fontSize: 13, display: "block" }}>📑 App Modules &amp; Sub-items Menu</strong>
-          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Browse commerce, banking, CRM &amp; utility pages cleanly</span>
+          <strong style={{ fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <FileText size={15} style={{ color: "var(--brand)" }} /> App Modules &amp; Sub-items Menu
+          </strong>
+          <span style={{ fontSize: 11, color: "var(--text-muted)", display: "block", marginTop: 2 }}>
+            Browse commerce, banking, CRM &amp; utility pages cleanly
+          </span>
         </div>
         <Link
           href={`/${orgId}/menu`}

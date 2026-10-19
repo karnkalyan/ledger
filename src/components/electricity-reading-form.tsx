@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { saveElectricityLogAction } from "@/app/(dashboard)/actions";
-import { Zap, RotateCcw, CheckCircle2 } from "lucide-react";
+import { Zap, RotateCcw, CheckCircle2, AlertCircle } from "lucide-react";
 import { adToBs, NEPALI_MONTHS_EN, NEPALI_MONTHS_NE } from "@/lib/nepali-calendar";
 import { FormPendingFeedback } from "@/components/form-pending-feedback";
 
@@ -135,7 +135,7 @@ export function ElectricityReadingForm({
         <label className="field" style={{ margin: 0 }}>
           <span className="field-label" style={{ display: "flex", justifyContent: "space-between" }}>
             <span>Billing Month (BS)</span>
-            <span style={{ color: "var(--brand)", fontSize: 10, fontWeight: 700 }}>🇳🇵 Nepali BS</span>
+            <span style={{ color: "var(--brand)", fontSize: 10, fontWeight: 700 }}>Nepali BS</span>
           </span>
           <select
             name="month"
@@ -164,7 +164,11 @@ export function ElectricityReadingForm({
         <label className="field" style={{ margin: 0 }}>
           <span className="field-label" style={{ display: "flex", justifyContent: "space-between" }}>
             <span>Last Unit (Previous)</span>
-            {!isEditingPrevious && <span style={{ color: "var(--success)", fontSize: 10 }}>✔ Auto-Retrieved</span>}
+            {!isEditingPrevious && (
+              <span style={{ color: "var(--success)", fontSize: 10, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                <CheckCircle2 size={11} /> Auto-Retrieved
+              </span>
+            )}
           </span>
           <input
             type="number"
@@ -184,7 +188,7 @@ export function ElectricityReadingForm({
         {/* CURRENT UNIT (PRIMARY ENTRY FIELD) */}
         <label className="field" style={{ margin: 0 }}>
           <span className="field-label" style={{ color: "var(--brand)", fontWeight: 750 }}>
-            ★ Current Unit (Today)
+            Current Unit (Today)
           </span>
           <input
             type="number"
@@ -230,8 +234,8 @@ export function ElectricityReadingForm({
               color: paidStatus ? "var(--green)" : "var(--amber)",
             }}
           >
-            <option value="PAID">✔ PAID (Finalized)</option>
-            <option value="UNPAID">⏳ UNPAID (Pending)</option>
+            <option value="PAID">PAID (Finalized)</option>
+            <option value="UNPAID">UNPAID (Pending)</option>
           </select>
         </label>
 
@@ -289,7 +293,7 @@ export function ElectricityReadingForm({
           <div>
             <span style={{ color: "var(--text-muted)" }}>Status: </span>
             <strong style={{ color: paidStatus ? "var(--green)" : "var(--amber)" }}>
-              {paidStatus ? "✔ PAID" : "⏳ UNPAID (PENDING)"}
+              {paidStatus ? "PAID" : "UNPAID (PENDING)"}
             </strong>
           </div>
         </div>
@@ -306,8 +310,8 @@ export function ElectricityReadingForm({
 
       {typeof currentUnit === "number" || (typeof currentUnit === "string" && currentUnit.trim() !== "") ? (
         curNum < previousUnit ? (
-          <div style={{ color: "var(--danger)", fontSize: 11, marginTop: 6, fontWeight: 600 }}>
-            ⚠️ Current meter reading ({curNum}) is less than previous reading ({previousUnit}). Please check meter reading.
+          <div style={{ color: "var(--danger)", fontSize: 11, marginTop: 6, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+            <AlertCircle size={13} /> Current meter reading ({curNum}) is less than previous reading ({previousUnit}). Please check meter reading.
           </div>
         ) : (
           <div style={{ color: "var(--success)", fontSize: 11, marginTop: 6, display: "flex", alignItems: "center", gap: 4 }}>

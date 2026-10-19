@@ -843,7 +843,7 @@ export default async function ModulePage({
                               title="Commitment is UNPAID. Click to mark as PAID"
                               style={{ cursor: "pointer", border: "none", background: "rgba(245, 158, 11, 0.15)", color: "#d97706", fontWeight: 700 }}
                             >
-                              ⏳ UNPAID
+                              <Clock size={11} style={{ verticalAlign: "middle", marginRight: 3 }} /> UNPAID
                             </button>
                           ) : (
                             <button
@@ -852,7 +852,7 @@ export default async function ModulePage({
                               title="Expense is PAID. Click to mark as UNPAID"
                               style={{ cursor: "pointer", border: "none", background: "rgba(16, 185, 129, 0.15)", color: "#059669", fontWeight: 700 }}
                             >
-                              ✔ PAID
+                              <CheckCircle2 size={11} style={{ verticalAlign: "middle", marginRight: 3 }} /> PAID
                             </button>
                           )}
                         </form>
@@ -1026,8 +1026,8 @@ export default async function ModulePage({
                   <label className="field" style={{ margin: 0 }}>
                     <span className="field-label">Bill Status</span>
                     <select name="paid" defaultValue="false" style={{ fontWeight: 600 }}>
-                      <option value="false">⏳ UNPAID</option>
-                      <option value="true">✔ PAID</option>
+                      <option value="false">UNPAID (PENDING)</option>
+                      <option value="true">PAID</option>
                     </select>
                   </label>
                   <div>
@@ -1079,7 +1079,7 @@ export default async function ModulePage({
                                   title="Milk bill marked PAID. Click to toggle UNPAID"
                                   style={{ cursor: "pointer", border: "none", background: "rgba(16, 185, 129, 0.15)", color: "#059669", fontWeight: 700 }}
                                 >
-                                  ✔ PAID
+                                  <CheckCircle2 size={11} style={{ verticalAlign: "middle", marginRight: 3 }} /> PAID
                                 </button>
                               ) : (
                                 <button
@@ -1088,7 +1088,7 @@ export default async function ModulePage({
                                   title="Milk bill marked UNPAID. Click to toggle PAID"
                                   style={{ cursor: "pointer", border: "none", background: "rgba(245, 158, 11, 0.15)", color: "#d97706", fontWeight: 700 }}
                                 >
-                                  ⏳ UNPAID
+                                  <Clock size={11} style={{ verticalAlign: "middle", marginRight: 3 }} /> UNPAID
                                 </button>
                               )}
                             </form>
@@ -1181,7 +1181,7 @@ export default async function ModulePage({
                               title="Electricity bill marked PAID. Click to toggle UNPAID"
                               style={{ cursor: "pointer", border: "none", background: "rgba(16, 185, 129, 0.15)", color: "#059669", fontWeight: 700 }}
                             >
-                              ✔ PAID
+                              <CheckCircle2 size={11} style={{ verticalAlign: "middle", marginRight: 3 }} /> PAID
                             </button>
                           ) : (
                             <button
@@ -1190,7 +1190,7 @@ export default async function ModulePage({
                               title="Electricity bill marked UNPAID. Click to toggle PAID"
                               style={{ cursor: "pointer", border: "none", background: "rgba(245, 158, 11, 0.15)", color: "#d97706", fontWeight: 700 }}
                             >
-                              ⏳ UNPAID
+                              <Clock size={11} style={{ verticalAlign: "middle", marginRight: 3 }} /> UNPAID
                             </button>
                           )}
                         </form>

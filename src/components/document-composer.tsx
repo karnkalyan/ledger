@@ -573,7 +573,7 @@ export function DocumentComposer({
                           }}
                           onClick={() => useCustomItemForLine(i, itemQuery)}
                         >
-                          ➕ Use &ldquo;{itemQuery.trim()}&rdquo; as custom item (Press Enter)
+                          <Plus size={12} style={{ display: "inline", verticalAlign: "middle", marginRight: 4 }} /> Use &ldquo;{itemQuery.trim()}&rdquo; as custom item (Press Enter)
                         </div>
                       )}
 

@@ -576,7 +576,7 @@ export function AiChatAssistant({
         {
           id: `err-${Date.now()}`,
           role: "assistant",
-          text: `⚠️ **Error:** ${err.message || "Unable to process message. Please check connection."}`,
+          text: `**Error:** ${err.message || "Unable to process message. Please check connection."}`,
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         },
       ]);

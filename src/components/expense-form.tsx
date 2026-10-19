@@ -254,8 +254,8 @@ export function ExpenseForm({
                           <span>
                             Tracked Wallet Balance: <strong style={{ color: bal && bal > 0 ? "var(--green)" : "var(--amber)" }}>NPR {bal?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
                             {bal !== null && bal < finalAmount && finalAmount > 0 && (
-                              <span style={{ color: "var(--danger)", marginLeft: 8 }}>
-                                (⚠️ Low balance — transfer from Bank to Wallet if needed)
+                              <span style={{ color: "var(--danger)", marginLeft: 8, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                                <AlertTriangle size={12} /> (Low balance — transfer from Bank to Wallet if needed)
                               </span>
                             )}
                           </span>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
   Wallet, ArrowRightLeft, Plus, CheckCircle2, XCircle, Clock, ShieldCheck,
-  CreditCard, ArrowUpRight, ArrowDownLeft, AlertCircle
+  CreditCard, ArrowUpRight, ArrowDownLeft, AlertCircle, Check, X
 } from "lucide-react";
 import { money, shortDate } from "@/lib/format";
 import { WalletModal } from "@/components/wallet-modal";
@@ -426,7 +426,9 @@ export function WalletManagementView({
                                 onClick={() => handleAction(r.id, "LEADER_APPROVE")}
                                 title="Grant Leader Approval"
                               >
-                                Leader ✓
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                                  Leader <Check size={11} />
+                                </span>
                               </button>
                             )}
 
@@ -438,7 +440,9 @@ export function WalletManagementView({
                                 onClick={() => handleAction(r.id, "ADMIN_APPROVE")}
                                 title="Grant Admin Approval"
                               >
-                                Admin ✓
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                                  Admin <Check size={11} />
+                                </span>
                               </button>
                             )}
 
@@ -461,7 +465,7 @@ export function WalletManagementView({
                               onClick={() => handleAction(r.id, "REJECT")}
                               title="Reject Request"
                             >
-                              ✕
+                              <X size={12} />
                             </button>
                           </div>
                         ) : (
@@ -588,8 +592,8 @@ export function WalletManagementView({
                       </td>
 
                       <td data-label="Approval">
-                        <span style={{ fontSize: 11, fontWeight: 650, color: "#10b981" }}>
-                          ✓ Approved &amp; Settled
+                        <span style={{ fontSize: 11, fontWeight: 650, color: "#10b981", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          <CheckCircle2 size={12} /> Approved &amp; Settled
                         </span>
                       </td>
 
