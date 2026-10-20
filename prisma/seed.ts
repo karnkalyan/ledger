@@ -514,7 +514,87 @@ async function main() {
           });
         }
         const lastWithBal = [...txs].reverse().find((t) => t.balance != null);
-        const endingBal = lastWithBal ? Number(lastWithBal.balance) : (accNo === "55509175153" ? 36843.35 : (accNo === "02905120254304" ? 3800.58 : 0));
+        let endingBal = lastWithBal ? Number(lastWithBal.balance) : (accNo === "55509175153" ? 36843.35 : (accNo === "02905120254304" ? 3800.58 : 0));
+
+        // Append latest October transactions if account is Kalyan's Siddhartha Bank or NIMB
+        if (accNo === "01615383041") {
+          const sblPost16Txs = [
+            {
+              transactionDate: new Date("2026-10-17T00:00:00Z"),
+              type: "WITHDRAWAL" as const,
+              amount: 3.43,
+              balance: 10683.05,
+              description: "01615383041:WTax.Pd:17-07-2026to 17-10-2026 Interest run",
+              category: "Household Expenditure",
+            },
+            {
+              transactionDate: new Date("2026-10-17T00:00:00Z"),
+              type: "DEPOSIT" as const,
+              amount: 57.16,
+              balance: 10740.21,
+              description: "01615383041:Int.Pd:17-07-2026 to 17-10-2026 Interest run",
+              category: "Household Inflow",
+            },
+            {
+              transactionDate: new Date("2026-10-18T00:00:00Z"),
+              type: "WITHDRAWAL" as const,
+              amount: 210.0,
+              balance: 10530.21,
+              description: "Fund Trf to KRISHNA KUMAR SHAH-puja FUN MOB/SBLMOB01puja",
+              category: "Household Expenditure",
+            },
+            {
+              transactionDate: new Date("2026-10-18T00:00:00Z"),
+              type: "WITHDRAWAL" as const,
+              amount: 60.0,
+              balance: 10470.21,
+              description: "Fund Trf to NABIL BANK LTD (ESEW-9849202107,23554 FUN",
+              category: "Household Expenditure",
+            },
+            {
+              transactionDate: new Date("2026-10-20T00:00:00Z"),
+              type: "WITHDRAWAL" as const,
+              amount: 370.0,
+              balance: 10100.21,
+              description: "Fund Trf to A/C PAYABLE IBFT (IN-44979521yQjM,Mob FUN",
+              category: "Household Expenditure",
+            },
+          ];
+          for (const st of sblPost16Txs) {
+            await prisma.bankTransaction.create({
+              data: {
+                organizationId: household.id,
+                bankAccountId: acc.id,
+                transactionDate: st.transactionDate,
+                valueDate: st.transactionDate,
+                type: st.type,
+                amount: st.amount,
+                balance: st.balance,
+                description: st.description,
+                category: st.category,
+              },
+            });
+          }
+          endingBal = 10100.21;
+        }
+
+        if (accNo === "02905120254304") {
+          // Repayment of NPR 100,000 on 1 Kartik 2083 (2026-10-18) for Aditya loan
+          await prisma.bankTransaction.create({
+            data: {
+              organizationId: household.id,
+              bankAccountId: acc.id,
+              transactionDate: new Date("2026-10-18T00:00:00Z"),
+              valueDate: new Date("2026-10-18T00:00:00Z"),
+              type: "WITHDRAWAL",
+              amount: 100000.0,
+              balance: 3006.9,
+              description: "Fund Trf to Aditya - Loan Repayment (1st Kartik 2083)",
+              category: "Household Expenditure",
+            },
+          });
+          endingBal = 3006.9;
+        }
 
         await prisma.bankAccount.update({
           where: { id: acc.id },
@@ -526,17 +606,75 @@ async function main() {
     }
   }
 
-  // House Sample Income
+  // House Income & Expenses (Exact user specifications)
+  console.log("\n--- SEEDING HOUSEHOLD EXPENSES & INFLOWS ---");
   await prisma.income.deleteMany({ where: { organizationId: household.id } });
   await prisma.income.create({
     data: {
       organizationId: household.id,
-      title: "Monthly household income",
-      source: "Salary / Professional Remittance",
-      amount: 180000,
-      receivedAt: new Date(),
-      notes: "Primary household inflow",
+      title: "Director Drawings / Remittance from Simulcast",
+      source: "Simulcast Technologies Pvt Ltd (Company Workspace)",
+      amount: 50000,
+      receivedAt: new Date("2026-10-15T12:00:00Z"), // 29 Ashwin 2083
+      paymentMethod: "CASH",
+      notes: "Director cash drawings NPR 50,000 taken from Simulcast on 29th Ashwin 2083 BS.",
     },
+  });
+
+  // Additional household expenses
+  await prisma.expense.createMany({
+    data: [
+      {
+        organizationId: household.id,
+        title: "Dashain Expense - Papa",
+        vendor: "Papa (Dashain)",
+        type: ExpenseType.ONE_TIME,
+        amount: 2500,
+        occurredAt: new Date("2026-10-16T10:00:00Z"), // 30 Ashwin 2083
+        isEstimated: false, // PAID
+        notes: "Cash given to Papa for Dashain expenses on 30th Ashwin 2083.",
+      },
+      {
+        organizationId: household.id,
+        title: "Dashain Expense - Mummy",
+        vendor: "Mummy (Dashain)",
+        type: ExpenseType.ONE_TIME,
+        amount: 2500,
+        occurredAt: new Date("2026-10-16T10:00:00Z"), // 30 Ashwin 2083
+        isEstimated: false, // PAID
+        notes: "Cash given to Mummy for Dashain expenses on 30th Ashwin 2083.",
+      },
+      {
+        organizationId: household.id,
+        title: "Room Rent (Ashwin 2083)",
+        vendor: "House Landlord",
+        type: ExpenseType.RECURRING,
+        amount: 16800,
+        occurredAt: new Date("2026-09-17T00:00:00Z"), // 1 Ashwin 2083
+        isEstimated: true, // UNPAID
+        notes: "Monthly house room rent for Ashwin 2083 - UNPAID status for tracking.",
+      },
+      {
+        organizationId: household.id,
+        title: "Garbage Charge (Ashwin 2083)",
+        vendor: "Local Sanitation Committee",
+        type: ExpenseType.RECURRING,
+        amount: 500,
+        occurredAt: new Date("2026-09-17T00:00:00Z"), // 1 Ashwin 2083
+        isEstimated: true, // UNPAID
+        notes: "Monthly waste & garbage collection charge for Ashwin 2083 - UNPAID status.",
+      },
+      {
+        organizationId: household.id,
+        title: "Personal Expenses - Kalyan Karn",
+        vendor: "Kalyan Karn",
+        type: ExpenseType.ONE_TIME,
+        amount: 1000,
+        occurredAt: new Date("2026-10-19T10:00:00Z"), // 2 Kartik 2083
+        isEstimated: false, // PAID
+        notes: "Personal expenses spent by Kalyan Karn on 2nd Kartik 2083.",
+      },
+    ],
   });
 
   // 5. COMPLETE CLEAN TRUNCATE OF ALL PREVIOUS COMPANY DATA (FRESH SLATE FOR SEED & IMPORT)
@@ -634,10 +772,37 @@ async function main() {
     where: { organizationId: { in: [company.id, household.id] } },
   });
 
+  // Seed Aditya Loan in My House
+  console.log("\n--- CONFIGURING ADITYA LOAN (MY HOUSE) ---");
+  await prisma.loan.create({
+    data: {
+      organizationId: household.id,
+      type: LoanType.TAKEN,
+      partyName: "Aditya",
+      principalAmount: 200000,
+      startDate: new Date("2026-04-22T00:00:00Z"),
+      hasInterest: false,
+      interestRate: 0,
+      status: LoanStatus.ACTIVE,
+      totalPrincipalPaid: 100000,
+      totalInterestPaid: 0,
+      notes: "Loan taken from Aditya on April 22, 2026 without any interest. Repaid NPR 100,000 on 1st Kartik 2083 from NIMB bank.",
+      payments: {
+        create: {
+          paymentDate: new Date("2026-10-18T00:00:00Z"), // 1 Kartik 2083
+          principalAmount: 100000,
+          interestAmount: 0,
+          totalAmount: 100000,
+          notes: "Repaid NPR 100,000 via NIMB Bank (02905120254304)",
+        },
+      },
+    },
+  });
+
   // 7. HOUSEHOLD RENTAL RESIDENCE & TENANCY (USER SPECIFIED)
   console.log("\n--- CONFIGURING TENANCY & HOUSE MANAGEMENT (MY HOUSE) ---");
   await prisma.rentalHouse.deleteMany({ where: { organizationId: household.id } });
-  await prisma.rentalHouse.create({
+  const myHouseResidence = await prisma.rentalHouse.create({
     data: {
       organizationId: household.id,
       title: "Current Rental Residence",
@@ -650,6 +815,23 @@ async function main() {
       lastElectricityUnit: 6632,
       notes: "Active household tenancy agreement. Monthly rent NPR 16,800, water/garbage NPR 500, electricity NPR 12/unit, last meter reading: 6632.",
       isActive: true,
+    },
+  });
+
+  // Seed Rental Bill for Ashwin 2083 (2083-06) - UNPAID
+  await prisma.rentalBill.deleteMany({ where: { organizationId: household.id } });
+  await prisma.rentalBill.create({
+    data: {
+      organizationId: household.id,
+      rentalHouseId: myHouseResidence.id,
+      billingMonth: "2083-06",
+      rentAmount: 16800,
+      waterAmount: 500,
+      electricityAmount: 0,
+      otherAmount: 0,
+      totalAmount: 17300,
+      dueDate: new Date("2026-10-17T00:00:00Z"),
+      notes: "Ashwin 2083 Rent (NPR 16,800) + Garbage & Water (NPR 500). UNPAID.",
     },
   });
 
