@@ -1624,8 +1624,8 @@ export async function recordRentalPaymentAction(formData: FormData) {
   const rentalHouseId = s(formData, "rentalHouseId");
   const billingMonth = s(formData, "billingMonth");
   const paidAmount = n(formData, "paidAmount", 0);
-  if (!rentalHouseId || !/^\d{4}-\d{2}$/.test(billingMonth) || paidAmount <= 0) {
-    throw new Error("House, billing month, and a positive payment amount are required.");
+  if (!rentalHouseId || !/^\d{4}-\d{2}$/.test(billingMonth) || paidAmount < 0) {
+    throw new Error("House and a valid billing month (YYYY-MM) are required.");
   }
 
   const house = await db.rentalHouse.findFirst({
@@ -1686,58 +1686,93 @@ export async function recordRentalPaymentAction(formData: FormData) {
       monthDisplay = `${dObj.toLocaleString("default", { month: "long" })} ${aYr} AD`;
     }
 
-    const expense = await tx.expense.create({
-      data: {
-        organizationId: orgId,
-        categoryId: category.id,
-        title: `Rental payment - ${house.title} (${monthDisplay})`,
-        vendor: house.ownerName,
-        type: "ONE_TIME",
-        amount: paidAmount,
-        occurredAt: paidAt,
-        isEstimated: false,
-        notes: [
-          `Rent/Utility Bill for ${monthDisplay}: Rent ${rentAmount}, Electricity ${electricityAmount}, Water/CAM ${waterAmount}, Other ${otherAmount}.`,
-          reference ? `Reference: ${reference}.` : "",
-          notes || "",
-        ].filter(Boolean).join(" "),
-      },
-    });
-
-    await tx.rentalPayment.create({
-      data: {
-        organizationId: orgId,
-        rentalBillId: bill.id,
-        amount: paidAmount,
-        paidAt,
-        paymentMethod,
-        reference,
-        notes,
-        expenseId: expense.id,
-      },
-    });
-
-    if (paymentMethod === "BANK" && bankAccountId) {
-      const account = await tx.bankAccount.findFirst({ where: { id: bankAccountId, organizationId: orgId } });
-      if (!account) throw new Error("Selected payment account was not found.");
-      const updated = await tx.bankAccount.update({
-        where: { id: account.id },
-        data: { currentBalance: { decrement: paidAmount } },
-      });
-      await tx.bankTransaction.create({
+    if (paidAmount > 0) {
+      const expense = await tx.expense.create({
         data: {
           organizationId: orgId,
-          bankAccountId: account.id,
-          transactionDate: paidAt,
-          type: "WITHDRAWAL",
+          categoryId: category.id,
+          title: `Rental payment - ${house.title} (${monthDisplay})`,
+          vendor: house.ownerName,
+          type: "ONE_TIME",
           amount: paidAmount,
-          balance: updated.currentBalance,
-          description: `Rental payment - ${house.title} (${monthDisplay})`,
+          occurredAt: paidAt,
+          isEstimated: false,
+          notes: [
+            `Rent/Utility Bill for ${monthDisplay}: Rent ${rentAmount}, Electricity ${electricityAmount}, Water/CAM ${waterAmount}, Other ${otherAmount}.`,
+            reference ? `Reference: ${reference}.` : "",
+            notes || "",
+          ].filter(Boolean).join(" "),
+        },
+      });
+
+      await tx.rentalPayment.create({
+        data: {
+          organizationId: orgId,
+          rentalBillId: bill.id,
+          amount: paidAmount,
+          paidAt,
+          paymentMethod,
           reference,
-          category: "Rent & Premises",
+          notes,
           expenseId: expense.id,
         },
       });
+
+      if (paymentMethod === "BANK" && bankAccountId) {
+        const account = await tx.bankAccount.findFirst({ where: { id: bankAccountId, organizationId: orgId } });
+        if (!account) throw new Error("Selected payment account was not found.");
+        const updated = await tx.bankAccount.update({
+          where: { id: account.id },
+          data: { currentBalance: { decrement: paidAmount } },
+        });
+        await tx.bankTransaction.create({
+          data: {
+            organizationId: orgId,
+            bankAccountId: account.id,
+            transactionDate: paidAt,
+            type: "WITHDRAWAL",
+            amount: paidAmount,
+            balance: updated.currentBalance,
+            description: `Rental payment - ${house.title} (${monthDisplay})`,
+            reference,
+            category: "Rent & Premises",
+            expenseId: expense.id,
+          },
+        });
+      }
+    } else {
+      // UNPAID Bill: Create or upsert an UNPAID (isEstimated: true) expense so it is visible in the expenses ledger for tracking
+      const existingUnpaidExp = await tx.expense.findFirst({
+        where: {
+          organizationId: orgId,
+          title: { contains: `Room Rent (${monthDisplay})` },
+        },
+      });
+      if (existingUnpaidExp) {
+        await tx.expense.update({
+          where: { id: existingUnpaidExp.id },
+          data: {
+            amount: totalAmount,
+            occurredAt: dueDate || paidAt,
+            isEstimated: true,
+            notes: `Unpaid monthly rent & utility bill for ${monthDisplay}. Rent: ${rentAmount}, Water/Waste: ${waterAmount}, Electricity: ${electricityAmount}, Other: ${otherAmount}.`,
+          },
+        });
+      } else {
+        await tx.expense.create({
+          data: {
+            organizationId: orgId,
+            categoryId: category.id,
+            title: `Room Rent (${monthDisplay})`,
+            vendor: house.ownerName,
+            type: "RECURRING",
+            amount: totalAmount,
+            occurredAt: dueDate || paidAt,
+            isEstimated: true, // UNPAID
+            notes: `Unpaid monthly rent & utility bill for ${monthDisplay}. Rent: ${rentAmount}, Water/Waste: ${waterAmount}, Electricity: ${electricityAmount}, Other: ${otherAmount}.`,
+          },
+        });
+      }
     }
   });
 

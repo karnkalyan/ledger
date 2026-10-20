@@ -1974,23 +1974,24 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
               <CompanyPrintLogo organization={organization} />
               <div className="invoice-company-info">
                 <h2>{organization.name}</h2>
-                <p>
-                  {organization.address && <>{organization.address}<br /></>}
-                  {organization.email && <span>{organization.email} </span>}
-                  {organization.phone && <span>· {organization.phone}</span>}
+                <p style={{ marginTop: 3 }}>
+                  {organization.address && <span>{organization.address}</span>}
+                  {organization.email && <span> · {organization.email}</span>}
+                  {organization.phone && <span> · {organization.phone}</span>}
                   {organizationTaxNumber && <><br /><strong>Tax / PAN / VAT ID:</strong> {organizationTaxNumber}</>}
                 </p>
               </div>
             </div>
             <div className="invoice-meta-col">
-              <div style={{ marginBottom: 6 }}><Badge value={loan.status} /></div>
-              <div className="invoice-doc-type">
-                {loan.type === "TAKEN" ? "LOAN BORROWING AGREEMENT" : "LOAN LENDING CONTRACT"}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "flex-end", marginBottom: 4 }}>
+                <span className="invoice-doc-type">
+                  {loan.type === "TAKEN" ? "LOAN BORROWING AGREEMENT" : "LOAN LENDING CONTRACT"}
+                </span>
+                <Badge value={loan.status} />
               </div>
-              <div className="table-sub" style={{ fontSize: 11.5, marginTop: 4 }}>
-                <strong>Loan ID:</strong> {loan.id.slice(-8).toUpperCase()}<br />
-                <strong>Disbursement Date:</strong> {formatDualDate(loan.startDate)}<br />
-                {loan.dueDate && <><strong>Target Due Date:</strong> {formatDualDate(loan.dueDate)}<br /></>}
+              <div className="table-sub" style={{ fontSize: 11.5, marginTop: 2, textAlign: "right" }}>
+                <strong>Loan ID:</strong> {loan.id.slice(-8).toUpperCase()} · <strong>Disbursement Date:</strong> {formatDualDate(loan.startDate)}<br />
+                {loan.dueDate && <><strong>Target Due Date:</strong> {formatDualDate(loan.dueDate)} · </>}
                 <strong>Status:</strong> {loan.status}
               </div>
             </div>

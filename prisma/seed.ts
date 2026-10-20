@@ -287,33 +287,11 @@ async function main() {
     },
   });
 
-  // Electricity meter initial reading benchmark
-  await prisma.electricityReadingLog.create({
-    data: {
-      organizationId: household.id,
-      month: "2083-06",
-      meterNumber: "MAIN",
-      previousUnit: 6632,
-      currentUnit: 6632,
-      unitsConsumed: 0,
-      ratePerUnit: 12,
-      totalCost: 0,
-      readingDate: new Date(),
-      notes: "Initial meter benchmark reading (6632 units) at NPR 12/unit",
-    },
-  });
-
   const homeRentCat = await prisma.expenseCategory.findUnique({
     where: { organizationId_name: { organizationId: household.id, name: "House Rent" } },
   });
   const homeWaterCat = await prisma.expenseCategory.findUnique({
     where: { organizationId_name: { organizationId: household.id, name: "Water & Garbage" } },
-  });
-  const homeElecCat = await prisma.expenseCategory.findUnique({
-    where: { organizationId_name: { organizationId: household.id, name: "Electricity" } },
-  });
-  const homeMilkCat = await prisma.expenseCategory.findUnique({
-    where: { organizationId_name: { organizationId: household.id, name: "Milk" } },
   });
 
   await prisma.recurringExpense.create({
@@ -341,37 +319,6 @@ async function main() {
       dayOfMonth: 1,
       reminderDaysBefore: 2,
       notes: "Fixed monthly water and garbage collection fee (NPR 500)",
-    },
-  });
-
-  await prisma.recurringExpense.create({
-    data: {
-      organizationId: household.id,
-      categoryId: homeElecCat?.id,
-      title: "House electricity",
-      vendor: "Nepal Electricity Authority (NEA)",
-      recurrence: Recurrence.MONTHLY,
-      unit: "unit",
-      unitRate: 12,
-      quantity: 100,
-      dayOfMonth: 5,
-      reminderDaysBefore: 3,
-      notes: "House electricity at NPR 12/unit (~100 units/mo)",
-    },
-  });
-
-  await prisma.recurringExpense.create({
-    data: {
-      organizationId: household.id,
-      categoryId: homeMilkCat?.id,
-      title: "House daily milk",
-      vendor: "Local Dairy",
-      recurrence: Recurrence.DAILY,
-      unit: "ltr",
-      unitRate: 115,
-      quantity: 1.5,
-      billingDays: 30,
-      notes: "Daily fresh milk: 1.5 L/day at NPR 115 per liter",
     },
   });
 
@@ -839,25 +786,7 @@ async function main() {
   console.log("\n--- CLEANING OFFICE PREMISES & LEASE FOR COMPANY (SIMULCAST) ---");
   await prisma.rentalHouse.deleteMany({ where: { organizationId: company.id } });
 
-  // Seed Milk Monthly Log sample (28 days @ 1.5L + 2 days @ 1.0L = 44L @ 115/L = NPR 5,060)
   await prisma.milkMonthlyLog.deleteMany({ where: { organizationId: household.id } });
-  await prisma.milkMonthlyLog.create({
-    data: {
-      organizationId: household.id,
-      month: "2083-06",
-      ratePerLiter: 115,
-      regularDays: 28,
-      regularQty: 1.5,
-      alternateDays: 2,
-      alternateQty: 1.0,
-      totalLiters: 44.0,
-      totalCost: 5060,
-      paid: true,
-      notes: "Adjusted milk quota: 28 days @ 1.5L + 2 days @ 1.0L = 44L total @ NPR 115/L.",
-    },
-  });
-
-  console.log("Configured active rental house (Rent 16.8k, Elec 15/u, Water 300) and sample milk consumption log.");
 
   // 8. REAL COMPANY DATA IMPORT WITH CRM DEDUPLICATION & TAX ENRICHMENT
   const dataFilePath = path.join(process.cwd(), "scripts", "extracted_company_data.json");

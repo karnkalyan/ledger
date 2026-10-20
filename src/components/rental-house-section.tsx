@@ -510,7 +510,10 @@ export function RentalHouseSection({
 
             <label className="field">
               Amount Paid Now ({currency})
-              <input name="paidAmount" type="number" min="0.01" step="0.01" required placeholder="0.00" />
+              <input name="paidAmount" type="number" min="0" step="0.01" defaultValue="0" placeholder="0.00 (Enter 0 for UNPAID)" />
+              <span style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 2 }}>
+                Enter 0.00 to record this month as an <strong>UNPAID</strong> bill for statement tracking.
+              </span>
             </label>
 
             <label className="field">
@@ -550,7 +553,7 @@ export function RentalHouseSection({
               Cancel
             </button>
             <button className="success-btn" type="submit">
-              Save Actual Payment
+              Save Bill / Payment
             </button>
           </div>
         </form>
