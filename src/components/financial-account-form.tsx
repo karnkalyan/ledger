@@ -2,20 +2,42 @@
 
 import { useState } from "react";
 import { FormPendingFeedback } from "@/components/form-pending-feedback";
-import { CreditCard, Landmark, Wallet, Banknote, Users, Sparkles, Building2, HelpCircle } from "lucide-react";
+import { CreditCard, Landmark, Wallet, Banknote, Users, CheckCircle2 } from "lucide-react";
+
+export type FinancialAccountInitialData = {
+  id?: string;
+  bankName?: string;
+  accountName?: string | null;
+  accountNumber?: string;
+  accountType?: string | null;
+  branch?: string | null;
+  currency?: string | null;
+  openingBalance?: number | string | any | null;
+  currentBalance?: number | string | any | null;
+  holdAmount?: number | string | any | null;
+  creditLimit?: number | string | any | null;
+  statementDay?: number | null;
+  paymentDueDay?: number | null;
+  notes?: string | null;
+};
 
 export function FinancialAccountForm({
   orgId,
   currency = "NPR",
   defaultName = "",
+  initialData,
   action,
+  onCancel,
 }: {
   orgId: string;
   currency?: string;
   defaultName?: string;
+  initialData?: FinancialAccountInitialData;
   action: (formData: FormData) => Promise<any>;
+  onCancel?: () => void;
 }) {
-  const [accountType, setAccountType] = useState<string>("CURRENT");
+  const isEdit = Boolean(initialData?.id);
+  const [accountType, setAccountType] = useState<string>(initialData?.accountType || "CURRENT");
 
   const isCreditCard = accountType === "CREDIT_CARD";
   const isCash = accountType === "CASH";
@@ -48,15 +70,15 @@ export function FinancialAccountForm({
     accountNumberLabel = "Cash Account Identifier";
     accountNumberPlaceholder = "CASH-MAIN / CASH-DRAWER";
     openingBalanceLabel = "Cash in Hand Opening Balance";
-    openingBalanceHelp = "Physical physical cash currently counted in hand or drawer";
+    openingBalanceHelp = "Physical cash currently counted in hand or drawer";
   } else if (isWallet) {
     providerLabel = "Digital Wallet Provider";
     providerPlaceholder = "eSewa / Khalti / IME Pay / Prabhu Pay";
     accountNameLabel = "Wallet Account Holder Name";
     accountNumberLabel = "Registered Mobile Number / Wallet ID";
     accountNumberPlaceholder = "98XXXXXXXX";
-    openingBalanceLabel = "Current Wallet Balance";
-    openingBalanceHelp = "Actual balance currently inside the digital wallet app";
+    openingBalanceLabel = "Wallet Opening Balance";
+    openingBalanceHelp = "Initial balance recorded for the digital wallet";
   } else if (isPersonOrFamily) {
     providerLabel = "Person / Party Name";
     providerPlaceholder = "Kashvi / Kalyan / Sujan / Client / Associate Name";
@@ -64,16 +86,17 @@ export function FinancialAccountForm({
     accountNumberLabel = "Mobile / Reference Identification (Optional)";
     accountNumberPlaceholder = "98XXXXXXXX or REF-PERSON";
     openingBalanceLabel = "Opening Balance";
-    openingBalanceHelp = "Positive = Money Given / Receivable (they owe you); Negative = Money Taken / Payable (you owe them)";
+    openingBalanceHelp = "Positive = Money Given / Receivable; Negative = Money Taken / Payable";
   }
 
   return (
     <form action={action}>
       <FormPendingFeedback
-        processingMessage="Registering financial account..."
-        successMessage="Financial account configured successfully"
+        processingMessage={isEdit ? "Updating financial account..." : "Registering financial account..."}
+        successMessage={isEdit ? "Financial account updated successfully" : "Financial account configured successfully"}
       />
       <input type="hidden" name="orgId" value={orgId} />
+      {isEdit && <input type="hidden" name="id" value={initialData?.id} />}
 
       {/* Account Type Selector Header */}
       <div style={{ marginBottom: 18, background: "var(--soft)", padding: 14, borderRadius: 8, border: "1px solid var(--line)" }}>
@@ -122,7 +145,7 @@ export function FinancialAccountForm({
             name="bankName"
             required
             placeholder={providerPlaceholder}
-            defaultValue={isCash ? "Cash in Hand" : isWallet ? "eSewa Wallet" : ""}
+            defaultValue={initialData?.bankName || (isCash ? "Cash in Hand" : isWallet ? "eSewa Wallet" : "")}
           />
         </label>
 
@@ -132,7 +155,7 @@ export function FinancialAccountForm({
           <input
             name="accountName"
             placeholder="Account Name"
-            defaultValue={defaultName || ""}
+            defaultValue={initialData?.accountName || defaultName || ""}
           />
         </label>
 
@@ -143,28 +166,55 @@ export function FinancialAccountForm({
             name="accountNumber"
             required
             placeholder={accountNumberPlaceholder}
-            defaultValue={isCash ? "CASH-MAIN" : ""}
+            defaultValue={initialData?.accountNumber || (isCash ? "CASH-MAIN" : "")}
           />
         </label>
 
-        {/* Branch Name - Only for Standard Bank Accounts */}
-        {isStandardBank && (
+        {/* Branch Name - Only for Standard Bank Accounts & Wallets */}
+        {(isStandardBank || isWallet) && (
           <label className="field">
-            <span className="field-label">Branch Name</span>
-            <input name="branch" placeholder="Kathmandu Branch / Hattisar / New Road" />
+            <span className="field-label">Branch / Region</span>
+            <input
+              name="branch"
+              placeholder={isWallet ? "Digital Wallet / Kathmandu" : "Kathmandu Branch / Hattisar / New Road"}
+              defaultValue={initialData?.branch || ""}
+            />
           </label>
         )}
 
         {/* Currency */}
         <label className="field">
           <span className="field-label">Currency</span>
-          <input name="currency" defaultValue={currency} />
+          <input name="currency" defaultValue={initialData?.currency || currency} />
         </label>
+
+        {/* Current Balance (Editable) */}
+        {isEdit && (
+          <label className="field">
+            <span className="field-label" style={{ fontWeight: 700, color: "var(--brand)" }}>
+              Current Available Balance ({initialData?.currency || currency})
+            </span>
+            <input
+              name="currentBalance"
+              type="number"
+              step="0.01"
+              defaultValue={initialData?.currentBalance !== undefined && initialData?.currentBalance !== null ? Number(initialData.currentBalance) : 0}
+            />
+            <small style={{ color: "var(--text-muted)", fontSize: 11, marginTop: 3, display: "block" }}>
+              Active live ledger balance. Update here to reconcile or adjust account funds.
+            </small>
+          </label>
+        )}
 
         {/* Opening Balance */}
         <label className="field">
           <span className="field-label">{openingBalanceLabel}</span>
-          <input name="openingBalance" type="number" step="0.01" defaultValue="0" />
+          <input
+            name="openingBalance"
+            type="number"
+            step="0.01"
+            defaultValue={initialData?.openingBalance !== undefined && initialData?.openingBalance !== null ? Number(initialData.openingBalance) : 0}
+          />
           <small style={{ color: "var(--text-muted)", fontSize: 11, marginTop: 3, display: "block" }}>
             {openingBalanceHelp}
           </small>
@@ -174,7 +224,13 @@ export function FinancialAccountForm({
         {isStandardBank && (
           <label className="field">
             <span className="field-label">Hold / Lien Amount (Account Minimum / Lien)</span>
-            <input name="holdAmount" type="number" step="0.01" defaultValue="0" placeholder="2500" />
+            <input
+              name="holdAmount"
+              type="number"
+              step="0.01"
+              defaultValue={initialData?.holdAmount !== undefined && initialData?.holdAmount !== null ? Number(initialData.holdAmount) : 0}
+              placeholder="2500"
+            />
             <small style={{ color: "var(--text-muted)", fontSize: 11, marginTop: 3, display: "block" }}>
               Restricted or opening charge amount excluded from available liquidity (e.g. 2,500)
             </small>
@@ -185,7 +241,14 @@ export function FinancialAccountForm({
         {isOverdraft && (
           <label className="field">
             <span className="field-label">Overdraft (OD) Sanctioned Limit ({currency})</span>
-            <input name="creditLimit" type="number" min="0" step="0.01" defaultValue="0" placeholder="500000" />
+            <input
+              name="creditLimit"
+              type="number"
+              min="0"
+              step="0.01"
+              defaultValue={initialData?.creditLimit !== undefined && initialData?.creditLimit !== null ? Number(initialData.creditLimit) : 0}
+              placeholder="500000"
+            />
           </label>
         )}
 
@@ -196,14 +259,30 @@ export function FinancialAccountForm({
               <span className="field-label" style={{ fontWeight: 700, color: "var(--brand)" }}>
                 Credit Card Limit ({currency})
               </span>
-              <input name="creditLimit" type="number" min="0" step="0.01" placeholder="100000" required />
+              <input
+                name="creditLimit"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="100000"
+                defaultValue={initialData?.creditLimit !== undefined && initialData?.creditLimit !== null ? Number(initialData.creditLimit) : 100000}
+                required
+              />
             </label>
 
             <label className="field">
               <span className="field-label" style={{ fontWeight: 700, color: "var(--brand)" }}>
                 Monthly Statement Day (Closing Date)
               </span>
-              <input name="statementDay" type="number" min="1" max="31" placeholder="26" defaultValue="26" required />
+              <input
+                name="statementDay"
+                type="number"
+                min="1"
+                max="31"
+                placeholder="26"
+                defaultValue={initialData?.statementDay || 26}
+                required
+              />
               <small style={{ color: "var(--text-muted)", fontSize: 11, marginTop: 3, display: "block" }}>
                 Day of each month the bank closes and generates your credit card statement (e.g. 26th)
               </small>
@@ -213,7 +292,15 @@ export function FinancialAccountForm({
               <span className="field-label" style={{ fontWeight: 700, color: "var(--brand)" }}>
                 Monthly Payment Due Day
               </span>
-              <input name="paymentDueDay" type="number" min="1" max="31" placeholder="10" defaultValue="10" required />
+              <input
+                name="paymentDueDay"
+                type="number"
+                min="1"
+                max="31"
+                placeholder="10"
+                defaultValue={initialData?.paymentDueDay || 10}
+                required
+              />
               <small style={{ color: "var(--text-muted)", fontSize: 11, marginTop: 3, display: "block" }}>
                 Day of each month the payment must be settled to avoid finance charges (e.g. 10th)
               </small>
@@ -226,6 +313,7 @@ export function FinancialAccountForm({
           <span className="field-label">Notes / Remarks</span>
           <textarea
             name="notes"
+            defaultValue={initialData?.notes || ""}
             placeholder={
               isCreditCard
                 ? "Auto-debit setup, reward points, bank helpline..."
@@ -237,9 +325,11 @@ export function FinancialAccountForm({
         </label>
       </div>
 
-      <div className="form-actions" style={{ marginTop: 16 }}>
+      <div className="form-actions" style={{ marginTop: 18, display: "flex", gap: 10, alignItems: "center" }}>
         <button className="primary-btn" type="submit">
-          {isCreditCard
+          {isEdit
+            ? "Save Changes to Account"
+            : isCreditCard
             ? "Save Credit Card Account"
             : isCash
             ? "Save Cash Account"
@@ -249,6 +339,11 @@ export function FinancialAccountForm({
             ? "Save Person / Party Account"
             : "Save Financial Account"}
         </button>
+        {onCancel && (
+          <button type="button" onClick={onCancel} className="secondary-btn">
+            Cancel
+          </button>
+        )}
       </div>
     </form>
   );

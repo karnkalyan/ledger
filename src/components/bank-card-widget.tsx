@@ -14,6 +14,9 @@ import {
   TrendingDown,
   MapPin,
   Sparkles,
+  Pencil,
+  Banknote,
+  Wallet,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -39,11 +42,14 @@ export interface BankAccountItem {
 export function formatAccountType(type?: string | null): string {
   if (!type) return "Current Account";
   const upper = type.toUpperCase().trim();
+  if (upper === "CASH" || upper.includes("CASH")) return "Cash in Hand";
   if (upper === "CANR" || upper.includes("CURRENT") || upper === "CANR (CURRENT ACCOUNT)") return "Current Account";
   if (upper === "SB" || upper.includes("SAVING")) return "Savings Account";
   if (upper.includes("FIXED")) return "Fixed Deposit";
   if (upper.includes("OVERDRAFT") || upper === "OD") return "Overdraft";
   if (upper.includes("WALLET") || upper === "DIGITAL_WALLET" || upper.includes("ESEWA") || upper.includes("KHALTI")) return "Digital Wallet";
+  if (upper.includes("FAMILY")) return "Family Member";
+  if (upper.includes("PARTY")) return "Party / Personal";
   return type.replace(/_/g, " ");
 }
 
@@ -54,6 +60,7 @@ export function BankCardWidget({
   currency = "NPR",
   moneyFormatter,
   onAttachStatement,
+  onEdit,
 }: {
   account: BankAccountItem;
   isSelected: boolean;
@@ -61,6 +68,7 @@ export function BankCardWidget({
   currency?: string;
   moneyFormatter?: (val: any, cur?: string) => string;
   onAttachStatement?: (accountId: string) => void;
+  onEdit?: (account: BankAccountItem) => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -112,25 +120,34 @@ export function BankCardWidget({
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 12 }}>
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 750,
-                letterSpacing: 0.5,
-                textTransform: "uppercase",
-                padding: "3px 9px",
-                borderRadius: 20,
-                background: "var(--brand-soft)",
-                color: "var(--brand)",
-                whiteSpace: "nowrap",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-              }}
-            >
-              <Building2 size={11} />
-              {accountTypeFormatted}
-            </span>
+            {(() => {
+              const upper = (account.accountType || "").toUpperCase();
+              const isCash = upper === "CASH" || upper.includes("CASH");
+              const isWallet = upper === "DIGITAL_WALLET" || upper.includes("WALLET") || upper.includes("ESEWA");
+              const bg = isCash ? "var(--success-soft)" : isWallet ? "var(--purple-soft)" : "var(--brand-soft)";
+              const col = isCash ? "var(--success)" : isWallet ? "var(--purple)" : "var(--brand)";
+              return (
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 750,
+                    letterSpacing: 0.5,
+                    textTransform: "uppercase",
+                    padding: "3px 9px",
+                    borderRadius: 20,
+                    background: bg,
+                    color: col,
+                    whiteSpace: "nowrap",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                  }}
+                >
+                  {isCash ? <Banknote size={11} /> : isWallet ? <Wallet size={11} /> : <Building2 size={11} />}
+                  {accountTypeFormatted}
+                </span>
+              );
+            })()}
 
             {isSelected && (
               <span
@@ -219,6 +236,34 @@ export function BankCardWidget({
             >
               {copied ? <Check size={12} /> : <Copy size={12} />}
             </button>
+
+            {onEdit && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onEdit(account);
+                }}
+                title="Edit account information and balance"
+                style={{
+                  background: "var(--soft)",
+                  border: "1px solid var(--line)",
+                  borderRadius: 5,
+                  padding: "2px 7px",
+                  fontSize: 11,
+                  fontWeight: 650,
+                  color: "var(--brand)",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 3,
+                }}
+              >
+                <Pencil size={10} />
+                <span>Edit</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -293,7 +338,35 @@ export function BankCardWidget({
           {account.branch || "Kathmandu Branch"}
         </span>
 
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+          {onEdit && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onEdit(account);
+              }}
+              title="Edit bank or wallet details"
+              style={{
+                background: "var(--soft)",
+                border: "1px solid var(--line)",
+                borderRadius: 6,
+                padding: "3px 8px",
+                fontSize: 11,
+                fontWeight: 650,
+                color: "var(--text)",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              <Pencil size={11} />
+              <span>Edit</span>
+            </button>
+          )}
+
           {/* Quick Attach Statement button */}
           {onAttachStatement && (
             <button

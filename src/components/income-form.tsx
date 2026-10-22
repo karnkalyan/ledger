@@ -28,6 +28,7 @@ export function IncomeForm({
   bankAccounts = [],
   action,
   initialContactId = "",
+  isCompany = false,
 }: {
   orgId: string;
   currency: string;
@@ -35,6 +36,7 @@ export function IncomeForm({
   bankAccounts?: BankAccount[];
   action: (formData: FormData) => Promise<void>;
   initialContactId?: string;
+  isCompany?: boolean;
 }) {
   const defaultContact = contacts.find((c) => c.id === initialContactId);
   const [source, setSource] = useState(defaultContact ? (defaultContact.companyName || defaultContact.name) : "");
@@ -230,46 +232,48 @@ export function IncomeForm({
           <NepaliDatePicker name="receivedAt" label="Received Date (BS / AD)" required />
         </div>
 
-        {/* DIRECTOR CURRENT ACCOUNT INFLOW OPTION */}
-        <div className="field full" style={{ background: "var(--soft)", padding: "12px 14px", borderRadius: 8, border: "1px solid var(--line)" }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600 }}>
-            <input
-              type="checkbox"
-              name="isDirectorAccount"
-              checked={isDirector}
-              onChange={(e) => {
-                const next = e.target.checked;
-                setIsDirector(next);
-                if (next && !source) {
-                  setSource("Director Capital / Inflow");
-                }
-              }}
-              style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
-            />
-            <span>Director Current Account (Capital Injection / Loan Inflow)</span>
-          </label>
-          {isDirector && (
-            <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <label className="field" style={{ margin: 0 }}>
-                <span className="field-label" style={{ fontSize: 11 }}>Director Name</span>
-                <input
-                  name="directorName"
-                  defaultValue="Director"
-                  placeholder="e.g. Director Name"
-                  required={isDirector}
-                />
-              </label>
-              <label className="field" style={{ margin: 0 }}>
-                <span className="field-label" style={{ fontSize: 11 }}>Director Inflow Type</span>
-                <select name="directorTxType" defaultValue="CAPITAL">
-                  <option value="CAPITAL">Director Capital Injection / Inflow</option>
-                  <option value="LOAN">Loan from Director to Company</option>
-                  <option value="DRAWINGS_REPAYMENT">Repayment of Personal Drawings</option>
-                </select>
-              </label>
-            </div>
-          )}
-        </div>
+        {/* DIRECTOR CURRENT ACCOUNT INFLOW OPTION - ONLY FOR COMPANIES */}
+        {isCompany && (
+          <div className="field full" style={{ background: "var(--soft)", padding: "12px 14px", borderRadius: 8, border: "1px solid var(--line)" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600 }}>
+              <input
+                type="checkbox"
+                name="isDirectorAccount"
+                checked={isDirector}
+                onChange={(e) => {
+                  const next = e.target.checked;
+                  setIsDirector(next);
+                  if (next && !source) {
+                    setSource("Director Capital / Inflow");
+                  }
+                }}
+                style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
+              />
+              <span>Director Current Account (Capital Injection / Loan Inflow)</span>
+            </label>
+            {isDirector && (
+              <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <label className="field" style={{ margin: 0 }}>
+                  <span className="field-label" style={{ fontSize: 11 }}>Director Name</span>
+                  <input
+                    name="directorName"
+                    defaultValue="Director"
+                    placeholder="e.g. Director Name"
+                    required={isDirector}
+                  />
+                </label>
+                <label className="field" style={{ margin: 0 }}>
+                  <span className="field-label" style={{ fontSize: 11 }}>Director Inflow Type</span>
+                  <select name="directorTxType" defaultValue="CAPITAL">
+                    <option value="CAPITAL">Director Capital Injection / Inflow</option>
+                    <option value="LOAN">Loan from Director to Company</option>
+                    <option value="DRAWINGS_REPAYMENT">Repayment of Personal Drawings</option>
+                  </select>
+                </label>
+              </div>
+            )}
+          </div>
+        )}
 
         <label className="field full">
           <span className="field-label">Transaction Notes / Reference</span>

@@ -1,1461 +1,161 @@
 import {
   PrismaClient,
-  ContactType,
-  LeadStatus,
-  WorkspaceKind,
-  MemberRole,
-  Recurrence,
-  ExpenseType,
-  TaskPriority,
-  UserRole,
-  AccountStatus,
-  OrderStatus,
-  LoanType,
-  InterestFrequency,
-  LoanStatus,
+  PluginAuthType,
+  PluginStatus,
 } from "../src/generated/client";
-import { bsToAd } from "../src/lib/nepali-calendar";
-import bcrypt from "bcryptjs";
-import fs from "fs";
-import path from "path";
 
 const prisma = new PrismaClient();
 
-function parseDate(dateStr: string | null | undefined): Date {
-  if (!dateStr) return new Date();
-  if (dateStr.startsWith("BS:")) {
-    const parts = dateStr.replace("BS:", "").split("-");
-    if (parts.length === 3) {
-      const y = parseInt(parts[0], 10);
-      const m = parseInt(parts[1], 10);
-      const d = parseInt(parts[2], 10);
-      try {
-        return bsToAd(y, m, d);
-      } catch {
-        return new Date();
-      }
-    }
-  }
-  const clean = dateStr.slice(0, 10);
-  const d = new Date(`${clean}T12:00:00Z`);
-  return isNaN(d.getTime()) ? new Date() : d;
-}
-
-function toTitleCase(str?: string | null): string {
-  if (!str) return "";
-  return str
-    .trim()
-    .split(/\s+/)
-    .map((word) => {
-      if (!word) return "";
-      const lower = word.toLowerCase();
-      if (["pvt", "ltd"].includes(lower)) return lower === "pvt" ? "Pvt" : "Ltd";
-      if (["tv", "ku", "vat", "pan", "ips", "atm", "po", "so", "inv"].includes(lower)) return word.toUpperCase();
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-    })
-    .join(" ");
-}
-
 async function main() {
-  console.log("=== KASHTRIX LEDGER & EXPENSE SUITE MASTER PRODUCTION SEED ===");
+  console.log("=== FLOWLEDGER / SIMULCAST SUITE - PLUGINS & SERVICES SEED ===");
+  console.log("Seeding exclusively Plugins & Connectors catalog (no dummy users, vendors, transactions, or warehouses)...");
 
-  try {
-    await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 0;");
-  } catch {}
-
-  console.log("\n--- PURGING ALL EXISTING DATABASE DATA (FRESH CLEAN PURGE) ---");
-  await prisma.rentalPayment.deleteMany();
-  await prisma.rentalBill.deleteMany();
-  await prisma.bankTransaction.deleteMany();
-  await prisma.income.deleteMany();
-  await prisma.expense.deleteMany();
-  await prisma.recurringExpense.deleteMany();
-  await prisma.purchasePayment.deleteMany();
-  await prisma.purchaseOrderItem.deleteMany();
-  await prisma.purchaseOrder.deleteMany();
-  await prisma.invoicePayment.deleteMany();
-  await prisma.invoiceItem.deleteMany();
-  await prisma.invoice.deleteMany();
-  await prisma.salesOrderItem.deleteMany();
-  await prisma.salesOrder.deleteMany();
-  await prisma.quoteItem.deleteMany();
-  await prisma.quote.deleteMany();
-  await prisma.stockMovement.deleteMany();
-  await prisma.product.deleteMany();
-  await prisma.lead.deleteMany();
-  await prisma.contact.deleteMany();
-  await prisma.loanPayment.deleteMany();
-  await prisma.loan.deleteMany();
-  await prisma.rentalHouse.deleteMany();
-  await prisma.milkMonthlyLog.deleteMany();
-  await prisma.projectMember.deleteMany();
-  await prisma.workLog.deleteMany();
-  await prisma.walletTransaction.deleteMany();
-  await prisma.projectWallet.deleteMany();
-  await prisma.project.deleteMany();
-  await prisma.task.deleteMany();
-  await prisma.payroll.deleteMany();
-  await prisma.leaveRequest.deleteMany();
-  await prisma.employee.deleteMany();
-  await prisma.licenseRecord.deleteMany();
-  await prisma.reminder.deleteMany();
-  await prisma.bankAccount.deleteMany();
-  await prisma.expenseCategory.deleteMany();
-  console.log("Database purged cleanly. Proceeding with fresh seed.");
-
-  const passwordHash = await bcrypt.hash("Admin@123", 12);
-  const vendorPasswordHash = await bcrypt.hash("Vendor@123", 12);
-
-  // 1. Users
-  const superAdmin = await prisma.user.upsert({
-    where: { email: "superadmin@kashtrix.com" },
-    update: { name: "Kashtrix Super Admin", passwordHash, role: UserRole.SUPER_ADMIN, status: AccountStatus.APPROVED },
-    create: { name: "Kashtrix Super Admin", email: "superadmin@kashtrix.com", passwordHash, role: UserRole.SUPER_ADMIN, status: AccountStatus.APPROVED },
+  // Find all organizations to attach available plugins to (prioritizing company workspaces)
+  const organizations = await prisma.organization.findMany({
+    where: { kind: "COMPANY" },
   });
 
-  const user = await prisma.user.upsert({
-    where: { email: "admin@simulcast.local" },
-    update: { name: "System Admin (Simulcast)", passwordHash, role: UserRole.USER, status: AccountStatus.APPROVED },
-    create: { name: "System Admin (Simulcast)", email: "admin@simulcast.local", passwordHash, role: UserRole.USER, status: AccountStatus.APPROVED },
-  });
+  const targetOrgs = organizations.length > 0 
+    ? organizations 
+    : await prisma.organization.findMany();
 
-  const pendingUser = await prisma.user.upsert({
-    where: { email: "vendor@himalayanmart.np" },
-    update: { name: "Bikash Gurung", passwordHash: vendorPasswordHash, role: UserRole.USER, status: AccountStatus.PENDING, phone: "+977-9841234567" },
-    create: { name: "Bikash Gurung", email: "vendor@himalayanmart.np", passwordHash: vendorPasswordHash, role: UserRole.USER, status: AccountStatus.PENDING, phone: "+977-9841234567" },
-  });
-
-  // 2. Organizations
-  const company = await prisma.organization.upsert({
-    where: { slug: "simulcast-technologies" },
-    update: {
-      name: "Simulcast Technologies Pvt Ltd",
-      status: AccountStatus.APPROVED,
-      panVatNumber: "609670271",
-      taxNumber: "609670271",
-      vendorCategory: "IT & Software",
-      address: "Kathmandu, Nepal",
-      email: "accounts@simulcast.local",
-      logoUrl: "/logo-mark.png",
-      defaultTaxPercent: 13.00,
-    },
-    create: {
-      name: "Simulcast Technologies Pvt Ltd",
-      slug: "simulcast-technologies",
-      kind: WorkspaceKind.COMPANY,
-      status: AccountStatus.APPROVED,
-      ownerId: user.id,
-      currency: "NPR",
-      address: "Kathmandu, Nepal",
-      email: "accounts@simulcast.local",
-      panVatNumber: "609670271",
-      taxNumber: "609670271",
-      vendorCategory: "IT & Software",
-      logoUrl: "/logo-mark.png",
-      defaultTaxPercent: 13.00,
-    },
-  });
-
-  const household = await prisma.organization.upsert({
-    where: { slug: "my-house" },
-    update: {
-      name: "My House",
-      kind: WorkspaceKind.HOUSEHOLD,
-      currency: "NPR",
-      address: "Kathmandu, Nepal",
-      logoUrl: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23059669'/><path d='M50 22 L20 48 L28 48 L28 78 L72 78 L72 48 L80 48 Z' fill='%23ffffff'/><rect x='44' y='52' width='12' height='26' rx='2' fill='%23059669'/></svg>",
-      defaultTaxPercent: 13.00,
-    },
-    create: {
-      name: "My House",
-      slug: "my-house",
-      kind: WorkspaceKind.HOUSEHOLD,
-      status: AccountStatus.APPROVED,
-      ownerId: user.id,
-      currency: "NPR",
-      address: "Kathmandu, Nepal",
-      logoUrl: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23059669'/><path d='M50 22 L20 48 L28 48 L28 78 L72 78 L72 48 L80 48 Z' fill='%23ffffff'/><rect x='44' y='52' width='12' height='26' rx='2' fill='%23059669'/></svg>",
-      defaultTaxPercent: 13.00,
-    },
-  });
-
-  const pendingCompany = await prisma.organization.upsert({
-    where: { slug: "himalayan-retail-mart" },
-    update: { status: AccountStatus.PENDING, panVatNumber: "609876543", vendorCategory: "Trading & Retail" },
-    create: {
-      name: "Himalayan Retail Mart Pvt Ltd",
-      slug: "himalayan-retail-mart",
-      kind: WorkspaceKind.COMPANY,
-      status: AccountStatus.PENDING,
-      ownerId: pendingUser.id,
-      currency: "NPR",
-      address: "Pokhara, Nepal",
-      phone: "+977-9841234567",
-      email: "vendor@himalayanmart.np",
-      panVatNumber: "609876543",
-      vendorCategory: "Trading & Retail",
-    },
-  });
-
-  // Memberships
-  await prisma.membership.upsert({
-    where: { userId_organizationId: { userId: user.id, organizationId: company.id } },
-    update: { role: MemberRole.OWNER },
-    create: { userId: user.id, organizationId: company.id, role: MemberRole.OWNER },
-  });
-  await prisma.membership.upsert({
-    where: { userId_organizationId: { userId: user.id, organizationId: household.id } },
-    update: { role: MemberRole.OWNER },
-    create: { userId: user.id, organizationId: household.id, role: MemberRole.OWNER },
-  });
-  await prisma.membership.upsert({
-    where: { userId_organizationId: { userId: pendingUser.id, organizationId: pendingCompany.id } },
-    update: { role: MemberRole.OWNER },
-    create: { userId: pendingUser.id, organizationId: pendingCompany.id, role: MemberRole.OWNER },
-  });
-
-  // 3. Expense Categories
-  const officeCategories = [
-    ["Office Rent", "building"],
-    ["Electricity", "zap"],
-    ["Internet", "wifi"],
-    ["Cost of Goods / Supplies", "shopping-cart"],
-    ["Office Setup & Fixtures", "laptop"],
-    ["Staff Salary & Payroll", "users"],
-    ["Director Current Account (Drawings)", "user-check"],
-    ["Bank Service Charges & Tax", "landmark"],
-    ["Software & Licenses", "key-round"],
-  ] as const;
-
-  const homeCategories = [
-    ["House Rent", "house"],
-    ["Milk", "milk"],
-    ["Water & Garbage", "droplets"],
-    ["Electricity", "zap"],
-    ["Grocery", "shopping-basket"],
-    ["Internet", "wifi"],
-    ["Education", "book-open"],
-    ["Family Expenses", "heart"],
-  ] as const;
-
-  for (const [name, icon] of officeCategories) {
-    await prisma.expenseCategory.upsert({
-      where: { organizationId_name: { organizationId: company.id, name } },
-      update: { icon },
-      create: { organizationId: company.id, name, icon },
-    });
+  if (targetOrgs.length === 0) {
+    console.log("No organization found in database. Create an organization first before seeding plugins.");
+    return;
   }
 
-  for (const [name, icon] of homeCategories) {
-    await prisma.expenseCategory.upsert({
-      where: { organizationId_name: { organizationId: household.id, name } },
-      update: { icon },
-      create: { organizationId: household.id, name, icon },
-    });
-  }
-
-  // 4. HOUSEHOLD COMMITMENTS & SCHEDULES (User specified)
-  // House Rent: 16,800
-  // Water & Garbage: 300
-  // Electricity: 15 rupees per unit (100 units = 1,500)
-  // Milk: 115 per liter (1.5 ltr × 115 × 30 days = 5,175)
-  console.log("\n--- CONFIGURING HOUSEHOLD COMMITMENTS (MY HOUSE) ---");
-  await prisma.rentalPayment.deleteMany({ where: { organizationId: household.id } });
-  await prisma.rentalBill.deleteMany({ where: { organizationId: household.id } });
-  await prisma.expense.deleteMany({ where: { organizationId: household.id } });
-  await prisma.income.deleteMany({ where: { organizationId: household.id } });
-  await prisma.recurringExpense.deleteMany({ where: { organizationId: household.id } });
-  await prisma.loanPayment.deleteMany({ where: { loan: { organizationId: household.id } } });
-  await prisma.loan.deleteMany({ where: { organizationId: household.id } });
-  await prisma.rentalHouse.deleteMany({ where: { organizationId: household.id } });
-  await prisma.electricityReadingLog.deleteMany({ where: { organizationId: household.id } });
-
-  // Active Rental House / Tenancy (User specified: Unit Rate: 12, Garbage: 500, Last Unit: 6632)
-  await prisma.rentalHouse.create({
-    data: {
-      organizationId: household.id,
-      title: "Current Rental Residence",
-      ownerName: "House Owner (Landlord)",
-      ownerPhone: "+977-9800000000",
-      address: "Kathmandu, Nepal",
-      monthlyRent: 16800,
-      electricityRate: 12,
-      waterGarbageFee: 500,
-      lastElectricityUnit: 6632,
-      notes: "Active household tenancy. Electricity at NPR 12/unit, Garbage fee NPR 500, Last meter reading: 6632.",
-      isActive: true,
+  // Master definition of updated Plugins & Services
+  const pluginDefinitions = [
+    {
+      name: "Kashtrix License Manager",
+      slug: "kashtrix-license-manager",
+      category: "SECURITY_LICENSING",
+      description: "High-assurance Ed25519 commercial licensing, real-time client heartbeat telemetry, automated validity extension, and client hardware activation control.",
+      baseUrl: "https://license.simulcast.com.np",
+      allowedDomains: "license.simulcast.com.np",
+      authType: PluginAuthType.API_KEY,
+      logoUrl: "https://license.simulcast.com.np/favicon.ico",
+      status: PluginStatus.CONNECTED,
+      apiKey: "KTX_LzxJHUeIfpTcNO8LAvHNaYBQSFqHkLz5",
+      isEnabled: true,
     },
-  });
-
-  const homeRentCat = await prisma.expenseCategory.findUnique({
-    where: { organizationId_name: { organizationId: household.id, name: "House Rent" } },
-  });
-  const homeWaterCat = await prisma.expenseCategory.findUnique({
-    where: { organizationId_name: { organizationId: household.id, name: "Water & Garbage" } },
-  });
-
-  await prisma.recurringExpense.create({
-    data: {
-      organizationId: household.id,
-      categoryId: homeRentCat?.id,
-      title: "House rent",
-      vendor: "House Landlord",
-      recurrence: Recurrence.MONTHLY,
-      fixedAmount: 16800,
-      dayOfMonth: 1,
-      reminderDaysBefore: 3,
-      notes: "Fixed monthly house rent",
+    {
+      name: "Kashtrix RADIUS AAA Engine",
+      slug: "kashtrix-radius-aaa",
+      category: "NETWORK_AAA",
+      description: "High-throughput subscriber authentication, accounting records, bandwidth quota synchronization, and NAS session termination.",
+      baseUrl: "https://radius.simulcast.com.np",
+      allowedDomains: "radius.simulcast.com.np",
+      authType: PluginAuthType.API_KEY,
+      logoUrl: "",
+      status: PluginStatus.DISCONNECTED,
+      apiKey: null,
+      isEnabled: true,
     },
-  });
-
-  await prisma.recurringExpense.create({
-    data: {
-      organizationId: household.id,
-      categoryId: homeWaterCat?.id,
-      title: "Water & Garbage",
-      vendor: "Local Committee / Water Board",
-      recurrence: Recurrence.MONTHLY,
-      fixedAmount: 500,
-      dayOfMonth: 1,
-      reminderDaysBefore: 2,
-      notes: "Fixed monthly water and garbage collection fee (NPR 500)",
+    {
+      name: "eSewa Nepal ePay Gateway",
+      slug: "esewa-nepal-epay",
+      category: "PAYMENT_GATEWAY",
+      description: "Automated digital wallet checkout, QR payment verification, and instant ledger invoice reconciliation.",
+      baseUrl: "https://epay.esewa.com.np",
+      allowedDomains: "epay.esewa.com.np",
+      authType: PluginAuthType.API_KEY,
+      logoUrl: "https://esewa.com.np/common/images/esewa_logo.png",
+      status: PluginStatus.DISCONNECTED,
+      apiKey: null,
+      isEnabled: true,
     },
-  });
-
-  // House Bank Accounts (from houseDetails statements)
-  await prisma.bankAccount.upsert({
-    where: { organizationId_accountNumber: { organizationId: household.id, accountNumber: "01615383041" } },
-    update: { bankName: "Siddhartha Bank Ltd", accountName: "Kalyan Kumar Karn", currentBalance: 0 },
-    create: {
-      organizationId: household.id,
-      bankName: "Siddhartha Bank Ltd",
-      accountName: "Kalyan Kumar Karn",
-      accountNumber: "01615383041",
-      accountType: "SVPS (Personal Savings)",
-      branch: "Kathmandu Branch",
-      currency: "NPR",
-      currentBalance: 0,
+    {
+      name: "MikroTik RouterOS API",
+      slug: "mikrotik-routeros",
+      category: "NETWORK_INFRASTRUCTURE",
+      description: "Direct REST/API interface for MikroTik CCR, queue management, IP pool sync, and live interface traffic monitoring.",
+      baseUrl: "https://10.10.100.1:8728",
+      allowedDomains: "10.10.100.1",
+      authType: PluginAuthType.LOGIN,
+      logoUrl: "",
+      status: PluginStatus.DISCONNECTED,
+      apiKey: null,
+      isEnabled: true,
     },
-  });
-
-  await prisma.bankAccount.upsert({
-    where: { organizationId_accountNumber: { organizationId: household.id, accountNumber: "55509175153" } },
-    update: { bankName: "Siddhartha Bank Ltd", accountName: "Kashvi Karn", currentBalance: 36843.35 },
-    create: {
-      organizationId: household.id,
-      bankName: "Siddhartha Bank Ltd",
-      accountName: "Kashvi Karn",
-      accountNumber: "55509175153",
-      accountType: "SVZA (Personal Savings)",
-      branch: "Kathmandu Branch",
-      currency: "NPR",
-      currentBalance: 36843.35,
+    {
+      name: "Kashtrix TR-069 ACS Server",
+      slug: "kashtrix-tr069-acs",
+      category: "DEVICE_MANAGEMENT",
+      description: "Auto-configuration server (CWMP), CPE diagnostic telemetry, Wi-Fi provisioning, and firmware lifecycle management.",
+      baseUrl: "https://acs.simulcast.com.np",
+      allowedDomains: "acs.simulcast.com.np",
+      authType: PluginAuthType.API_KEY,
+      logoUrl: "",
+      status: PluginStatus.DISCONNECTED,
+      apiKey: null,
+      isEnabled: true,
     },
-  });
-
-  await prisma.bankAccount.upsert({
-    where: { organizationId_accountNumber: { organizationId: household.id, accountNumber: "02905120254304" } },
-    update: { bankName: "Nepal Investment Mega Bank (NIMB)", accountName: "Kalyan Kumar Karn", currentBalance: 103006.90 },
-    create: {
-      organizationId: household.id,
-      bankName: "Nepal Investment Mega Bank (NIMB)",
-      accountName: "Kalyan Kumar Karn",
-      accountNumber: "02905120254304",
-      accountType: "Personal Account",
-      branch: "Kathmandu Branch",
-      currency: "NPR",
-      currentBalance: 103006.90,
+    {
+      name: "Fonepay Merchant QR API",
+      slug: "fonepay-merchant-qr",
+      category: "PAYMENT_GATEWAY",
+      description: "Dynamic interoperable NepalPay QR generation, push payment webhook notification, and automated transaction settlement.",
+      baseUrl: "https://clientapi.fonepay.com",
+      allowedDomains: "fonepay.com",
+      authType: PluginAuthType.API_KEY,
+      logoUrl: "",
+      status: PluginStatus.DISCONNECTED,
+      apiKey: null,
+      isEnabled: true,
     },
-  });
+  ];
 
-  // eSewa Digital Wallet (9814823222)
-  const esewaWallet = await prisma.bankAccount.upsert({
-    where: { organizationId_accountNumber: { organizationId: household.id, accountNumber: "9814823222" } },
-    update: { bankName: "eSewa Wallet", accountName: "Kalyan Karn (9814823222)", currentBalance: 0 },
-    create: {
-      organizationId: household.id,
-      bankName: "eSewa Wallet",
-      accountName: "Kalyan Karn (9814823222)",
-      accountNumber: "9814823222",
-      accountType: "DIGITAL_WALLET",
-      branch: "eSewa Digital Wallet",
-      currency: "NPR",
-      openingBalance: 0,
-      currentBalance: 0,
-      isActive: true,
-    },
-  });
+  for (const org of targetOrgs) {
+    console.log(`\nAttaching Plugins to workspace: ${org.name} (${org.slug})...`);
 
-  const gameExpDate = new Date("2026-10-17T14:00:00Z");
-  // 1. Inbound Contra Transfer to eSewa from NIMB
-  await prisma.bankTransaction.create({
-    data: {
-      organizationId: household.id,
-      bankAccountId: esewaWallet.id,
-      transactionDate: gameExpDate,
-      type: "DEPOSIT",
-      amount: 1000,
-      balance: 1000,
-      description: "Internal Transfer from Nepal Investment Mega Bank (02905120254304)",
-      reference: "168290389",
-      category: "Internal Transfer",
-    },
-  });
-
-  // 2. Game Bad Debt Expense
-  const gameExp = await prisma.expense.create({
-    data: {
-      organizationId: household.id,
-      title: "Game Bad Debt",
-      vendor: "Game Platform / eSewa",
-      type: ExpenseType.ONE_TIME,
-      amount: 1000,
-      occurredAt: gameExpDate,
-      notes: "Game bad debt payment paid from eSewa (9814823222) after transfer from Investment Bank [Paid via Wallet: eSewa - 9814823222]",
-    },
-  });
-
-  // 3. Outbound Withdrawal from eSewa Wallet
-  await prisma.bankTransaction.create({
-    data: {
-      organizationId: household.id,
-      bankAccountId: esewaWallet.id,
-      transactionDate: gameExpDate,
-      type: "WITHDRAWAL",
-      amount: 1000,
-      balance: 0,
-      description: "Expense: Game Bad Debt",
-      reference: "168290389",
-      category: "Household Expenditure",
-      expenseId: gameExp.id,
-    },
-  });
-
-  // Import House Bank Statements from extracted_house_data.json
-  const houseDataPath = path.join(process.cwd(), "scripts", "extracted_house_data.json");
-  if (fs.existsSync(houseDataPath)) {
-    console.log("\n--- IMPORTING HOUSE BANK STATEMENT TRANSACTIONS ---");
-    const houseData = JSON.parse(fs.readFileSync(houseDataPath, "utf-8"));
-
-    for (const [accNo, txs] of Object.entries(houseData) as [string, any[]][]) {
-      const acc = await prisma.bankAccount.findFirst({
-        where: { organizationId: household.id, accountNumber: accNo },
-      });
-      if (acc) {
-        await prisma.bankTransaction.deleteMany({ where: { bankAccountId: acc.id } });
-        const BATCH_SIZE = 100;
-        for (let i = 0; i < txs.length; i += BATCH_SIZE) {
-          const chunk = txs.slice(i, i + BATCH_SIZE);
-          await prisma.bankTransaction.createMany({
-            data: chunk.map((t) => ({
-              organizationId: household.id,
-              bankAccountId: acc.id,
-              transactionDate: new Date(`${t.date}T12:00:00Z`),
-              type: t.type,
-              amount: t.amount,
-              balance: t.balance != null ? Number(t.balance) : null,
-              description: t.description || "Bank Transaction",
-              reference: t.reference || null,
-              category: t.type === "DEPOSIT" ? "Household Inflow" : "Household Expenditure",
-            })),
-          });
-        }
-        const lastWithBal = [...txs].reverse().find((t) => t.balance != null);
-        let endingBal = lastWithBal ? Number(lastWithBal.balance) : (accNo === "55509175153" ? 36843.35 : (accNo === "02905120254304" ? 3800.58 : 0));
-
-        // Append latest October transactions if account is Kalyan's Siddhartha Bank or NIMB
-        if (accNo === "01615383041") {
-          const sblPost16Txs = [
-            {
-              transactionDate: new Date("2026-10-17T00:00:00Z"),
-              type: "WITHDRAWAL" as const,
-              amount: 3.43,
-              balance: 10683.05,
-              description: "01615383041:WTax.Pd:17-07-2026to 17-10-2026 Interest run",
-              category: "Household Expenditure",
-            },
-            {
-              transactionDate: new Date("2026-10-17T00:00:00Z"),
-              type: "DEPOSIT" as const,
-              amount: 57.16,
-              balance: 10740.21,
-              description: "01615383041:Int.Pd:17-07-2026 to 17-10-2026 Interest run",
-              category: "Household Inflow",
-            },
-            {
-              transactionDate: new Date("2026-10-18T00:00:00Z"),
-              type: "WITHDRAWAL" as const,
-              amount: 210.0,
-              balance: 10530.21,
-              description: "Fund Trf to KRISHNA KUMAR SHAH-puja FUN MOB/SBLMOB01puja",
-              category: "Household Expenditure",
-            },
-            {
-              transactionDate: new Date("2026-10-18T00:00:00Z"),
-              type: "WITHDRAWAL" as const,
-              amount: 60.0,
-              balance: 10470.21,
-              description: "Fund Trf to NABIL BANK LTD (ESEW-9849202107,23554 FUN",
-              category: "Household Expenditure",
-            },
-            {
-              transactionDate: new Date("2026-10-20T00:00:00Z"),
-              type: "WITHDRAWAL" as const,
-              amount: 370.0,
-              balance: 10100.21,
-              description: "Fund Trf to A/C PAYABLE IBFT (IN-44979521yQjM,Mob FUN",
-              category: "Household Expenditure",
-            },
-          ];
-          for (const st of sblPost16Txs) {
-            await prisma.bankTransaction.create({
-              data: {
-                organizationId: household.id,
-                bankAccountId: acc.id,
-                transactionDate: st.transactionDate,
-                valueDate: st.transactionDate,
-                type: st.type,
-                amount: st.amount,
-                balance: st.balance,
-                description: st.description,
-                category: st.category,
-              },
-            });
-          }
-          endingBal = 10100.21;
-        }
-
-        if (accNo === "02905120254304") {
-          // Repayment of NPR 100,000 on 1 Kartik 2083 (2026-10-18) for Aditya loan
-          await prisma.bankTransaction.create({
-            data: {
-              organizationId: household.id,
-              bankAccountId: acc.id,
-              transactionDate: new Date("2026-10-18T00:00:00Z"),
-              valueDate: new Date("2026-10-18T00:00:00Z"),
-              type: "WITHDRAWAL",
-              amount: 100000.0,
-              balance: 3006.9,
-              description: "Fund Trf to Aditya - Loan Repayment (1st Kartik 2083)",
-              category: "Household Expenditure",
-            },
-          });
-          endingBal = 3006.9;
-        }
-
-        await prisma.bankAccount.update({
-          where: { id: acc.id },
-          data: { currentBalance: endingBal },
-        });
-
-        console.log(`Imported ${txs.length} transactions for ${acc.bankName} (${accNo}). Verified closing balance set to NPR ${endingBal.toLocaleString()}.`);
-      }
-    }
-  }
-
-  // House Income & Expenses (Exact user specifications)
-  console.log("\n--- SEEDING HOUSEHOLD EXPENSES & INFLOWS ---");
-  await prisma.income.deleteMany({ where: { organizationId: household.id } });
-  await prisma.income.create({
-    data: {
-      organizationId: household.id,
-      title: "Director Drawings / Remittance from Simulcast",
-      source: "Simulcast Technologies Pvt Ltd (Company Workspace)",
-      amount: 50000,
-      receivedAt: new Date("2026-10-15T12:00:00Z"), // 29 Ashwin 2083
-      paymentMethod: "CASH",
-      notes: "Director cash drawings NPR 50,000 taken from Simulcast on 29th Ashwin 2083 BS.",
-    },
-  });
-
-  // Additional household expenses
-  await prisma.expense.createMany({
-    data: [
-      {
-        organizationId: household.id,
-        title: "Dashain Expense - Papa",
-        vendor: "Papa (Dashain)",
-        type: ExpenseType.ONE_TIME,
-        amount: 2500,
-        occurredAt: new Date("2026-10-16T10:00:00Z"), // 30 Ashwin 2083
-        isEstimated: false, // PAID
-        notes: "Cash given to Papa for Dashain expenses on 30th Ashwin 2083.",
-      },
-      {
-        organizationId: household.id,
-        title: "Dashain Expense - Mummy",
-        vendor: "Mummy (Dashain)",
-        type: ExpenseType.ONE_TIME,
-        amount: 2500,
-        occurredAt: new Date("2026-10-16T10:00:00Z"), // 30 Ashwin 2083
-        isEstimated: false, // PAID
-        notes: "Cash given to Mummy for Dashain expenses on 30th Ashwin 2083.",
-      },
-      {
-        organizationId: household.id,
-        title: "Room Rent (Ashwin 2083)",
-        vendor: "House Landlord",
-        type: ExpenseType.RECURRING,
-        amount: 16800,
-        occurredAt: new Date("2026-09-17T00:00:00Z"), // 1 Ashwin 2083
-        isEstimated: true, // UNPAID
-        notes: "Monthly house room rent for Ashwin 2083 - UNPAID status for tracking.",
-      },
-      {
-        organizationId: household.id,
-        title: "Garbage Charge (Ashwin 2083)",
-        vendor: "Local Sanitation Committee",
-        type: ExpenseType.RECURRING,
-        amount: 500,
-        occurredAt: new Date("2026-09-17T00:00:00Z"), // 1 Ashwin 2083
-        isEstimated: true, // UNPAID
-        notes: "Monthly waste & garbage collection charge for Ashwin 2083 - UNPAID status.",
-      },
-      {
-        organizationId: household.id,
-        title: "Personal Expenses - Kalyan Karn",
-        vendor: "Kalyan Karn",
-        type: ExpenseType.ONE_TIME,
-        amount: 1000,
-        occurredAt: new Date("2026-10-19T10:00:00Z"), // 2 Kartik 2083
-        isEstimated: false, // PAID
-        notes: "Personal expenses spent by Kalyan Karn on 2nd Kartik 2083.",
-      },
-    ],
-  });
-
-  // 5. COMPLETE CLEAN TRUNCATE OF ALL PREVIOUS COMPANY DATA (FRESH SLATE FOR SEED & IMPORT)
-  console.log("\n--- CLEANING ALL PREVIOUS COMPANY DATA (FRESH SLATE FOR NEW IMPORT) ---");
-  await prisma.rentalPayment.deleteMany({ where: { organizationId: company.id } });
-  await prisma.rentalBill.deleteMany({ where: { organizationId: company.id } });
-  await prisma.bankTransaction.deleteMany({ where: { organizationId: company.id } });
-  await prisma.invoicePayment.deleteMany({ where: { invoice: { organizationId: company.id } } });
-  await prisma.invoiceItem.deleteMany({ where: { invoice: { organizationId: company.id } } });
-  await prisma.invoice.deleteMany({ where: { organizationId: company.id } });
-  await prisma.salesOrderItem.deleteMany({ where: { salesOrder: { organizationId: company.id } } });
-  await prisma.salesOrder.deleteMany({ where: { organizationId: company.id } });
-  await prisma.purchasePayment.deleteMany({ where: { purchaseOrder: { organizationId: company.id } } });
-  await prisma.purchaseOrderItem.deleteMany({ where: { purchaseOrder: { organizationId: company.id } } });
-  await prisma.purchaseOrder.deleteMany({ where: { organizationId: company.id } });
-  await prisma.quoteItem.deleteMany({ where: { quote: { organizationId: company.id } } });
-  await prisma.quote.deleteMany({ where: { organizationId: company.id } });
-  await prisma.lead.deleteMany({ where: { organizationId: company.id } });
-  await prisma.stockMovement.deleteMany({ where: { organizationId: company.id } });
-  await prisma.product.deleteMany({ where: { organizationId: company.id } });
-  await prisma.workLog.deleteMany({ where: { organizationId: company.id } });
-  await prisma.task.deleteMany({ where: { organizationId: company.id } });
-  await prisma.projectMember.deleteMany({ where: { project: { organizationId: company.id } } });
-  await prisma.project.deleteMany({ where: { organizationId: company.id } });
-  await prisma.walletTransaction.deleteMany({ where: { wallet: { organizationId: company.id } } });
-  await prisma.projectWallet.deleteMany({ where: { organizationId: company.id } });
-  await prisma.leaveRequest.deleteMany({ where: { organizationId: company.id } });
-  await prisma.payroll.deleteMany({ where: { organizationId: company.id } });
-  await prisma.employee.deleteMany({ where: { organizationId: company.id } });
-  await prisma.contact.deleteMany({ where: { organizationId: company.id } });
-  await prisma.income.deleteMany({ where: { organizationId: company.id } });
-  await prisma.expense.deleteMany({ where: { organizationId: company.id } });
-  await prisma.recurringExpense.deleteMany({ where: { organizationId: company.id } });
-  await prisma.loanPayment.deleteMany({ where: { loan: { organizationId: company.id } } });
-  await prisma.loan.deleteMany({ where: { organizationId: company.id } });
-  await prisma.licenseRecord.deleteMany({ where: { organizationId: company.id } });
-  await prisma.reminder.deleteMany({ where: { organizationId: company.id } });
-  console.log("All previous company records cleaned successfully.");
-
-  // 6. REMOVED OFFICE COMMITMENTS FOR COMPANY (RENT & ELECTRICITY)
-  console.log("\n--- CLEANING OFFICE COMMITMENTS (SIMULCAST) ---");
-  await prisma.recurringExpense.deleteMany({
-    where: {
-      organizationId: company.id,
-      OR: [
-        { title: { contains: "rent" } },
-        { title: { contains: "Rent" } },
-        { title: { contains: "electricity" } },
-        { title: { contains: "Electricity" } },
-      ],
-    },
-  });
-
-  // 6. CLEANUP OFFICE SETUP PURCHASE & UNWANTED PROCUREMENT DUES
-  console.log("\n--- REMOVING OFFICE SETUP PURCHASE PO-OFFICE-SETUP-300K & DUES ---");
-  const existingOfficePO = await prisma.purchaseOrder.findFirst({
-    where: { organizationId: company.id, orderNumber: "PO-OFFICE-SETUP-300K" },
-  });
-  if (existingOfficePO) {
-    await prisma.purchasePayment.deleteMany({ where: { purchaseOrderId: existingOfficePO.id } });
-    await prisma.purchaseOrderItem.deleteMany({ where: { purchaseOrderId: existingOfficePO.id } });
-    await prisma.purchaseOrder.delete({ where: { id: existingOfficePO.id } });
-  }
-
-  // Delete any linked expenses for PO-OFFICE-SETUP-300K or Commercial Tech
-  await prisma.expense.deleteMany({
-    where: {
-      organizationId: company.id,
-      OR: [
-        { title: { contains: "PO-OFFICE-SETUP-300K" } },
-        { title: { contains: "Commercial Tech" } },
-        { vendor: { contains: "Commercial Tech" } },
-      ],
-    },
-  });
-
-  // Delete office vendor contact if exists
-  await prisma.contact.deleteMany({
-    where: {
-      organizationId: company.id,
-      OR: [
-        { id: "c-office-interiors-vendor" },
-        { name: { contains: "Commercial Tech & Office Interiors" } },
-      ],
-    },
-  });
-  console.log("Successfully removed PO-OFFICE-SETUP-300K, payments, items, and linked expenses.");
-
-  // 7. LOAN CLEANUP (Office Loans Removed per user requirements)
-  console.log("\n--- CLEANING PREVIOUS DUMMY LOANS ---");
-  await prisma.loanPayment.deleteMany({
-    where: { loan: { organizationId: { in: [company.id, household.id] } } },
-  });
-  await prisma.loan.deleteMany({
-    where: { organizationId: { in: [company.id, household.id] } },
-  });
-
-  // Seed Aditya Loan in My House
-  console.log("\n--- CONFIGURING ADITYA LOAN (MY HOUSE) ---");
-  await prisma.loan.create({
-    data: {
-      organizationId: household.id,
-      type: LoanType.TAKEN,
-      partyName: "Aditya",
-      principalAmount: 200000,
-      startDate: new Date("2026-04-22T00:00:00Z"),
-      hasInterest: false,
-      interestRate: 0,
-      status: LoanStatus.ACTIVE,
-      totalPrincipalPaid: 100000,
-      totalInterestPaid: 0,
-      notes: "Loan taken from Aditya on April 22, 2026 without any interest. Repaid NPR 100,000 on 1st Kartik 2083 from NIMB bank.",
-      payments: {
+    for (const def of pluginDefinitions) {
+      await prisma.plugin.upsert({
+        where: {
+          organizationId_slug: {
+            organizationId: org.id,
+            slug: def.slug,
+          },
+        },
+        update: {
+          name: def.name,
+          category: def.category,
+          description: def.description,
+          baseUrl: def.baseUrl,
+          allowedDomains: def.allowedDomains,
+          authType: def.authType,
+          logoUrl: def.logoUrl || undefined,
+          status: def.status,
+          apiKey: def.apiKey || undefined,
+          isEnabled: def.isEnabled,
+        },
         create: {
-          paymentDate: new Date("2026-10-18T00:00:00Z"), // 1 Kartik 2083
-          principalAmount: 100000,
-          interestAmount: 0,
-          totalAmount: 100000,
-          notes: "Repaid NPR 100,000 via NIMB Bank (02905120254304)",
-        },
-      },
-    },
-  });
-
-  // 7. HOUSEHOLD RENTAL RESIDENCE & TENANCY (USER SPECIFIED)
-  console.log("\n--- CONFIGURING TENANCY & HOUSE MANAGEMENT (MY HOUSE) ---");
-  await prisma.rentalHouse.deleteMany({ where: { organizationId: household.id } });
-  const myHouseResidence = await prisma.rentalHouse.create({
-    data: {
-      organizationId: household.id,
-      title: "Current Rental Residence",
-      ownerName: "House Owner (Landlord)",
-      ownerPhone: "+977-9841234567",
-      address: "Kathmandu, Nepal",
-      monthlyRent: 16800,
-      electricityRate: 12,
-      waterGarbageFee: 500,
-      lastElectricityUnit: 6632,
-      notes: "Active household tenancy agreement. Monthly rent NPR 16,800, water/garbage NPR 500, electricity NPR 12/unit, last meter reading: 6632.",
-      isActive: true,
-    },
-  });
-
-  // Seed Rental Bill for Ashwin 2083 (2083-06) - UNPAID
-  await prisma.rentalBill.deleteMany({ where: { organizationId: household.id } });
-  await prisma.rentalBill.create({
-    data: {
-      organizationId: household.id,
-      rentalHouseId: myHouseResidence.id,
-      billingMonth: "2083-06",
-      rentAmount: 16800,
-      waterAmount: 500,
-      electricityAmount: 0,
-      otherAmount: 0,
-      totalAmount: 17300,
-      dueDate: new Date("2026-10-17T00:00:00Z"),
-      notes: "Ashwin 2083 Rent (NPR 16,800) + Garbage & Water (NPR 500). UNPAID.",
-    },
-  });
-
-  // 8. OFFICE PREMISES & LEASE TENANCY (REMOVED FROM COMPANY WORKSPACE)
-  console.log("\n--- CLEANING OFFICE PREMISES & LEASE FOR COMPANY (SIMULCAST) ---");
-  await prisma.rentalHouse.deleteMany({ where: { organizationId: company.id } });
-
-  await prisma.milkMonthlyLog.deleteMany({ where: { organizationId: household.id } });
-
-  // 8. REAL COMPANY DATA IMPORT WITH CRM DEDUPLICATION & TAX ENRICHMENT
-  const dataFilePath = path.join(process.cwd(), "scripts", "extracted_company_data.json");
-  if (fs.existsSync(dataFilePath)) {
-    console.log("\n--- IMPORTING LIVE COMPANY DATA FROM EXTRACTED JSON ---");
-    const data = JSON.parse(fs.readFileSync(dataFilePath, "utf-8"));
-
-    // Clean prior child records & contacts (except office interior setup) to maintain relational integrity
-    await prisma.bankTransaction.deleteMany({ where: { organizationId: company.id } });
-    await prisma.invoicePayment.deleteMany({ where: { invoice: { organizationId: company.id } } });
-    await prisma.invoiceItem.deleteMany({ where: { invoice: { organizationId: company.id } } });
-    await prisma.invoice.deleteMany({ where: { organizationId: company.id } });
-    await prisma.salesOrderItem.deleteMany({ where: { salesOrder: { organizationId: company.id } } });
-    await prisma.salesOrder.deleteMany({ where: { organizationId: company.id } });
-    await prisma.purchasePayment.deleteMany({ where: { purchaseOrder: { organizationId: company.id } } });
-    await prisma.purchaseOrderItem.deleteMany({ where: { purchaseOrder: { organizationId: company.id } } });
-    await prisma.purchaseOrder.deleteMany({ where: { organizationId: company.id } });
-    await prisma.quoteItem.deleteMany({ where: { quote: { organizationId: company.id } } });
-    await prisma.quote.deleteMany({ where: { organizationId: company.id } });
-    await prisma.lead.deleteMany({ where: { organizationId: company.id } });
-    await prisma.stockMovement.deleteMany({ where: { organizationId: company.id } });
-    await prisma.product.deleteMany({ where: { organizationId: company.id } });
-    await prisma.contact.deleteMany({
-      where: {
-        organizationId: company.id,
-      },
-    });
-
-    const CANONICAL_CONTACTS: Record<string, { name: string; type?: ContactType }> = {
-      "simulcast": { name: "Simulcast Technologies Pvt Ltd", type: ContactType.BOTH },
-      "nav solutions": { name: "Nav Solutions Pvt Ltd", type: ContactType.VENDOR },
-      "av bionics": { name: "AV Bionics Pvt Ltd", type: ContactType.BOTH },
-      "kathmandu university": { name: "Kathmandu University", type: ContactType.CUSTOMER },
-      "dhulikhel": { name: "Dhulikhel Hospital", type: ContactType.CUSTOMER },
-      "prime minister": { name: "Prime Minister Office", type: ContactType.CUSTOMER },
-      "nepal max tech": { name: "Nepal Max Tech Pvt Ltd", type: ContactType.VENDOR },
-      "balkumari electronics": { name: "Balkumari Electronics", type: ContactType.VENDOR },
-      "digital camera": { name: "Digital Camera", type: ContactType.VENDOR },
-      "shasa enterprises": { name: "Shasa Enterprises", type: ContactType.VENDOR },
-      "spykar company": { name: "Spykar Company Pvt Ltd", type: ContactType.VENDOR },
-      "neoteric nepal": { name: "Neoteric Nepal Pvt Ltd", type: ContactType.VENDOR },
-      "smart enterprises": { name: "Smart Enterprises Pvt Ltd", type: ContactType.VENDOR },
-      "cloud tech": { name: "Cloud Tech", type: ContactType.VENDOR },
-      "lokesh agarwal": { name: "Lokesh Agarwal", type: ContactType.VENDOR },
-      "vianet": { name: "Vianet", type: ContactType.VENDOR },
-      "riddhi siddhi": { name: "Riddhi Siddhi Multipurpose", type: ContactType.CUSTOMER },
-      "aashi traders": { name: "Aashi Traders", type: ContactType.CUSTOMER },
-      "sujay": { name: "Sujay", type: ContactType.CUSTOMER },
-      "illya": { name: "Illya", type: ContactType.VENDOR },
-      "quick": { name: "Quick", type: ContactType.VENDOR },
-      "air": { name: "Air", type: ContactType.VENDOR },
-      "bagmati": { name: "Bagmati TV Network", type: ContactType.CUSTOMER },
-      "nepal news": { name: "Nepal News Bank", type: ContactType.CUSTOMER },
-      "tv today": { name: "TV Today Network", type: ContactType.CUSTOMER },
-      "black swan": { name: "Black Swan Nepal", type: ContactType.CUSTOMER },
-      "7 star tv": { name: "7 Star TV", type: ContactType.CUSTOMER },
-      "dim movies": { name: "DIM Movies", type: ContactType.CUSTOMER },
-      "fewa tv": { name: "Fewa TV Ltd", type: ContactType.CUSTOMER },
-      "mediko": { name: "Mediko Life", type: ContactType.CUSTOMER },
-    };
-
-    function matchCanonicalKey(rawName: string): string | null {
-      const lower = rawName.toLowerCase().trim();
-      if (lower === "simul" || lower === "simulcast" || lower.includes("simulcast")) return "simulcast";
-      if (lower === "nav" || lower === "navsolutions" || lower.includes("nav solutions")) return "nav solutions";
-      if (lower === "av" || lower === "avbionics" || lower.includes("av bionics")) return "av bionics";
-      if (lower === "ku" || lower.includes("kayhmandu") || lower.includes("kathmandu university")) return "kathmandu university";
-      if (lower.includes("dhulukhel") || lower.includes("dhulikhel")) return "dhulikhel";
-      if (lower.includes("primeminister") || lower.includes("prime minister")) return "prime minister";
-      if (lower === "max" || lower.includes("max tech")) return "nepal max tech";
-      if (lower.includes("riddhi siddhi")) return "riddhi siddhi";
-      if (lower.includes("aashi")) return "aashi traders";
-      if (lower.includes("sujay")) return "sujay";
-      if (lower.includes("illya")) return "illya";
-      if (lower.includes("quick")) return "quick";
-      if (lower.includes("air")) return "air";
-      if (lower.includes("mediko")) return "mediko";
-
-      for (const k of Object.keys(CANONICAL_CONTACTS)) {
-        if (lower.includes(k)) return k;
-      }
-      return null;
-    }
-
-    const contactMap = new Map<string, string>();
-
-    // Process clients
-    for (const clientName of data.clients) {
-      if (!clientName || clientName.trim().length < 2) continue;
-      const raw = clientName.trim();
-      const canonKey = matchCanonicalKey(raw);
-      const meta = canonKey ? CANONICAL_CONTACTS[canonKey] : null;
-      const compName = meta ? meta.name : toTitleCase(raw);
-      const key = (canonKey || raw).toLowerCase();
-
-      if (contactMap.has(key)) {
-        const existingId = contactMap.get(key)!;
-        contactMap.set(raw.toLowerCase(), existingId);
-        if (canonKey) contactMap.set(canonKey, existingId);
-        continue;
-      }
-
-      const c = await prisma.contact.create({
-        data: {
-          organizationId: company.id,
-          type: meta?.type || ContactType.CUSTOMER,
-          name: compName,
-          companyName: null,
-          taxNumber: null,
-          address: null,
-          phone: null,
-          email: null,
-          notes: null,
+          organizationId: org.id,
+          name: def.name,
+          slug: def.slug,
+          category: def.category,
+          description: def.description,
+          baseUrl: def.baseUrl,
+          allowedDomains: def.allowedDomains,
+          authType: def.authType,
+          logoUrl: def.logoUrl,
+          status: def.status,
+          apiKey: def.apiKey,
+          isEnabled: def.isEnabled,
         },
       });
-      contactMap.set(key, c.id);
-      contactMap.set(raw.toLowerCase(), c.id);
-      if (canonKey) contactMap.set(canonKey, c.id);
-      if (meta) contactMap.set(meta.name.toLowerCase(), c.id);
+      console.log(`  + Plugin [${def.name}] (${def.authType}) -> ${def.status}`);
     }
-
-    // Process vendors
-    for (const vendorName of data.vendors) {
-      if (!vendorName || vendorName.trim().length < 2) continue;
-      const raw = vendorName.trim();
-      const canonKey = matchCanonicalKey(raw);
-      const meta = canonKey ? CANONICAL_CONTACTS[canonKey] : null;
-      const compName = meta ? meta.name : toTitleCase(raw);
-      const key = (canonKey || raw).toLowerCase();
-
-      const existingId = contactMap.get(key) || (meta ? contactMap.get(meta.name.toLowerCase()) : undefined);
-      if (existingId) {
-        await prisma.contact.update({
-          where: { id: existingId },
-          data: {
-            type: ContactType.BOTH,
-          },
-        });
-        contactMap.set(raw.toLowerCase(), existingId);
-      } else {
-        const c = await prisma.contact.create({
-          data: {
-            organizationId: company.id,
-            type: meta?.type || ContactType.VENDOR,
-            name: compName,
-            companyName: null,
-            taxNumber: null,
-            address: null,
-            phone: null,
-            email: null,
-            notes: null,
-          },
-        });
-        contactMap.set(key, c.id);
-        contactMap.set(raw.toLowerCase(), c.id);
-        if (canonKey) contactMap.set(canonKey, c.id);
-        if (meta) contactMap.set(meta.name.toLowerCase(), c.id);
-      }
-    }
-
-    function resolveContactId(rawName: string | null | undefined): string | null {
-      if (!rawName) return null;
-      const raw = rawName.trim().toLowerCase();
-      if (contactMap.has(raw)) return contactMap.get(raw)!;
-      const canonKey = matchCanonicalKey(raw);
-      if (canonKey && contactMap.has(canonKey)) return contactMap.get(canonKey)!;
-      if (canonKey && CANONICAL_CONTACTS[canonKey] && contactMap.has(CANONICAL_CONTACTS[canonKey].name.toLowerCase())) {
-        return contactMap.get(CANONICAL_CONTACTS[canonKey].name.toLowerCase())!;
-      }
-      for (const [k, v] of contactMap.entries()) {
-        if (k.length >= 3 && (raw.includes(k) || k.includes(raw))) return v;
-      }
-      return null;
-    }
-
-    // Products & Stock
-    const productMap = new Map<string, string>();
-    for (const p of data.products) {
-      const prod = await prisma.product.create({
-        data: {
-          organizationId: company.id,
-          sku: p.sku,
-          name: p.name,
-          unit: p.unit || "pcs",
-          purchasePrice: p.purchasePrice,
-          salePrice: p.salePrice,
-          stockQty: p.stockQty,
-          reorderLevel: p.reorderLevel,
-          active: true,
-        },
-      });
-      productMap.set(p.name.toLowerCase(), prod.id);
-    }
-
-    // Purchases
-    const purchaseGroups = new Map<string, typeof data.purchases>();
-    for (const p of data.purchases) {
-      const key = `${p.vendor}_${p.invoiceNumber}`;
-      if (!purchaseGroups.has(key)) purchaseGroups.set(key, []);
-      purchaseGroups.get(key)!.push(p);
-    }
-    let poCount = 0;
-    for (const [, items] of purchaseGroups.entries()) {
-      const first = items[0];
-      const contactId = resolveContactId(first.vendor);
-      const subtotal = items.reduce((s: number, i: any) => s + Number(i.total), 0);
-      const tax = items.reduce((s: number, i: any) => s + Number(i.vat || 0), 0);
-      const total = subtotal + tax;
-      const orderDate = parseDate(first.date);
-
-      await prisma.purchaseOrder.create({
-        data: {
-          organizationId: company.id,
-          orderNumber: `${first.invoiceNumber}-${poCount + 1}`,
-          contactId,
-          status: OrderStatus.COMPLETED,
-          orderDate,
-          subtotal,
-          tax,
-          total,
-          paidAmount: total, // previous historical orders are fully settled
-          notes: `Fiscal Year: ${first.fiscalYear}`,
-          stockPostedAt: orderDate,
-          items: {
-            create: items.map((i: any) => ({
-              productId: productMap.get(i.productName.toLowerCase()) || null,
-              description: i.productName,
-              quantity: Number(i.quantity) || 1,
-              unitPrice: Number(i.unitPrice) || 0,
-              amount: Number(i.total) || 0,
-            })),
-          },
-        },
-      });
-      poCount++;
-    }
-    console.log(`Imported ${poCount} historical purchase orders.`);
-
-    // Sales & Invoices
-    const salesGroups = new Map<string, typeof data.sales>();
-    for (const s of data.sales) {
-      const key = `${s.client}_${s.billNumber}`;
-      if (!salesGroups.has(key)) salesGroups.set(key, []);
-      salesGroups.get(key)!.push(s);
-    }
-    let soCount = 0;
-    for (const [, items] of salesGroups.entries()) {
-      const first = items[0];
-      const contactId = resolveContactId(first.client);
-      const subtotal = items.reduce((s: number, i: any) => s + Number(i.total), 0);
-      const tax = items.reduce((s: number, i: any) => s + Number(i.vat || 0), 0);
-      const total = subtotal + tax;
-      const orderDate = parseDate(first.date);
-
-      const so = await prisma.salesOrder.create({
-        data: {
-          organizationId: company.id,
-          orderNumber: `${first.billNumber}-${soCount + 1}`,
-          contactId,
-          status: OrderStatus.COMPLETED,
-          orderDate,
-          subtotal,
-          tax,
-          total,
-          notes: `Fiscal Year: ${first.fiscalYear}`,
-          stockPostedAt: orderDate,
-          items: {
-            create: items.map((i: any) => ({
-              productId: productMap.get(i.productName.toLowerCase()) || null,
-              description: i.productName,
-              quantity: Number(i.quantity) || 1,
-              unitPrice: Number(i.unitPrice) || 0,
-              amount: Number(i.total) || 0,
-            })),
-          },
-        },
-      });
-
-      await prisma.invoice.create({
-        data: {
-          organizationId: company.id,
-          invoiceNumber: `INV-${so.orderNumber}`,
-          contactId,
-          status: "PAID",
-          issueDate: orderDate,
-          dueDate: orderDate,
-          subtotal,
-          tax,
-          total,
-          paidAmount: total,
-          notes: `Tax invoice for order ${so.orderNumber}`,
-          items: {
-            create: items.map((i: any) => ({
-              productId: productMap.get(i.productName.toLowerCase()) || null,
-              description: i.productName,
-              quantity: Number(i.quantity) || 1,
-              unitPrice: Number(i.unitPrice) || 0,
-              amount: Number(i.total) || 0,
-            })),
-          },
-          payments: {
-            create: [{
-              amount: total,
-              paidAt: orderDate,
-              method: "Settled",
-              reference: `Settlement for ${so.orderNumber}`,
-              notes: "Historical order settled in full",
-            }],
-          },
-        },
-      });
-      soCount++;
-    }
-    console.log(`Imported ${soCount} sales orders & tax invoices.`);
-
-    // Siddhartha Bank Account & Transactions
-    const sBankData = data.siddharthaBank;
-    const sBank = await prisma.bankAccount.upsert({
-      where: { organizationId_accountNumber: { organizationId: company.id, accountNumber: sBankData.accountNumber } },
-      update: {
-        bankName: sBankData.bankName,
-        accountName: sBankData.accountName,
-        accountType: sBankData.accountType,
-        branch: "Kathmandu Branch",
-        currency: "NPR",
-        currentBalance: 87944.68,
-        holdAmount: 2500,
-      },
-      create: {
-        organizationId: company.id,
-        bankName: sBankData.bankName,
-        accountName: sBankData.accountName,
-        accountNumber: sBankData.accountNumber,
-        accountType: sBankData.accountType,
-        branch: "Kathmandu Branch",
-        currency: "NPR",
-        openingBalance: sBankData.openingBalance,
-        currentBalance: 87944.68,
-        holdAmount: 2500,
-      },
-    });
-
-    // Seed Siddhartha Bank Transactions (Guaranteed 0 duplicates)
-    const seenTxKeys = new Set<string>();
-    for (const tx of sBankData.transactions) {
-      const descClean = (tx.description || "").trim();
-      const descLower = descClean.toLowerCase();
-
-      if (descLower.includes("kashvi")) {
-        // Exclude Kashvi Karn personal transactions from company ledger
-        continue;
-      }
-
-      const txDate = new Date(`${tx.date}T12:00:00Z`);
-      const amount = Number(tx.amount);
-      const txKey = `${tx.date}_${amount}_${descLower}_${tx.type}`;
-
-      if (seenTxKeys.has(txKey)) {
-        continue;
-      }
-      seenTxKeys.add(txKey);
-
-      let category = "General Bank Transaction";
-      if (descLower.includes("charge") || descLower.includes("fee") || descLower.includes("wtax") || descLower.includes("sms")) {
-        category = "Bank Service Charges & Tax";
-      } else if (descLower.includes("kalyan") || descLower.includes("director")) {
-        category = tx.type === "DEPOSIT" ? "Director Current Account (Inflow)" : "Director Current Account (Drawings)";
-      } else if (descLower.includes("salary") || descLower.includes("payroll")) {
-        category = "Staff Salary & Payroll";
-      } else {
-        category = tx.type === "DEPOSIT" ? "Client Revenue / Sales Inflow" : "Vendor / Operating Outflow";
-      }
-
-      let incomeId: string | null = null;
-      let expenseId: string | null = null;
-      let linkedContactId: string | null = null;
-
-      if (tx.type === "DEPOSIT") {
-        let depositSource = "Siddhartha Bank Ltd (02017249683)";
-        let depositTitle = tx.description || "Bank Deposit Receipt";
-
-        if (descLower.includes("mediko")) {
-          depositSource = "Mediko Life";
-          depositTitle = "Client Revenue (Mediko Life) - " + (tx.description || "cIPS Fund Trf");
-          linkedContactId = contactMap.get("mediko") || null;
-        }
-
-        const inc = await prisma.income.create({
-          data: {
-            organizationId: company.id,
-            contactId: linkedContactId,
-            title: depositTitle,
-            source: depositSource,
-            amount,
-            receivedAt: txDate,
-            paymentMethod: "BANK",
-            bankAccountId: sBank.id,
-            notes: `Bank ref: ${tx.reference || "N/A"}`,
-          },
-        });
-        incomeId = inc.id;
-      } else {
-        const exp = await prisma.expense.create({
-          data: {
-            organizationId: company.id,
-            title: tx.description || "Bank Withdrawal Outlay",
-            vendor: "Siddhartha Bank Outlay",
-            type: ExpenseType.ONE_TIME,
-            amount,
-            occurredAt: txDate,
-            notes: `Bank ref: ${tx.reference || "N/A"}`,
-          },
-        });
-        expenseId = exp.id;
-      }
-
-      try {
-        await prisma.bankTransaction.create({
-          data: {
-            organizationId: company.id,
-            bankAccountId: sBank.id,
-            transactionDate: txDate,
-            type: tx.type,
-            amount,
-            balance: tx.balance != null ? Number(tx.balance) : null,
-            description: tx.description,
-            reference: tx.reference,
-            category,
-            contactId: linkedContactId ?? undefined,
-            incomeId: incomeId ?? undefined,
-            expenseId: expenseId ?? undefined,
-          },
-        });
-      } catch (err: any) {
-        if (err?.code === "P2003") {
-          await prisma.bankTransaction.create({
-            data: {
-              organizationId: company.id,
-              bankAccountId: sBank.id,
-              transactionDate: txDate,
-              type: tx.type,
-              amount,
-              balance: tx.balance != null ? Number(tx.balance) : null,
-              description: tx.description,
-              reference: tx.reference,
-              category,
-            },
-          });
-        } else {
-          throw err;
-        }
-      }
-    }
-
-
-    await prisma.bankAccount.update({
-      where: { id: sBank.id },
-      data: { currentBalance: 87944.68, holdAmount: 2500 },
-    });
-
-    console.log(`Imported Siddhartha Bank transactions. Verified closing balance set to NPR 87,944.68 (Available: NPR 85,444.68, Hold: NPR 2,500.00).`);
   }
 
-  // 9. Staff Clean Directory (No dummy employees seeded per request)
-  await prisma.task.deleteMany({ where: { organizationId: company.id, employee: { employeeCode: "EMP-001" } } });
-  await prisma.employee.deleteMany({ where: { organizationId: company.id, employeeCode: "EMP-001" } });
-
-  await prisma.licenseRecord.deleteMany({ where: { organizationId: company.id } });
-  await prisma.licenseRecord.create({
-    data: {
-      organizationId: company.id,
-      name: "Cloud playout subscription",
-      vendor: "Broadcast Cloud Vendor",
-      seats: 5,
-      renewalCost: 78000,
-      expiryDate: new Date(Date.now() + 45 * 86400000),
-    },
-  });
-
-  // Materialize historical rent/electricity payments into the dedicated
-  // tenancy reconciliation ledger so seeded reports show billed, paid, and due.
-  let rentalPaymentsImported = 0;
-  for (const organizationId of [company.id, household.id]) {
-    const house = await prisma.rentalHouse.findFirst({
-      where: { organizationId },
-      orderBy: [{ isActive: "desc" }, { createdAt: "desc" }],
-    });
-    if (!house) continue;
-    const rentExpenses = await prisma.expense.findMany({
-      where: {
-        organizationId,
-        isEstimated: false,
-        OR: [
-          { title: { contains: "rent" } },
-          { title: { contains: "Rent" } },
-          { title: { contains: "electricity" } },
-          { title: { contains: "Electricity" } },
-        ],
-      },
-      include: { bankTransactions: true },
-      orderBy: { occurredAt: "asc" },
-    });
-    for (const expense of rentExpenses) {
-      const billingMonth = expense.occurredAt.toISOString().slice(0, 7);
-      const amount = Number(expense.amount);
-      const isElectricity = expense.title.toLowerCase().includes("electricity");
-      let bill = await prisma.rentalBill.findUnique({
-        where: { rentalHouseId_billingMonth: { rentalHouseId: house.id, billingMonth } },
-      });
-      if (!bill) {
-        bill = await prisma.rentalBill.create({
-          data: {
-            organizationId,
-            rentalHouseId: house.id,
-            billingMonth,
-            rentAmount: isElectricity ? 0 : amount,
-            electricityAmount: isElectricity ? amount : 0,
-            totalAmount: amount,
-            notes: "Seeded from an actual historical expense.",
-          },
-        });
-      } else {
-        bill = await prisma.rentalBill.update({
-          where: { id: bill.id },
-          data: {
-            rentAmount: isElectricity ? undefined : { increment: amount },
-            electricityAmount: isElectricity ? { increment: amount } : undefined,
-            totalAmount: { increment: amount },
-          },
-        });
-      }
-      await prisma.rentalPayment.create({
-        data: {
-          organizationId,
-          rentalBillId: bill.id,
-          amount,
-          paidAt: expense.occurredAt,
-          paymentMethod: expense.bankTransactions.length ? "BANK" : "OTHER",
-          reference: expense.bankTransactions[0]?.reference || null,
-          notes: "Seeded from the existing expense ledger.",
-          expenseId: expense.id,
-        },
-      });
-      rentalPaymentsImported++;
-    }
-  }
-  console.log(`Rental reconciliation populated with ${rentalPaymentsImported} actual payments.`);
-
-  // 10. BLACK SWAN NEPAL 2083-06-29 BS TRANSACTIONS & DIRECTOR CASH DRAWINGS (USER SPECIFIED)
-  console.log("\n--- SEEDING 2083-06-29 BS TRANSACTIONS (BLACK SWAN AP1 & DIRECTOR KALYAN KARN CASH) ---");
-  let blackSwan = await prisma.contact.findFirst({
-    where: { organizationId: company.id, name: { contains: "Black Swan" } },
-  });
-  if (!blackSwan) {
-    blackSwan = await prisma.contact.create({
-      data: {
-        organizationId: company.id,
-        type: ContactType.CUSTOMER,
-        name: "Black Swan Nepal",
-      },
-    });
-  }
-
-  const dirCat = await prisma.expenseCategory.findFirst({
-    where: { organizationId: company.id, name: { contains: "Director Current Account" } },
-  });
-
-  // 2083-06-29 BS is 2026-10-15 AD
-  const txDate2083 = new Date("2026-10-15T12:00:00.000Z");
-
-  // 1. Sales Order SO-7994542
-  await prisma.salesOrder.create({
-    data: {
-      organizationId: company.id,
-      orderNumber: "SO-7994542",
-      contactId: blackSwan.id,
-      status: OrderStatus.COMPLETED,
-      orderDate: txDate2083,
-      subtotal: 50000,
-      tax: 0,
-      discount: 0,
-      total: 50000,
-      notes: "AP1 Service Charge for Black Swan Nepal (2083-06-29 BS)",
-      stockPostedAt: txDate2083,
-      items: {
-        create: [{
-          description: "AP1 Service Charge",
-          quantity: 1,
-          unitPrice: 50000,
-          amount: 50000,
-        }],
-      },
-    },
-  });
-
-  // 2. Invoice INV-SO-7994542
-  await prisma.invoice.create({
-    data: {
-      organizationId: company.id,
-      invoiceNumber: "INV-SO-7994542",
-      contactId: blackSwan.id,
-      status: "PAID",
-      issueDate: txDate2083,
-      dueDate: txDate2083,
-      subtotal: 50000,
-      tax: 0,
-      discount: 0,
-      total: 50000,
-      paidAmount: 50000,
-      notes: "Tax invoice for order SO-7994542 - AP1 Service Charge (2083-06-29 BS)",
-      items: {
-        create: [{
-          description: "AP1 Service Charge",
-          quantity: 1,
-          unitPrice: 50000,
-          amount: 50000,
-          taxRate: 0,
-        }],
-      },
-    },
-  });
-
-  // 3. Direct Income Receipt (+ NPR 50,000 Cash in Hand)
-  await prisma.income.create({
-    data: {
-      organizationId: company.id,
-      title: "AP1 Service Charge From Black Swan",
-      source: "Black Swan Nepal",
-      amount: 50000,
-      receivedAt: txDate2083,
-      paymentMethod: "CASH",
-      contactId: blackSwan.id,
-      notes: "AP1 Service Charge From Black Swan [Cash in Hand] - 2083-06-29 BS",
-    },
-  });
-
-  // 4. Cash Out to Kalyan Kumar Karn Director Account (NPR 50,000 Cash)
-  await prisma.expense.create({
-    data: {
-      organizationId: company.id,
-      title: "Cash Out to Kalyan Kumar Karn Director [Director: Kalyan Kumar Karn]",
-      vendor: "Director: Kalyan Kumar Karn",
-      categoryId: dirCat ? dirCat.id : null,
-      type: ExpenseType.ONE_TIME,
-      amount: 50000,
-      occurredAt: txDate2083,
-      isEstimated: false,
-      notes: "[Director Account: DRAWINGS - Kalyan Kumar Karn] Cash given to director account Kalyan Karn on 2083-06-29 BS (Cash in Hand)",
-    },
-  });
-  console.log("Seeded Black Swan 50k AP1 service charge & Kalyan Karn 50k director cash drawings for 2083-06-29 BS.");
-
-  console.log("\n=== MASTER SEED COMPLETED SUCCESSFULLY ===");
-  console.log("Credentials:");
-  console.log("  Super Admin: superadmin@kashtrix.com / Admin@123");
-  console.log("  Company Admin: admin@simulcast.local / Admin@123");
-  console.log("Workspaces:");
-  console.log(`  Simulcast Technologies: ${company.id} (slug: ${company.slug})`);
-  console.log(`  My House: ${household.id} (slug: ${household.slug})`);
+  console.log("\nPlugins & Services seed finished successfully. No users, vendors, transactions, or warehouses touched.");
 }
 
 main()
   .catch((e) => {
-    console.error("SEEDING ERROR:", e);
+    console.error("Seed error:", e);
     process.exit(1);
   })
   .finally(async () => {
-    try {
-      await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 1;");
-    } catch {}
     await prisma.$disconnect();
   });

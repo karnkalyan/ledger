@@ -9,6 +9,13 @@ import { requireOrganizationAccess } from "@/lib/session";
 import { estimateRecurringExpense } from "@/lib/expense-engine";
 import { getDaysInMonth, startOfMonth, endOfMonth } from "date-fns";
 import { getBsMonthRange, bsToAd, adToBs, NEPALI_MONTHS_EN, NEPALI_MONTHS_NE } from "@/lib/nepali-calendar";
+import {
+  extendRemoteLicense,
+  updateRemoteLicenseStatus,
+  banRemoteLicenseClient,
+  unbanRemoteLicenseClient,
+  fetchRemoteLicenseStatus,
+} from "@/lib/license-api";
 
 type Line = { description: string; quantity: number; unitPrice: number; taxRate?: number; productId?: string };
 
@@ -989,6 +996,72 @@ export async function createBankAccountAction(formData: FormData) {
     },
   });
   refresh(orgId, "banking");
+}
+
+export async function updateBankAccountAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  await orgAccess(orgId);
+  const id = s(formData, "id");
+  if (!id) return;
+
+  const bankName = s(formData, "bankName");
+  const accountNumber = s(formData, "accountNumber");
+  if (!bankName || !accountNumber) return;
+
+  const openingBalance = n(formData, "openingBalance", 0);
+  const currentBalance = formData.has("currentBalance") ? n(formData, "currentBalance", openingBalance) : openingBalance;
+  const holdAmount = n(formData, "holdAmount", 0);
+  const creditLimit = n(formData, "creditLimit", 0);
+  const statementDay = n(formData, "statementDay", 0);
+  const paymentDueDay = n(formData, "paymentDueDay", 0);
+
+  await db.bankAccount.update({
+    where: { id, organizationId: orgId },
+    data: {
+      bankName,
+      accountName: s(formData, "accountName") || bankName,
+      accountNumber,
+      accountType: s(formData, "accountType") || "CURRENT",
+      branch: s(formData, "branch") || null,
+      currency: s(formData, "currency") || "NPR",
+      openingBalance,
+      currentBalance,
+      holdAmount,
+      creditLimit: creditLimit > 0 ? creditLimit : null,
+      statementDay: statementDay >= 1 && statementDay <= 31 ? statementDay : null,
+      paymentDueDay: paymentDueDay >= 1 && paymentDueDay <= 31 ? paymentDueDay : null,
+      notes: s(formData, "notes") || null,
+    },
+  });
+
+  refresh(orgId, "banking");
+  refresh(orgId, "expenses");
+  refresh(orgId, "income");
+  revalidatePath(`/${orgId}/reports`);
+}
+
+export async function deleteBankAccountAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  await orgAccess(orgId);
+  const id = s(formData, "id");
+  if (!id) return;
+
+  const txCount = await db.bankTransaction.count({ where: { bankAccountId: id } });
+  if (txCount > 0) {
+    await db.bankAccount.update({
+      where: { id, organizationId: orgId },
+      data: { isActive: false },
+    });
+  } else {
+    await db.bankAccount.delete({
+      where: { id, organizationId: orgId },
+    });
+  }
+
+  refresh(orgId, "banking");
+  refresh(orgId, "expenses");
+  refresh(orgId, "income");
+  revalidatePath(`/${orgId}/reports`);
 }
 
 export async function recordBankTransactionAction(formData: FormData) {
@@ -3100,3 +3173,340 @@ export async function changeUserPasswordAction(formData: FormData) {
 
   revalidatePath(`/${orgId}/profile`);
 }
+
+// ==========================================
+// REMOTE LICENSE MANAGER API ACTIONS
+// ==========================================
+
+export async function extendRemoteLicenseAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  const { membership, user } = await requireOrganizationAccess(orgId);
+  const isAdmin = membership.role === "ADMIN" || membership.role === "OWNER" || user.role === "SUPER_ADMIN";
+  if (!isAdmin) {
+    throw new Error("Access Denied: Only administrators are authorized to extend licenses.");
+  }
+
+  const serial = s(formData, "serial");
+  const days = n(formData, "days", 0);
+  const expiresAt = s(formData, "expiresAt") || undefined;
+  const reason = s(formData, "reason") || "Extended by office workspace admin";
+  const customerRef = s(formData, "customerRef") || undefined;
+
+  if (!serial) throw new Error("License serial number is required.");
+  if (days <= 0 && !expiresAt) throw new Error("Please specify extension days or a future expiration date.");
+
+  await extendRemoteLicense(
+    serial,
+    {
+      days: days > 0 ? days : undefined,
+      expiresAt,
+      reason,
+      customerRef,
+    },
+    { orgId }
+  );
+
+  revalidatePath(`/${orgId}/licenses`);
+  revalidatePath(`/${orgId}`);
+}
+
+export async function updateRemoteLicenseStatusAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  const { membership, user } = await requireOrganizationAccess(orgId);
+  const isAdmin = membership.role === "ADMIN" || membership.role === "OWNER" || user.role === "SUPER_ADMIN";
+  if (!isAdmin) {
+    throw new Error("Access Denied: Only administrators can modify license status.");
+  }
+
+  const serial = s(formData, "serial");
+  const targetStatus = s(formData, "status") as "ACTIVE" | "SUSPENDED" | "REVOKED";
+  const reason = s(formData, "reason") || undefined;
+
+  if (!serial) throw new Error("License serial number is required.");
+  if (!["ACTIVE", "SUSPENDED", "REVOKED"].includes(targetStatus)) {
+    throw new Error("Invalid status specified.");
+  }
+
+  await updateRemoteLicenseStatus(serial, { status: targetStatus, reason }, { orgId });
+
+  revalidatePath(`/${orgId}/licenses`);
+  revalidatePath(`/${orgId}`);
+}
+
+export async function revokeRemoteLicenseAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  const { membership, user } = await requireOrganizationAccess(orgId);
+  const isAdmin = membership.role === "ADMIN" || membership.role === "OWNER" || user.role === "SUPER_ADMIN";
+  if (!isAdmin) {
+    throw new Error("Access Denied: Only administrators can revoke licenses.");
+  }
+
+  const serial = s(formData, "serial");
+  const reason = s(formData, "reason") || "Revoked by office workspace admin";
+  if (!serial) throw new Error("License serial is required.");
+
+  await updateRemoteLicenseStatus(serial, { status: "REVOKED", reason }, { orgId });
+
+  revalidatePath(`/${orgId}/licenses`);
+  revalidatePath(`/${orgId}`);
+}
+
+export async function restoreRemoteLicenseAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  const { membership, user } = await requireOrganizationAccess(orgId);
+  const isAdmin = membership.role === "ADMIN" || membership.role === "OWNER" || user.role === "SUPER_ADMIN";
+  if (!isAdmin) {
+    throw new Error("Access Denied: Only administrators can restore licenses.");
+  }
+
+  const serial = s(formData, "serial");
+  const reason = s(formData, "reason") || "Restored by office workspace admin";
+  if (!serial) throw new Error("License serial is required.");
+
+  await updateRemoteLicenseStatus(serial, { status: "ACTIVE", reason }, { orgId });
+
+  revalidatePath(`/${orgId}/licenses`);
+  revalidatePath(`/${orgId}`);
+}
+
+export async function banRemoteLicenseClientAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  const { membership, user } = await requireOrganizationAccess(orgId);
+  const isAdmin = membership.role === "ADMIN" || membership.role === "OWNER" || user.role === "SUPER_ADMIN";
+  if (!isAdmin) {
+    throw new Error("Access Denied: Only administrators can ban activations.");
+  }
+
+  const clientId = s(formData, "clientId");
+  const reason = s(formData, "reason") || "Installation banned by office workspace admin";
+  if (!clientId) throw new Error("Client installation ID is required.");
+
+  await banRemoteLicenseClient(clientId, { reason }, { orgId });
+
+  revalidatePath(`/${orgId}/licenses`);
+  revalidatePath(`/${orgId}`);
+}
+
+export async function unbanRemoteLicenseClientAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  const { membership, user } = await requireOrganizationAccess(orgId);
+  const isAdmin = membership.role === "ADMIN" || membership.role === "OWNER" || user.role === "SUPER_ADMIN";
+  if (!isAdmin) {
+    throw new Error("Access Denied: Only administrators can unban activations.");
+  }
+
+  const clientId = s(formData, "clientId");
+  if (!clientId) throw new Error("Client installation ID is required.");
+
+  await unbanRemoteLicenseClient(clientId, { orgId });
+
+  revalidatePath(`/${orgId}/licenses`);
+  revalidatePath(`/${orgId}`);
+}
+
+// ==========================================
+// WORKSPACE PLUGINS & CONNECTORS ACTIONS
+// ==========================================
+
+export async function createPluginAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  const { membership, user } = await requireOrganizationAccess(orgId);
+  const isAdmin = membership.role === "ADMIN" || membership.role === "OWNER" || user.role === "SUPER_ADMIN";
+  if (!isAdmin) throw new Error("Access Denied: Only administrators can add plugins.");
+
+  const name = s(formData, "name");
+  if (!name) throw new Error("Plugin name is required.");
+
+  let slug = s(formData, "slug").toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-");
+  if (!slug) {
+    slug = name.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-");
+  }
+
+  const category = s(formData, "category") || "GENERAL";
+  const description = s(formData, "description") || null;
+  const baseUrl = s(formData, "baseUrl") || null;
+  const allowedDomains = s(formData, "allowedDomains") || null;
+  const logoUrl = s(formData, "logoUrl") || null;
+  const authType = (s(formData, "authType").toUpperCase() || "API_KEY") as any;
+  const apiKey = s(formData, "apiKey") || null;
+
+  let status: any = apiKey ? "CONNECTED" : "DISCONNECTED";
+  let metadata: any = null;
+
+  // If apiKey and baseUrl provided and it's the license manager, verify connection
+  if (apiKey && baseUrl && (slug.includes("license") || name.toLowerCase().includes("license"))) {
+    try {
+      const ping = await fetchRemoteLicenseStatus({ baseUrl, apiKey });
+      if (ping?.ok) {
+        status = "CONNECTED";
+        metadata = JSON.stringify({
+          keyName: ping.keyName,
+          role: ping.role,
+          remainingDays: ping.remainingDays,
+          verifiedAt: new Date().toISOString(),
+        });
+      }
+    } catch {
+      // Keep provided key even if live server ping is unreachable
+    }
+  }
+
+  await db.plugin.upsert({
+    where: {
+      organizationId_slug: {
+        organizationId: orgId,
+        slug,
+      },
+    },
+    update: {
+      name,
+      category,
+      description,
+      baseUrl,
+      allowedDomains,
+      logoUrl,
+      authType,
+      apiKey: apiKey || undefined,
+      status,
+      metadata,
+      isEnabled: true,
+    },
+    create: {
+      organizationId: orgId,
+      name,
+      slug,
+      category,
+      description,
+      baseUrl,
+      allowedDomains,
+      logoUrl,
+      authType,
+      apiKey,
+      status,
+      metadata,
+      isEnabled: true,
+    },
+  });
+
+  revalidatePath(`/${orgId}/plugins`);
+  revalidatePath(`/${orgId}/licenses`);
+  revalidatePath(`/${orgId}`);
+}
+
+export async function connectPluginWithApiKeyAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  const { membership, user } = await requireOrganizationAccess(orgId);
+  const isAdmin = membership.role === "ADMIN" || membership.role === "OWNER" || user.role === "SUPER_ADMIN";
+  if (!isAdmin) throw new Error("Access Denied: Only administrators can connect plugins.");
+
+  const pluginId = s(formData, "pluginId");
+  const apiKey = s(formData, "apiKey");
+  const baseUrlInput = s(formData, "baseUrl");
+
+  if (!apiKey) throw new Error("API Key is required to connect.");
+
+  const plugin = await db.plugin.findFirst({
+    where: { id: pluginId, organizationId: orgId },
+  });
+
+  if (!plugin) throw new Error("Plugin record not found.");
+
+  const baseUrl = baseUrlInput || plugin.baseUrl || "https://license.simulcast.com.np";
+  let metadata: any = null;
+
+  // Test license manager connection if applicable
+  if (plugin.slug.includes("license") || plugin.name.toLowerCase().includes("license")) {
+    try {
+      const ping = await fetchRemoteLicenseStatus({ baseUrl, apiKey });
+      if (ping) {
+        metadata = JSON.stringify({
+          keyName: ping.keyName,
+          role: ping.role,
+          remainingDays: ping.remainingDays,
+          allowedDomains: ping.allowedDomains,
+          verifiedAt: new Date().toISOString(),
+        });
+      }
+    } catch (err: any) {
+      console.warn("Connection test warning:", err);
+    }
+  }
+
+  await db.plugin.update({
+    where: { id: plugin.id },
+    data: {
+      apiKey,
+      baseUrl,
+      status: "CONNECTED",
+      lastSyncAt: new Date(),
+      lastError: null,
+      metadata,
+      isEnabled: true,
+    },
+  });
+
+  revalidatePath(`/${orgId}/plugins`);
+  revalidatePath(`/${orgId}/licenses`);
+  revalidatePath(`/${orgId}`);
+}
+
+export async function disconnectPluginAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  const { membership, user } = await requireOrganizationAccess(orgId);
+  const isAdmin = membership.role === "ADMIN" || membership.role === "OWNER" || user.role === "SUPER_ADMIN";
+  if (!isAdmin) throw new Error("Access Denied: Only administrators can disconnect plugins.");
+
+  const pluginId = s(formData, "pluginId");
+  await db.plugin.update({
+    where: { id: pluginId, organizationId: orgId },
+    data: {
+      status: "DISCONNECTED",
+      apiKey: null,
+      lastSyncAt: null,
+      metadata: null,
+    },
+  });
+
+  revalidatePath(`/${orgId}/plugins`);
+  revalidatePath(`/${orgId}/licenses`);
+  revalidatePath(`/${orgId}`);
+}
+
+export async function togglePluginAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  const { membership, user } = await requireOrganizationAccess(orgId);
+  const isAdmin = membership.role === "ADMIN" || membership.role === "OWNER" || user.role === "SUPER_ADMIN";
+  if (!isAdmin) throw new Error("Access Denied: Only administrators can toggle plugins.");
+
+  const pluginId = s(formData, "pluginId");
+  const plugin = await db.plugin.findFirst({
+    where: { id: pluginId, organizationId: orgId },
+  });
+  if (!plugin) throw new Error("Plugin not found.");
+
+  await db.plugin.update({
+    where: { id: plugin.id },
+    data: { isEnabled: !plugin.isEnabled },
+  });
+
+  revalidatePath(`/${orgId}/plugins`);
+  revalidatePath(`/${orgId}/licenses`);
+  revalidatePath(`/${orgId}`);
+}
+
+export async function deletePluginAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  const { membership, user } = await requireOrganizationAccess(orgId);
+  const isAdmin = membership.role === "ADMIN" || membership.role === "OWNER" || user.role === "SUPER_ADMIN";
+  if (!isAdmin) throw new Error("Access Denied: Only administrators can delete plugins.");
+
+  const pluginId = s(formData, "pluginId");
+  await db.plugin.delete({
+    where: { id: pluginId, organizationId: orgId },
+  });
+
+  revalidatePath(`/${orgId}/plugins`);
+  revalidatePath(`/${orgId}/licenses`);
+  revalidatePath(`/${orgId}`);
+}
+

@@ -21,6 +21,7 @@ export function ExpenseForm({
   bankAccounts = [],
   cashInHandBalance = 0,
   recurring = false,
+  isCompany = false,
   action: pageAction,
 }: {
   orgId: string;
@@ -28,6 +29,7 @@ export function ExpenseForm({
   bankAccounts?: BankAccountOption[];
   cashInHandBalance?: number;
   recurring?: boolean;
+  isCompany?: boolean;
   action?: (formData: FormData) => Promise<void>;
 }) {
   // Payment Method: Default to CASH ("Cash in Hand")
@@ -424,40 +426,42 @@ export function ExpenseForm({
           </div>
         )}
 
-        {/* DIRECTOR CURRENT ACCOUNT OPTION */}
-        <div className="field full" style={{ background: "var(--soft)", padding: "12px 14px", borderRadius: 8, border: "1px solid var(--line)" }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600 }}>
-            <input
-              type="checkbox"
-              name="isDirectorAccount"
-              checked={isDirector}
-              onChange={(e) => setIsDirector(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
-            />
-            <span>Director Current Account (Personal Drawings / Loan Outlay)</span>
-          </label>
-          {isDirector && (
-            <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <label className="field" style={{ margin: 0 }}>
-                <span className="field-label" style={{ fontSize: 11 }}>Director Name</span>
-                <input
-                  name="directorName"
-                  defaultValue="Director"
-                  placeholder="e.g. Director Name"
-                  required={isDirector}
-                />
-              </label>
-              <label className="field" style={{ margin: 0 }}>
-                <span className="field-label" style={{ fontSize: 11 }}>Director Outlay Type</span>
-                <select name="directorTxType" defaultValue="DRAWINGS">
-                  <option value="DRAWINGS">Director Personal Drawings (Money Out)</option>
-                  <option value="REIMBURSEMENT">Loan / Expense Reimbursement to Director</option>
-                  <option value="SALARY_ADVANCE">Director Advance</option>
-                </select>
-              </label>
-            </div>
-          )}
-        </div>
+        {/* DIRECTOR CURRENT ACCOUNT OPTION - ONLY FOR COMPANIES */}
+        {isCompany && (
+          <div className="field full" style={{ background: "var(--soft)", padding: "12px 14px", borderRadius: 8, border: "1px solid var(--line)" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600 }}>
+              <input
+                type="checkbox"
+                name="isDirectorAccount"
+                checked={isDirector}
+                onChange={(e) => setIsDirector(e.target.checked)}
+                style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
+              />
+              <span>Director Current Account (Personal Drawings / Loan Outlay)</span>
+            </label>
+            {isDirector && (
+              <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <label className="field" style={{ margin: 0 }}>
+                  <span className="field-label" style={{ fontSize: 11 }}>Director Name</span>
+                  <input
+                    name="directorName"
+                    defaultValue="Director"
+                    placeholder="e.g. Director Name"
+                    required={isDirector}
+                  />
+                </label>
+                <label className="field" style={{ margin: 0 }}>
+                  <span className="field-label" style={{ fontSize: 11 }}>Director Outlay Type</span>
+                  <select name="directorTxType" defaultValue="DRAWINGS">
+                    <option value="DRAWINGS">Director Personal Drawings (Money Out)</option>
+                    <option value="REIMBURSEMENT">Loan / Expense Reimbursement to Director</option>
+                    <option value="SALARY_ADVANCE">Director Advance</option>
+                  </select>
+                </label>
+              </div>
+            )}
+          </div>
+        )}
 
         <label className="field full">
           <span className="field-label">Notes / Remarks</span>

@@ -2,6 +2,7 @@ import {
   BadgeDollarSign, Boxes, BriefcaseBusiness, Building2, CalendarClock, ClipboardCheck, Clock,
   FileCheck2, FileText, FolderKanban, Gauge, HandCoins, House, Landmark, ListTodo, PackageSearch,
   ReceiptText, Settings, ShoppingCart, SquareKanban, TrendingUp, UserRoundSearch, UsersRound, Wallet, WalletCards,
+  Plug,
   type LucideIcon
 } from "lucide-react";
 
@@ -35,6 +36,7 @@ export const officeNav: NavItem[] = [
   { href: "/payroll", label: "Payroll", icon: HandCoins, color: "#c026d3" }, // Fuchsia
   { href: "/leaves", label: "Leave / HRM", icon: CalendarClock, color: "#ea580c" }, // Orange
   { href: "/licenses", label: "Licenses", icon: FileCheck2, color: "#84cc16" }, // Lime
+  { href: "/plugins", label: "Plugins & Connectors", icon: Plug, color: "#a855f7" }, // Purple
   { href: "/loans", label: "Loans & Lending", icon: HandCoins, color: "#db2777" }, // Pink
   { href: "/reminders", label: "Reminders", icon: ClipboardCheck, color: "#eab308" }, // Yellow
   { href: "/reports", label: "Reports", icon: BadgeDollarSign, color: "#059669" }, // Emerald

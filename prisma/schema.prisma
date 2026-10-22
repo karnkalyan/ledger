@@ -212,6 +212,7 @@ model Organization {
   electricityLogs ElectricityReadingLog[]
   rentalBills     RentalBill[]
   rentalPayments  RentalPayment[]
+  plugins         Plugin[]
 }
 
 model Membership {
@@ -1018,5 +1019,47 @@ model WalletTransaction {
 
   @@index([organizationId, type])
   @@index([organizationId, status])
+}
+
+enum PluginAuthType {
+  API_KEY
+  OAUTH
+  LOGIN
+  NONE
+}
+
+enum PluginStatus {
+  CONNECTED
+  DISCONNECTED
+  CONFIGURED
+}
+
+model Plugin {
+  id             String          @id @default(cuid()) @db.VarChar(30)
+  organizationId String          @db.VarChar(30)
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  slug           String
+  category       String?         @default("SECURITY_LICENSING")
+  description    String?         @db.Text
+  logoUrl        String?         @db.Text
+  baseUrl        String?
+  allowedDomains String?
+  authType       PluginAuthType  @default(API_KEY)
+  apiKey         String?         @db.Text
+  clientId       String?
+  clientSecret   String?         @db.Text
+  authConfig     String?         @db.Text
+  status         PluginStatus    @default(DISCONNECTED)
+  lastSyncAt     DateTime?
+  lastError      String?         @db.Text
+  metadata       String?         @db.Text
+  isEnabled      Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@index([organizationId, category])
 }
 

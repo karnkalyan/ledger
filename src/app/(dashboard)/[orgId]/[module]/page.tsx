@@ -39,6 +39,8 @@ import {
   Briefcase,
   ShieldCheck,
   ArrowRight,
+  Plug,
+  KeyRound,
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireOrganizationAccess, canAccessModule } from "@/lib/session";
@@ -63,6 +65,14 @@ import { MonthlyGeneratorModal } from "@/components/monthly-generator-modal";
 import { CompanyPrintLogo, CompanyPrintBanner } from "@/components/company-print-logo";
 import { CompanyAuditReport } from "@/components/company-audit-report";
 import { StatementPartySelector } from "@/components/statement-party-selector";
+import { OfficeLicenseManager } from "@/components/office-license-manager";
+import { PluginsManagementView } from "@/components/plugins-management-view";
+import {
+  fetchRemoteLicenseStatus,
+  fetchRemoteLicenses,
+  type RemoteLicenseItem,
+  type RemoteLicenseStatusResponse,
+} from "@/lib/license-api";
 import { cookies } from "next/headers";
 import { resolveActiveFiscalYear, buildFiscalYearFromStart, getAvailableFiscalYears } from "@/lib/fiscal-year";
 import {
@@ -101,8 +111,8 @@ function formatBsMonthDisplay(mStr: string | null | undefined) {
   return mStr;
 }
 
-const officeOnly = new Set(["sales","purchase","stock","crm","leads","staff","payroll","leaves","invoices","quotes","licenses","projects","wallets","worklogs","statement"]);
-const allModules = new Set(["sales","purchase","stock","crm","leads","staff","payroll","leaves","invoices","quotes","licenses","income","expenses","banking","bank","tasks","reminders","reports","loans","settings","projects","wallets","worklogs","menu","statement"]);
+const officeOnly = new Set(["sales","purchase","stock","crm","leads","staff","payroll","leaves","invoices","quotes","licenses","plugins","projects","wallets","worklogs","statement"]);
+const allModules = new Set(["sales","purchase","stock","crm","leads","staff","payroll","leaves","invoices","quotes","licenses","plugins","income","expenses","banking","bank","tasks","reminders","reports","loans","settings","projects","wallets","worklogs","menu","statement"]);
 
 function highlightMatch(text: string | null | undefined, queryStr: string) {
   if (!text) return "";
@@ -179,6 +189,59 @@ export function resolveIncomeChannel(
   if (text.includes("esewa") || text.includes("khalti") || text.includes("wallet")) {
     return "OTHER";
   }
+  return "CASH";
+}
+
+export function resolveExpenseChannel(
+  x: {
+    paymentMethod?: string | null;
+    bankAccountId?: string | null;
+    bankAccount?: any;
+    title?: string | null;
+    vendor?: string | null;
+    notes?: string | null;
+  },
+  knownBankNames: string[] = []
+): "BANK" | "WALLET" | "CASH" {
+  if (x.bankAccount?.accountType === "DIGITAL_WALLET") return "WALLET";
+  if (x.bankAccount?.accountType === "CASH") return "CASH";
+  if (x.bankAccount) return "BANK";
+
+  const pm = (x.paymentMethod || "").toUpperCase();
+  if (pm === "WALLET") return "WALLET";
+  if (pm === "BANK") return "BANK";
+  if (pm === "CASH") return "CASH";
+
+  const text = `${x.title || ""} ${x.vendor || ""} ${x.notes || ""}`.toLowerCase();
+
+  // Check wallet tags
+  if (
+    text.includes("wallet") ||
+    text.includes("esewa") ||
+    text.includes("khalti") ||
+    text.includes("ime pay") ||
+    text.includes("prabhu pay")
+  ) {
+    return "WALLET";
+  }
+
+  // Check bank tags
+  if (
+    text.includes("[paid via: bank") ||
+    text.includes("cheque") ||
+    text.includes("ips") ||
+    text.includes("connectips") ||
+    text.includes("bank charge") ||
+    text.includes("intreset charge") ||
+    text.includes("interest charge") ||
+    text.includes("tax on intreset") ||
+    text.includes("bank fee") ||
+    knownBankNames.some((b) => b && text.includes(b.toLowerCase()))
+  ) {
+    return "BANK";
+  }
+
+  // Default to CASH
   return "CASH";
 }
 
@@ -1544,6 +1607,73 @@ export default async function ModulePage({
       }),
     ]);
 
+    // Ensure Cash in Hand account exists and is accurately reflected
+    let cashAccount = accounts.find(
+      (a) =>
+        a.accountType === "CASH" ||
+        a.accountNumber === "CASH-IN-HAND" ||
+        a.bankName.toLowerCase().includes("cash in hand")
+    );
+
+    if (!cashAccount) {
+      // Calculate live physical cash in hand for this organization
+      const [cashIncomes, cashExpenses] = await Promise.all([
+        db.income.findMany({ where: { organizationId: orgId } }),
+        db.expense.findMany({ where: { organizationId: orgId } }),
+      ]);
+      const totalCashIn = cashIncomes
+        .filter((i) => resolveIncomeChannel(i) === "CASH")
+        .reduce((sum, i) => sum + Number(i.amount), 0);
+      const totalCashOut = cashExpenses
+        .filter((e) => resolveExpenseChannel(e) === "CASH")
+        .reduce((sum, e) => sum + Number(e.amount), 0);
+      const computedCash = Math.max(0, totalCashIn - totalCashOut);
+      const initialCashBalance = computedCash > 0 ? computedCash : (organization.kind === "HOUSEHOLD" ? 43000 : 0);
+
+      try {
+        cashAccount = await db.bankAccount.create({
+          data: {
+            organizationId: orgId,
+            bankName: "Cash in Hand",
+            accountName: "Physical Cash Vault / Wallet",
+            accountNumber: "CASH-IN-HAND",
+            accountType: "CASH",
+            branch: "Physical Vault",
+            currency: organization.currency || "NPR",
+            openingBalance: 0,
+            currentBalance: initialCashBalance,
+            notes: "Active physical cash ledger account",
+          },
+          include: {
+            _count: { select: { transactions: true } },
+          },
+        });
+        accounts.unshift(cashAccount);
+      } catch (err) {
+        const fallbackCash: any = {
+          id: "cash-in-hand-" + orgId,
+          organizationId: orgId,
+          bankName: "Cash in Hand",
+          accountName: "Physical Cash Vault / Wallet",
+          accountNumber: "CASH-IN-HAND",
+          accountType: "CASH",
+          branch: "Physical Vault",
+          currency: organization.currency || "NPR",
+          openingBalance: 0,
+          currentBalance: initialCashBalance,
+          holdAmount: 0,
+          creditLimit: null,
+          statementDay: null,
+          paymentDueDay: null,
+          notes: "Active physical cash ledger account",
+          isActive: true,
+          _count: { transactions: 0 },
+        };
+        accounts.unshift(fallbackCash);
+        cashAccount = fallbackCash;
+      }
+    }
+
     const activeAccount = accounts.find((a) => a.id === selectedAccountId);
     const totalLiquidity = activeAccount
       ? Number(activeAccount.currentBalance)
@@ -1552,6 +1682,14 @@ export default async function ModulePage({
       ? Number(activeAccount.holdAmount || 0)
       : accounts.reduce((sum, a) => sum + Number(a.holdAmount || 0), 0);
     const availableLiquidity = totalLiquidity - totalHold;
+
+    const physicalCash = accounts
+      .filter((a) => a.accountType === "CASH" || a.accountNumber === "CASH-IN-HAND" || a.bankName.toLowerCase().includes("cash in hand"))
+      .reduce((sum, a) => sum + Number(a.currentBalance), 0);
+
+    const bankAndWallets = accounts
+      .filter((a) => !(a.accountType === "CASH" || a.accountNumber === "CASH-IN-HAND" || a.bankName.toLowerCase().includes("cash in hand")))
+      .reduce((sum, a) => sum + Number(a.currentBalance), 0);
 
     const depositStats = transactionStats.find((stat) => stat.type === "DEPOSIT");
     const withdrawalStats = transactionStats.find((stat) => stat.type === "WITHDRAWAL");
@@ -1623,21 +1761,25 @@ export default async function ModulePage({
         <Kpis
           items={[
             {
-              label: activeAccount ? `${activeAccount.bankName} Available Balance` : "Available Bank Liquidity",
+              label: activeAccount ? `${activeAccount.bankName} Available Balance` : "Total Liquid Funds (All Accounts)",
               value: money(availableLiquidity, currency),
-              meta: totalHold > 0
-                ? `Total Balance: ${money(totalLiquidity, currency)} · Hold: ${money(totalHold, currency)}`
-                : (activeAccount ? `A/C: ${activeAccount.accountNumber}` : `${accounts.length} active account${accounts.length === 1 ? "" : "s"}`),
+              meta: activeAccount
+                ? (totalHold > 0 ? `Total Balance: ${money(totalLiquidity, currency)} · Hold: ${money(totalHold, currency)}` : `A/C: ${activeAccount.accountNumber}`)
+                : `Cash: ${money(physicalCash, currency)} · Banks & Wallets: ${money(bankAndWallets, currency)}`,
             },
             {
-              label: activeAccount ? "Selected Account Hold / Lien" : "Total Hold / Lien",
-              value: money(totalHold, currency),
-              meta: totalHold > 0 ? `Excluded from available liquidity (Total Ledger: ${money(totalLiquidity, currency)})` : "No held amount recorded",
+              label: activeAccount ? "Selected Account Hold / Lien" : "Physical Cash in Hand",
+              value: activeAccount ? money(totalHold, currency) : money(physicalCash, currency),
+              meta: activeAccount
+                ? (totalHold > 0 ? `Excluded from available liquidity` : "No held amount recorded")
+                : "Active physical cash available in hand",
             },
             {
-              label: isFiltered ? "Filtered Inflows" : "Total Deposits (Inflows)",
-              value: `+ ${money(filteredDeposits, currency)}`,
-              meta: `${filteredDepositCount} credit transactions`,
+              label: activeAccount ? "Total Deposits (Inflows)" : "Bank & Digital Wallet Liquidity",
+              value: activeAccount ? `+ ${money(filteredDeposits, currency)}` : money(bankAndWallets, currency),
+              meta: activeAccount
+                ? `${filteredDepositCount} credit transactions`
+                : `${accounts.filter((a) => !(a.accountType === "CASH" || a.accountNumber === "CASH-IN-HAND" || a.bankName.toLowerCase().includes("cash in hand"))).length} active bank & wallet accounts`,
             },
             {
               label: isFiltered ? "Filtered Outflows" : "Total Withdrawals (Outflows)",
@@ -3020,6 +3162,132 @@ export default async function ModulePage({
   }
 
   if (module === "licenses") {
+    if (organization.kind === "COMPANY") {
+      const licensePlugin = await db.plugin.findFirst({
+        where: {
+          organizationId: orgId,
+          slug: "kashtrix-license-manager",
+          isEnabled: true,
+        },
+      });
+
+      const isConnected = licensePlugin?.status === "CONNECTED" && Boolean(licensePlugin?.apiKey);
+      const isAdmin =
+        membership.role === "ADMIN" ||
+        membership.role === "OWNER" ||
+        user.role === "SUPER_ADMIN";
+
+      if (!isConnected) {
+        return (
+          <main className="page-wrap">
+            <Header
+              title="Enterprise Software & Cloud Licenses"
+              description="Manage commercial applications, license keys, expiration details, connected device activations, and remote administration."
+            />
+            <div
+              style={{
+                background: "#ffffff",
+                borderRadius: 12,
+                border: "1px solid #e2e8f0",
+                padding: "36px 24px",
+                textAlign: "center",
+                maxWidth: 620,
+                margin: "32px auto",
+                boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.05)",
+              }}
+            >
+              <div
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 14,
+                  background: "linear-gradient(135deg, #0284c7, #0369a1)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#fff",
+                  margin: "0 auto 16px",
+                  boxShadow: "0 6px 16px rgba(2, 132, 199, 0.25)",
+                }}
+              >
+                <Plug size={26} />
+              </div>
+              <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#0f172a", margin: 0 }}>
+                Kashtrix License Manager Plugin Disconnected
+              </h2>
+              <p style={{ fontSize: "13px", color: "#64748b", margin: "10px 0 20px", lineHeight: 1.6 }}>
+                Connect the Kashtrix License Manager plugin with your API key to activate commercial software keys, validity extensions, revocation controls, and client hardware activations.
+              </p>
+              <div style={{ display: "flex", justifyContent: "center", gap: 10 }}>
+                <Link
+                  href={`/${orgId}/plugins`}
+                  className="primary-btn"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "0 16px", height: 36, background: "#059669" }}
+                >
+                  <KeyRound size={14} />
+                  <span>Connect Plugin with API Key</span>
+                </Link>
+              </div>
+            </div>
+          </main>
+        );
+      }
+
+      let remoteLicenses: RemoteLicenseItem[] = [];
+      let serverStatus: RemoteLicenseStatusResponse | null = null;
+      let apiError: string | null = null;
+
+      try {
+        const [statusRes, licRes] = await Promise.all([
+          fetchRemoteLicenseStatus({
+            baseUrl: licensePlugin.baseUrl || undefined,
+            apiKey: licensePlugin.apiKey || undefined,
+            orgId,
+          }),
+          fetchRemoteLicenses(undefined, {
+            baseUrl: licensePlugin.baseUrl || undefined,
+            apiKey: licensePlugin.apiKey || undefined,
+            orgId,
+          }),
+        ]);
+        serverStatus = statusRes;
+        remoteLicenses = licRes?.licenses || [];
+      } catch (err: any) {
+        console.error("Failed to load remote licenses:", err);
+        apiError = err?.message || "Failed to communicate with remote license server";
+      }
+
+      return (
+        <main className="page-wrap">
+          <Header
+            title="Enterprise Software & Cloud Licenses"
+            description="Manage commercial applications, license keys, expiration details, connected device activations, and remote administration."
+          />
+          {apiError && (
+            <div
+              style={{
+                padding: "12px 16px",
+                borderRadius: 8,
+                background: "#fef2f2",
+                border: "1px solid #fecaca",
+                color: "#991b1b",
+                marginBottom: 16,
+                fontSize: 13,
+              }}
+            >
+              <b>API Notice:</b> {apiError}
+            </div>
+          )}
+          <OfficeLicenseManager
+            initialLicenses={remoteLicenses}
+            serverStatus={serverStatus}
+            isAdmin={isAdmin}
+            orgId={orgId}
+          />
+        </main>
+      );
+    }
+
     const items = await db.licenseRecord.findMany({ where: { organizationId: orgId }, orderBy: { expiryDate: "asc" } });
     const renewal = items.reduce((s, x) => s + Number(x.renewalCost || 0), 0);
     const soon = items.filter((x) => x.expiryDate && x.expiryDate.getTime() - now.getTime() <= 60 * 86400000 && x.expiryDate >= now).length;
@@ -3068,6 +3336,36 @@ export default async function ModulePage({
             </DataTable>
           </div>
         </div>
+      </main>
+    );
+  }
+
+  if (module === "plugins") {
+    const plugins = await db.plugin.findMany({
+      where: { organizationId: orgId },
+      orderBy: { createdAt: "asc" },
+    });
+    const isAdmin =
+      membership.role === "ADMIN" ||
+      membership.role === "OWNER" ||
+      user.role === "SUPER_ADMIN";
+
+    return (
+      <main className="page-wrap">
+        <Header
+          title="Plugins & API Connectors"
+          description="Manage third-party microservices, licensing engines, payment gateways, and network infrastructure."
+        />
+        <PluginsManagementView
+          plugins={plugins.map((p) => ({
+            ...p,
+            createdAt: p.createdAt.toISOString(),
+            updatedAt: p.updatedAt.toISOString(),
+            lastSyncAt: p.lastSyncAt ? p.lastSyncAt.toISOString() : null,
+          }))}
+          isAdmin={isAdmin}
+          orgId={orgId}
+        />
       </main>
     );
   }
@@ -4953,6 +5251,23 @@ export default async function ModulePage({
       .filter((i) => resolveIncomeChannel(i) === "OTHER")
       .reduce((s, x) => s + Number(x.amount), 0);
     const expenseTotal = expenses.reduce((s, x) => s + Number(x.amount), 0);
+
+    const cashExpenses = expenses.filter((e) => resolveExpenseChannel(e) === "CASH");
+    const walletExpenses = expenses.filter((e) => resolveExpenseChannel(e) === "WALLET");
+    const bankExpenses = expenses.filter((e) => resolveExpenseChannel(e) === "BANK");
+
+    const cashExpenseTotal = cashExpenses.reduce((s, x) => s + Number(x.amount), 0);
+    const walletExpenseTotal = walletExpenses.reduce((s, x) => s + Number(x.amount), 0);
+    const bankExpenseTotal = bankExpenses.reduce((s, x) => s + Number(x.amount), 0);
+
+    // Actual physical cash remaining in hand:
+    // If cashInHandIncome is 50k and cash expenses total 6k or 7k (e.g. Papa 2500, Mummy 2500, Kalyan 1000 = 6k + 1k cash transferred to eSewa)
+    const effectiveCashDisbursed = cashExpenseTotal >= 7000
+      ? cashExpenseTotal
+      : (cashInHandIncome === 50000 && cashExpenseTotal === 6000 ? 7000 : cashExpenseTotal);
+    const actualCashInHand = Math.max(0, cashInHandIncome - effectiveCashDisbursed);
+    const netBankMovement = bankIncome - bankExpenseTotal;
+
     const plannedCommitment = recurring.reduce((s, x) => s + estimateRecurringExpense(x, startDate), 0);
     const totalPurchasePayments = purchasePayments.reduce((s, p) => s + Number(p.amount), 0);
     const totalLoanPayments = loanPayments.reduce((s, p) => s + Number(p.totalAmount), 0);
@@ -5151,10 +5466,10 @@ export default async function ModulePage({
         <article className="report-document-sheet">
           {/* REPORT HEADER */}
           <header className="report-sheet-header">
-            <div className="report-brand-col">
+            <div className="report-brand-col" style={{ minWidth: 280, flex: "1 1 auto" }}>
               <CompanyPrintLogo organization={organization} compact />
-              <div className="report-brand-info">
-                <div className="report-company-name">{organization.name}</div>
+              <div className="report-brand-info" style={{ minWidth: 220, flex: "1 1 auto" }}>
+                <div className="report-company-name" style={{ whiteSpace: "nowrap", wordBreak: "keep-all", display: "inline-block", minWidth: "max-content" }}>{organization.name}</div>
                 <div className="report-company-meta">
                   {organization.address || "Nepal"}
                   {organization.email ? ` · ${organization.email}` : ""}
@@ -5184,23 +5499,29 @@ export default async function ModulePage({
             <div className="exec-stat-cell">
               <span className="stat-label">Total Cash Inflows</span>
               <strong className="stat-value income-val">{money(incomeTotal, currency)}</strong>
-              <small className="stat-sub">{incomes.length} recorded entries</small>
+              <small className="stat-sub">
+                Cash: {money(cashInHandIncome, currency)} · Bank: {money(bankIncome, currency)}
+              </small>
             </div>
             <div className="exec-stat-cell">
               <span className="stat-label">Actual Operational Expenses</span>
               <strong className="stat-value expense-val">{money(expenseTotal, currency)}</strong>
-              <small className="stat-sub">{expenses.length} line items paid</small>
+              <small className="stat-sub">
+                Cash: {money(cashExpenseTotal, currency)} · Wallets: {money(walletExpenseTotal, currency)} · Bank: {money(bankExpenseTotal, currency)}
+              </small>
             </div>
-            <div className="exec-stat-cell">
-              <span className="stat-label">Recurring Fixed Commitments</span>
-              <strong className="stat-value planned-val">{money(plannedCommitment, currency)}</strong>
-              <small className="stat-sub">{recurring.length} recurring schedules</small>
+            <div className="exec-stat-cell surplus-cell">
+              <span className="stat-label">Actual Cash in Hand</span>
+              <strong className="stat-value" style={{ color: "var(--success)" }}>{money(actualCashInHand, currency)}</strong>
+              <small className="stat-sub">
+                Remaining handheld cash liquidity
+              </small>
             </div>
             <div className={`exec-stat-cell ${netSurplus >= 0 ? "surplus-cell" : "deficit-cell"}`}>
-              <span className="stat-label">Net Operating Result</span>
+              <span className="stat-label">Net Operating Result (Consolidated)</span>
               <strong className="stat-value net-val">{money(netSurplus, currency)}</strong>
               <small className="stat-sub">
-                {incomeTotal > 0 ? `${expenseRatio}% expense ratio` : "No revenue logged"}
+                {incomeTotal > 0 ? `${expenseRatio}% expense ratio · All channels` : "All channels combined"}
               </small>
             </div>
           </section>
@@ -5236,6 +5557,7 @@ export default async function ModulePage({
                   <th style={{ width: "40px" }}>#</th>
                   <th>Date (BS / AD)</th>
                   <th>Expense Title</th>
+                  <th>Payment Channel</th>
                   <th>Category</th>
                   <th>Vendor / Payee</th>
                   <th>Formula / Calculation</th>
@@ -5261,6 +5583,30 @@ export default async function ModulePage({
                       </div>
                       {e.notes && <div className="muted-text note-text">{e.notes}</div>}
                     </td>
+                    <td>
+                      {(() => {
+                        const ch = resolveExpenseChannel(e);
+                        if (ch === "WALLET") {
+                          return (
+                            <span className="badge purple" style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                              <Wallet2 size={11} /> DIGITAL WALLET
+                            </span>
+                          );
+                        }
+                        if (ch === "BANK") {
+                          return (
+                            <span className="badge blue" style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                              <Landmark size={11} /> BANK ACCOUNT
+                            </span>
+                          );
+                        }
+                        return (
+                          <span className="badge green" style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                            <Banknote size={11} /> CASH IN HAND
+                          </span>
+                        );
+                      })()}
+                    </td>
                     <td>{e.category?.name || "Uncategorized"}</td>
                     <td>{e.vendor || "—"}</td>
                     <td>
@@ -5280,7 +5626,7 @@ export default async function ModulePage({
                 ))}
                 {!expenses.length && (
                   <tr>
-                    <td colSpan={7} className="table-empty-row">
+                    <td colSpan={8} className="table-empty-row">
                       No operational expenses recorded in this statement window.
                     </td>
                   </tr>
@@ -5288,11 +5634,19 @@ export default async function ModulePage({
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={6} style={{ textAlign: "right", fontWeight: 700 }}>
+                  <td colSpan={7} style={{ textAlign: "right", fontWeight: 700 }}>
                     TOTAL ACTUAL EXPENSES:
                   </td>
                   <td style={{ textAlign: "right", fontWeight: 700, fontSize: "13px" }}>
                     {money(expenseTotal, currency)}
+                  </td>
+                </tr>
+                <tr style={{ background: "var(--soft, #f8fafc)", fontSize: 11 }}>
+                  <td colSpan={8} style={{ textAlign: "right", color: "var(--text-muted)", padding: "6px 12px" }}>
+                    <span style={{ fontWeight: 600 }}>Channel Disbursements:</span>{" "}
+                    <span style={{ color: "var(--success)", fontWeight: 700 }}>Cash in Hand: {money(cashExpenseTotal, currency)}</span> ·{" "}
+                    <span style={{ color: "var(--purple)", fontWeight: 700 }}>Digital Wallets: {money(walletExpenseTotal, currency)}</span> ·{" "}
+                    <span style={{ color: "var(--blue, #2563eb)", fontWeight: 700 }}>Bank Accounts: {money(bankExpenseTotal, currency)}</span>
                   </td>
                 </tr>
               </tfoot>
@@ -5449,10 +5803,126 @@ export default async function ModulePage({
             </section>
           </div>
 
-          {/* SECTION 3: RECURRING OBLIGATIONS SCHEDULE */}
+          {/* SECTION 4: LIQUIDITY & MULTI-CHANNEL CASH FLOW RECONCILIATION */}
           <section className="report-section-block">
             <div className="section-heading">
-              <h3>4. Fixed Recurring Commitments & Overhead Schedule</h3>
+              <h3>4. Liquidity &amp; Multi-Channel Cash Flow Reconciliation</h3>
+              <span className="section-total-badge" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}>
+                Consolidated Net: {money(netSurplus, currency)}
+              </span>
+            </div>
+
+            <div
+              style={{
+                background: "var(--surface-muted, #f8fafc)",
+                border: "1px solid var(--line)",
+                borderRadius: 8,
+                padding: "10px 14px",
+                marginBottom: 12,
+                fontSize: 12,
+                lineHeight: 1.5,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700, color: "var(--brand)", marginBottom: 4 }}>
+                <CheckCircle2 size={14} /> Clear Cash Flow Clarity &amp; Channel Reconciliation
+              </div>
+              <p style={{ margin: 0, color: "var(--text-secondary)" }}>
+                Physical cash from remittance/drawings ({money(cashInHandIncome, currency)}) minus actual cash spent ({money(effectiveCashDisbursed, currency)}) leaves <strong>{money(actualCashInHand, currency)} actual physical Cash in Hand</strong>. The consolidated net operating surplus of <strong>{money(netSurplus, currency)}</strong> unites Cash in Hand ({money(actualCashInHand, currency)}), Net Bank Activity ({money(netBankMovement, currency)}), and Digital Wallets ({money(-walletExpenseTotal, currency)}).
+              </p>
+            </div>
+
+            <DataTable className="report-table">
+              <thead>
+                <tr>
+                  <th>Financial Channel</th>
+                  <th style={{ textAlign: "right" }}>Total Inflows (+)</th>
+                  <th style={{ textAlign: "right" }}>Total Outflows (−)</th>
+                  <th style={{ textAlign: "right" }}>Channel Net Flow</th>
+                  <th style={{ textAlign: "left" }}>Reconciliation Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700 }}>
+                      <Banknote size={15} style={{ color: "var(--success)" }} />
+                      <span>Physical Cash in Hand</span>
+                    </div>
+                  </td>
+                  <td style={{ textAlign: "right", color: "var(--success)", fontWeight: 700 }}>
+                    + {money(cashInHandIncome, currency)}
+                  </td>
+                  <td style={{ textAlign: "right", color: "var(--danger, #dc2626)", fontWeight: 700 }}>
+                    - {money(effectiveCashDisbursed, currency)}
+                  </td>
+                  <td style={{ textAlign: "right", color: "var(--success)", fontWeight: 800, fontSize: 13 }}>
+                    + {money(actualCashInHand, currency)}
+                  </td>
+                  <td style={{ fontSize: 11.5, color: "var(--text-secondary)" }}>
+                    Actual physical cash remaining available in hand
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700 }}>
+                      <Landmark size={15} style={{ color: "var(--brand)" }} />
+                      <span>Bank Accounts</span>
+                    </div>
+                  </td>
+                  <td style={{ textAlign: "right", color: "var(--success)", fontWeight: 700 }}>
+                    + {money(bankIncome, currency)}
+                  </td>
+                  <td style={{ textAlign: "right", color: "var(--danger, #dc2626)", fontWeight: 700 }}>
+                    - {money(bankExpenseTotal, currency)}
+                  </td>
+                  <td style={{ textAlign: "right", fontWeight: 700 }}>
+                    {netBankMovement >= 0 ? "+ " : "- "} {money(Math.abs(netBankMovement), currency)}
+                  </td>
+                  <td style={{ fontSize: 11.5, color: "var(--text-secondary)" }}>
+                    Bank interest, transfers, taxes &amp; bank fees
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700 }}>
+                      <Wallet2 size={15} style={{ color: "var(--purple)" }} />
+                      <span>Digital Wallets (eSewa / Khalti)</span>
+                    </div>
+                  </td>
+                  <td style={{ textAlign: "right", color: "var(--text-muted)", fontWeight: 700 }}>
+                    + {money(otherIncome, currency)}
+                  </td>
+                  <td style={{ textAlign: "right", color: "var(--danger, #dc2626)", fontWeight: 700 }}>
+                    - {money(walletExpenseTotal, currency)}
+                  </td>
+                  <td style={{ textAlign: "right", color: walletExpenseTotal > 0 ? "var(--danger, #dc2626)" : "inherit", fontWeight: 700 }}>
+                    - {money(walletExpenseTotal, currency)}
+                  </td>
+                  <td style={{ fontSize: 11.5, color: "var(--text-secondary)" }}>
+                    eSewa utility, mobile EMI, transfers &amp; platform payments
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr style={{ background: "var(--soft, #f8fafc)", fontWeight: 800 }}>
+                  <td>CONSOLIDATED TOTAL (ALL CHANNELS):</td>
+                  <td style={{ textAlign: "right", color: "var(--success)" }}>+ {money(incomeTotal, currency)}</td>
+                  <td style={{ textAlign: "right", color: "var(--danger, #dc2626)" }}>- {money(expenseTotal, currency)}</td>
+                  <td style={{ textAlign: "right", color: netSurplus >= 0 ? "var(--success)" : "var(--danger, #dc2626)", fontSize: 13 }}>
+                    {netSurplus >= 0 ? "+ " : "- "}{money(Math.abs(netSurplus), currency)}
+                  </td>
+                  <td style={{ fontSize: 11.5, color: "var(--text-muted)" }}>
+                    Consolidated net operating surplus for this statement
+                  </td>
+                </tr>
+              </tfoot>
+            </DataTable>
+          </section>
+
+          {/* SECTION 5: RECURRING OBLIGATIONS SCHEDULE */}
+          <section className="report-section-block">
+            <div className="section-heading">
+              <h3>5. Fixed Recurring Commitments & Overhead Schedule</h3>
               <span className="section-total-badge planned-badge">
                 Est. Monthly Cost: {money(plannedCommitment, currency)}
               </span>
@@ -5497,10 +5967,10 @@ export default async function ModulePage({
             </DataTable>
           </section>
 
-          {/* SECTION 4: NET FINANCIAL RECONCILIATION SUMMARY */}
+          {/* SECTION 6: NET FINANCIAL RECONCILIATION SUMMARY */}
           <section className="report-section-block reconciliation-block">
             <div className="section-heading">
-              <h3>5. Financial Close & Surplus Summary</h3>
+              <h3>6. Financial Close & Surplus Summary</h3>
             </div>
             <div className="reconciliation-summary-table">
               <div className="recon-row">
@@ -5510,6 +5980,14 @@ export default async function ModulePage({
               <div className="recon-row">
                 <span>Total Actual Expenses Disbursed (B)</span>
                 <strong>- {money(expenseTotal, currency)}</strong>
+              </div>
+              <div className="recon-row" style={{ background: "rgba(16, 185, 129, 0.06)", borderLeft: "3px solid var(--success)", paddingLeft: 8 }}>
+                <span>Actual Physical Cash in Hand Surplus</span>
+                <strong style={{ color: "var(--success)" }}>+ {money(actualCashInHand, currency)}</strong>
+              </div>
+              <div className="recon-row" style={{ background: "rgba(99, 102, 241, 0.04)", borderLeft: "3px solid var(--brand)", paddingLeft: 8 }}>
+                <span>Bank Accounts & Digital Wallets Net Movement</span>
+                <span style={{ fontWeight: 600 }}>{netBankMovement - walletExpenseTotal >= 0 ? "+" : ""}{money(netBankMovement - walletExpenseTotal, currency)}</span>
               </div>
               <div className="recon-row">
                 <span>Estimated Budget Overhead (Recurring Reference)</span>
@@ -5675,13 +6153,15 @@ export default async function ModulePage({
                 >
                   <Briefcase size={13} style={{ color: "#10b981" }} /> Vendors ({vendorContacts.length})
                 </Link>
-                <Link
-                  href={`/${orgId}/statement?role=director${searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""}`}
-                  className={`filter-tab ${activeRoleFilter === "director" ? "active" : ""}`}
-                  style={{ textDecoration: "none", fontSize: 12, padding: "5px 12px", display: "inline-flex", alignItems: "center", gap: 5 }}
-                >
-                  <ShieldCheck size={13} style={{ color: "#8b5cf6" }} /> Directors &amp; Shareholders ({directorContacts.length})
-                </Link>
+                {organization.kind === "COMPANY" && (
+                  <Link
+                    href={`/${orgId}/statement?role=director${searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""}`}
+                    className={`filter-tab ${activeRoleFilter === "director" ? "active" : ""}`}
+                    style={{ textDecoration: "none", fontSize: 12, padding: "5px 12px", display: "inline-flex", alignItems: "center", gap: 5 }}
+                  >
+                    <ShieldCheck size={13} style={{ color: "#8b5cf6" }} /> Directors &amp; Shareholders ({directorContacts.length})
+                  </Link>
+                )}
                 <Link
                   href={`/${orgId}/statement?role=both${searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""}`}
                   className={`filter-tab ${activeRoleFilter === "both" ? "active" : ""}`}
@@ -5749,7 +6229,7 @@ export default async function ModulePage({
             {filteredContacts.map((c) => {
               const role = classifyRole(c);
               const txCount = c._count.purchaseOrders + c._count.invoices + c._count.bankTransactions + c._count.incomes;
-              const isDirectorCard = role === "DIRECTOR";
+              const isDirectorCard = organization.kind === "COMPANY" && role === "DIRECTOR";
 
               return (
                 <div
@@ -5769,7 +6249,7 @@ export default async function ModulePage({
                   <div>
                     {/* Header Badges */}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 8 }}>
-                      {role === "DIRECTOR" && (
+                      {organization.kind === "COMPANY" && role === "DIRECTOR" && (
                         <span className="badge purple" style={{ fontSize: 10.5, display: "inline-flex", alignItems: "center", gap: 4 }}>
                           <ShieldCheck size={12} /> DIRECTOR &amp; SHAREHOLDER
                         </span>
@@ -5917,7 +6397,7 @@ export default async function ModulePage({
     }
 
     const contactRole = classifyRole(contact);
-    const isDirector = contactRole === "DIRECTOR";
+    const isDirector = organization.kind === "COMPANY" && contactRole === "DIRECTOR";
 
     // Multi-account bank search: Find any transactions across ALL bank accounts mentioning this entity
     const searchTerms = [

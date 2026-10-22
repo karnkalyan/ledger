@@ -67,10 +67,10 @@ export default async function NewEntryPage({params, searchParams}: {
  const products = rawProducts.map(p => ({id:p.id,name:p.name,sku:p.sku,salePrice:Number(p.salePrice),purchasePrice:Number(p.purchasePrice)}));
  let form: React.ReactNode;
  switch(entry.type) {
- case "recurring-rule": form = (<>
+  case "recurring-rule": form = (<>
             <ExpenseForm action={saveRecurringExpenseAction} orgId={orgId} categories={categories.map((c) => ({ id: c.id, name: c.name }))} recurring />
           </>); break;
- case "new-expense": form = (<>
+  case "new-expense": form = (<>
             <ExpenseForm
               action={saveExpenseAction}
               orgId={orgId}
@@ -83,6 +83,7 @@ export default async function NewEntryPage({params, searchParams}: {
                 currentBalance: Number(b.currentBalance),
               }))}
               cashInHandBalance={cashInHandBalance}
+              isCompany={organization.kind === "COMPANY"}
             />
           </>); break;
   case "record-income": form = (
@@ -99,6 +100,7 @@ export default async function NewEntryPage({params, searchParams}: {
       }))}
       action={saveIncomeAction}
       initialContactId={contactId || ""}
+      isCompany={organization.kind === "COMPANY"}
     />
   ); break;
   case "new-account": form = (
@@ -147,46 +149,48 @@ export default async function NewEntryPage({params, searchParams}: {
                   <input name="partyName" placeholder="Client, Vendor, or Custom entity name" />
                 </label>
 
-                {/* DIRECTOR ACCOUNT CATEGORIZATION */}
-                <div className="field full" style={{ background: "var(--soft)", padding: "12px 14px", borderRadius: 8, border: "1px solid var(--line)" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600 }}>
-                    <input
-                      type="checkbox"
-                      name="isDirectorAccount"
-                      id="isDirectorAccountCheckbox"
-                      style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
-                    />
-                    <span>Categorize under Director Current Account ({entry.type === "record-deposit" ? "Capital Inflow / Loan" : "Personal Drawings"})</span>
-                  </label>
-                  <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <label className="field" style={{ margin: 0 }}>
-                      <span className="field-label" style={{ fontSize: 11 }}>Director Name</span>
+                {/* DIRECTOR ACCOUNT CATEGORIZATION - ONLY FOR COMPANIES */}
+                {organization.kind === "COMPANY" && (
+                  <div className="field full" style={{ background: "var(--soft)", padding: "12px 14px", borderRadius: 8, border: "1px solid var(--line)" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600 }}>
                       <input
-                        name="directorName"
-                        defaultValue="Director"
-                        placeholder="Director Name"
+                        type="checkbox"
+                        name="isDirectorAccount"
+                        id="isDirectorAccountCheckbox"
+                        style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
                       />
+                      <span>Categorize under Director Current Account ({entry.type === "record-deposit" ? "Capital Inflow / Loan" : "Personal Drawings"})</span>
                     </label>
-                    <label className="field" style={{ margin: 0 }}>
-                      <span className="field-label" style={{ fontSize: 11 }}>Director Transaction Type</span>
-                      <select name="directorTxType">
-                        {entry.type === "record-deposit" ? (
-                          <>
-                            <option value="CAPITAL">Director Capital Inflow</option>
-                            <option value="LOAN">Director Loan to Company</option>
-                            <option value="DRAWINGS_REPAYMENT">Director Drawings Repayment</option>
-                          </>
-                        ) : (
-                          <>
-                            <option value="DRAWINGS">Director Personal Drawings</option>
-                            <option value="REIMBURSEMENT">Loan Repayment / Reimbursement to Director</option>
-                            <option value="EXPENSE_ADVANCE">Director Advance</option>
-                          </>
-                        )}
-                      </select>
-                    </label>
+                    <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      <label className="field" style={{ margin: 0 }}>
+                        <span className="field-label" style={{ fontSize: 11 }}>Director Name</span>
+                        <input
+                          name="directorName"
+                          defaultValue="Director"
+                          placeholder="Director Name"
+                        />
+                      </label>
+                      <label className="field" style={{ margin: 0 }}>
+                        <span className="field-label" style={{ fontSize: 11 }}>Director Transaction Type</span>
+                        <select name="directorTxType">
+                          {entry.type === "record-deposit" ? (
+                            <>
+                              <option value="CAPITAL">Director Capital Inflow</option>
+                              <option value="LOAN">Director Loan to Company</option>
+                              <option value="DRAWINGS_REPAYMENT">Director Drawings Repayment</option>
+                            </>
+                          ) : (
+                            <>
+                              <option value="DRAWINGS">Director Personal Drawings</option>
+                              <option value="REIMBURSEMENT">Loan Repayment / Reimbursement to Director</option>
+                              <option value="EXPENSE_ADVANCE">Director Advance</option>
+                            </>
+                          )}
+                        </select>
+                      </label>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {entry.type === "record-withdrawal" && (
                   <div className="field full" style={{ background: "rgba(99, 102, 241, 0.05)", padding: "12px 14px", borderRadius: 8, border: "1px solid var(--brand-border)" }}>

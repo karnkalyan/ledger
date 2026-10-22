@@ -1771,19 +1771,23 @@ textarea { resize: vertical; }
   flex-direction: row !important;
   align-items: flex-start !important;
   gap: 16px !important;
-  min-width: 0 !important;
+  min-width: 280px !important;
+  flex: 1 1 auto !important;
 }
 .report-brand-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-width: 0;
+  min-width: 220px;
+  flex: 1 1 auto;
 }
 .report-company-name {
   font-size: 20px;
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.01em;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
 }
 .report-company-meta {
   margin-top: 3px;
@@ -2441,10 +2445,20 @@ button.filter-tab.active * {
     padding-bottom: 12px !important;
     border-bottom: 2px solid #1e293b !important;
   }
+  .report-brand-col {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    gap: 14px !important;
+    min-width: 65mm !important;
+    flex: 1 1 auto !important;
+  }
   .report-company-name {
     font-size: 18px !important;
     font-weight: 800 !important;
     color: #0f172a !important;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
   }
   .report-company-meta {
     font-size: 10.5px !important;
@@ -3006,7 +3020,7 @@ button.filter-tab.active * {
   .company-print-logo.compact { max-width: 30mm !important; max-height: 12mm !important; margin: 0 !important; }
   .company-print-logo-fallback { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; margin: 0 !important; flex-shrink: 0 !important; }
   .invoice-print-container { border: none !important; padding: 0 !important; color: #0f172a !important; background: white !important; }
-  .invoice-company-details, .report-brand-col { display: flex !important; flex-direction: row !important; align-items: flex-start !important; gap: 14px !important; }
+  .invoice-company-details, .report-brand-col { display: flex !important; flex-direction: row !important; align-items: flex-start !important; gap: 14px !important; min-width: 65mm !important; flex: 1 1 auto !important; }
   .invoice-brand-row { flex-direction: row !important; break-inside: avoid; }
   .invoice-meta-col { text-align: right !important; }
   .invoice-party-grid { grid-template-columns: 1fr 1fr !important; break-inside: avoid; }
