@@ -1,8 +1,31 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { CheckCircle2, X, ReceiptText, Calendar, Clock, Sparkles } from "lucide-react";
-import { saveRentalHouseAction, setActiveRentalHouseAction, deleteRentalHouseAction, recordRentalPaymentAction } from "@/app/(dashboard)/actions";
+import {
+  CheckCircle2,
+  X,
+  ReceiptText,
+  Calendar,
+  Clock,
+  Sparkles,
+  Layers,
+  ArrowDownCircle,
+  PlusCircle,
+  Check,
+  AlertTriangle,
+  CreditCard,
+  Building2,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import {
+  saveRentalHouseAction,
+  setActiveRentalHouseAction,
+  deleteRentalHouseAction,
+  recordRentalPaymentAction,
+  recordLumpSumRentPaymentAction,
+  batchGenerateRentalBillsAction,
+} from "@/app/(dashboard)/actions";
 import { NepaliDatePicker } from "@/components/nepali-date-picker";
 import {
   adToBs,
@@ -114,29 +137,23 @@ export function DualBillingMonthPicker({
     try {
       return adToBs(new Date());
     } catch {
-      return { year: 2083, month: 7 };
+      return { year: 2083, month: 7, day: 1 };
     }
   }, []);
 
-  const now = new Date();
   const [calendarMode, setCalendarMode] = useState<"BS" | "AD">("BS");
+  const parsed = useMemo(() => {
+    const parts = (value || "").split("-").map(Number);
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+      return { y: parts[0], m: parts[1] };
+    }
+    return { y: currentBs.year, m: currentBs.month };
+  }, [value, currentBs]);
 
-  const [bsYear, setBsYear] = useState<number>(() => {
-    const p = value.split("-").map(Number);
-    return p.length === 2 && p[0] >= 2070 ? p[0] : currentBs.year;
-  });
-  const [bsMonth, setBsMonth] = useState<number>(() => {
-    const p = value.split("-").map(Number);
-    return p.length === 2 && p[0] >= 2070 ? p[1] : currentBs.month;
-  });
-  const [adYear, setAdYear] = useState<number>(() => {
-    const p = value.split("-").map(Number);
-    return p.length === 2 && p[0] < 2070 ? p[0] : now.getFullYear();
-  });
-  const [adMonth, setAdMonth] = useState<number>(() => {
-    const p = value.split("-").map(Number);
-    return p.length === 2 && p[0] < 2070 ? p[1] : now.getMonth() + 1;
-  });
+  const [bsYear, setBsYear] = useState<number>(parsed.y >= 2070 ? parsed.y : currentBs.year);
+  const [bsMonth, setBsMonth] = useState<number>(parsed.y >= 2070 ? parsed.m : currentBs.month);
+  const [adYear, setAdYear] = useState<number>(parsed.y < 2070 ? parsed.y : new Date().getFullYear());
+  const [adMonth, setAdMonth] = useState<number>(parsed.y < 2070 ? parsed.m : new Date().getMonth() + 1);
 
   const handleBsUpdate = (y: number, m: number) => {
     setBsYear(y);
@@ -199,7 +216,7 @@ export function DualBillingMonthPicker({
   const adYears = Array.from({ length: 16 }, (_, i) => 2020 + i);
 
   return (
-    <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 8, padding: 12, marginBottom: 12 }}>
+    <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--radius-sm)", padding: 12, marginBottom: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Calendar size={14} color="var(--brand)" />
@@ -236,7 +253,7 @@ export function DualBillingMonthPicker({
             <select
               value={bsYear}
               onChange={(e) => handleBsUpdate(Number(e.target.value), bsMonth)}
-              style={{ width: "100%", padding: "6px 8px", borderRadius: 6, border: "1px solid var(--line)", background: "var(--background)", color: "var(--text)", fontSize: 12 }}
+              style={{ width: "100%", padding: "5px 8px", borderRadius: "var(--radius-sm)", border: "1px solid var(--line)", background: "var(--surface)", color: "var(--text)", fontSize: 12 }}
             >
               {bsYears.map((y) => (
                 <option key={y} value={y}>{y} BS</option>
@@ -248,7 +265,7 @@ export function DualBillingMonthPicker({
             <select
               value={bsMonth}
               onChange={(e) => handleBsUpdate(bsYear, Number(e.target.value))}
-              style={{ width: "100%", padding: "6px 8px", borderRadius: 6, border: "1px solid var(--line)", background: "var(--background)", color: "var(--text)", fontSize: 12 }}
+              style={{ width: "100%", padding: "5px 8px", borderRadius: "var(--radius-sm)", border: "1px solid var(--line)", background: "var(--surface)", color: "var(--text)", fontSize: 12 }}
             >
               {NEPALI_MONTHS_EN.map((mName, idx) => (
                 <option key={mName} value={idx + 1}>
@@ -265,7 +282,7 @@ export function DualBillingMonthPicker({
             <select
               value={adYear}
               onChange={(e) => handleAdUpdate(Number(e.target.value), adMonth)}
-              style={{ width: "100%", padding: "6px 8px", borderRadius: 6, border: "1px solid var(--line)", background: "var(--background)", color: "var(--text)", fontSize: 12 }}
+              style={{ width: "100%", padding: "5px 8px", borderRadius: "var(--radius-sm)", border: "1px solid var(--line)", background: "var(--surface)", color: "var(--text)", fontSize: 12 }}
             >
               {adYears.map((y) => (
                 <option key={y} value={y}>{y} AD</option>
@@ -277,7 +294,7 @@ export function DualBillingMonthPicker({
             <select
               value={adMonth}
               onChange={(e) => handleAdUpdate(adYear, Number(e.target.value))}
-              style={{ width: "100%", padding: "6px 8px", borderRadius: 6, border: "1px solid var(--line)", background: "var(--background)", color: "var(--text)", fontSize: 12 }}
+              style={{ width: "100%", padding: "5px 8px", borderRadius: "var(--radius-sm)", border: "1px solid var(--line)", background: "var(--surface)", color: "var(--text)", fontSize: 12 }}
             >
               {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((name, i) => (
                 <option key={name} value={i + 1}>
@@ -290,7 +307,7 @@ export function DualBillingMonthPicker({
       )}
 
       {/* Live Dual Synchronization Banner */}
-      <div style={{ fontSize: 11, color: "var(--brand)", background: "var(--brand-soft)", padding: "5px 10px", borderRadius: 6, marginBottom: 8, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+      <div style={{ fontSize: 11, color: "var(--brand)", background: "var(--brand-soft)", padding: "4px 8px", borderRadius: 4, marginBottom: 8, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
         <Clock size={12} />
         <span>{previewText}</span>
       </div>
@@ -313,7 +330,7 @@ export function DualBillingMonthPicker({
                 padding: "2px 7px",
                 borderRadius: 4,
                 border: isActive ? "1px solid var(--brand)" : "1px solid var(--line)",
-                background: isActive ? "var(--brand)" : "var(--background)",
+                background: isActive ? "var(--brand)" : "var(--surface)",
                 color: isActive ? "#ffffff" : "var(--text)",
                 cursor: "pointer",
                 fontWeight: isActive ? 700 : 500,
@@ -341,15 +358,38 @@ export function RentalHouseSection({
   const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
   const [selectedHouse, setSelectedHouse] = useState<RentalHouseItem | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
+
+  // Dialog states
+  const [showSingleBillForm, setShowSingleBillForm] = useState(false);
+  const [showLumpSumModal, setShowLumpSumModal] = useState(false);
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "DUE" | "PAID">("ALL");
+  const [expandedBillId, setExpandedBillId] = useState<string | null>(null);
+
+  // Lump sum calculation state
+  const [lumpSumAmount, setLumpSumAmount] = useState<number>(30000);
+
+  // Batch generator state
+  const currentBsYear = 2083;
+  const [batchYear, setBatchYear] = useState<number>(currentBsYear);
+  const [batchMonths, setBatchMonths] = useState<number[]>([1, 2, 3, 4, 5]);
+
   const activeHouse = rentalHouses.find((house) => house.isActive) || rentalHouses[0];
-  const allBills = rentalHouses.flatMap((house) => house.bills);
+  const allBills = useMemo(() => {
+    return rentalHouses.flatMap((house) => house.bills).sort((a, b) => b.billingMonth.localeCompare(a.billingMonth));
+  }, [rentalHouses]);
+
   const totalBilled = allBills.reduce((sum, bill) => sum + Number(bill.totalAmount), 0);
   const totalPaid = allBills.reduce(
-    (sum, bill) => sum + bill.payments.reduce((paymentSum, payment) => paymentSum + Number(payment.amount), 0),
-    0,
+    (sum, bill) => sum + bill.payments.reduce((pSum, p) => pSum + Number(p.amount), 0),
+    0
   );
   const totalDue = Math.max(0, totalBilled - totalPaid);
+
+  const unpaidBillsCount = allBills.filter((b) => {
+    const paid = b.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+    return Number(b.totalAmount) - paid > 0;
+  }).length;
 
   const defaultBsMonthKey = useMemo(() => {
     try {
@@ -361,6 +401,38 @@ export function RentalHouseSection({
   }, []);
 
   const [selectedBillingMonth, setSelectedBillingMonth] = useState<string>(defaultBsMonthKey);
+
+  // Lump sum breakdown simulation preview
+  const lumpSumBreakdown = useMemo(() => {
+    if (!activeHouse || lumpSumAmount <= 0) return { settled: [], partial: null, remainingDues: 0 };
+    let rem = lumpSumAmount;
+    const settled: { month: string; amount: number }[] = [];
+    let partial: { month: string; paid: number; dueRemaining: number } | null = null;
+
+    const billsChronological = [...activeHouse.bills].sort((a, b) => a.billingMonth.localeCompare(b.billingMonth));
+    for (const b of billsChronological) {
+      if (rem <= 0) break;
+      const bTotal = Number(b.totalAmount);
+      const bPaid = b.payments.reduce((s, p) => s + Number(p.amount), 0);
+      const due = Math.max(0, bTotal - bPaid);
+      if (due <= 0) continue;
+
+      if (rem >= due) {
+        settled.push({ month: b.billingMonth, amount: due });
+        rem -= due;
+      } else {
+        partial = { month: b.billingMonth, paid: rem, dueRemaining: due - rem };
+        rem = 0;
+      }
+    }
+    const currentUnpaidTotal = billsChronological.reduce((sum, b) => {
+      const p = b.payments.reduce((s, x) => s + Number(x.amount), 0);
+      return sum + Math.max(0, Number(b.totalAmount) - p);
+    }, 0);
+    const remainingDues = Math.max(0, currentUnpaidTotal - lumpSumAmount);
+
+    return { settled, partial, remainingDues };
+  }, [activeHouse, lumpSumAmount]);
 
   const handleOpenCreate = () => {
     setSelectedHouse(null);
@@ -377,84 +449,160 @@ export function RentalHouseSection({
     setSelectedHouse(null);
   };
 
+  const filteredBills = allBills.filter((bill) => {
+    const paid = bill.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+    const due = Math.max(0, Number(bill.totalAmount) - paid);
+    if (statusFilter === "DUE") return due > 0;
+    if (statusFilter === "PAID") return due <= 0;
+    return true;
+  });
+
   return (
-    <div style={{ marginTop: 24, marginBottom: 16 }}>
+    <div style={{ marginTop: 24, marginBottom: 20 }}>
+      {/* Header View */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          marginBottom: 12,
+          marginBottom: 14,
+          flexWrap: "wrap",
+          gap: 12,
         }}
       >
         <div>
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
-            {isCompany ? "Office Lease & Premises Management" : "House Owner & Tenancy Management"}
+          <span className="page-eyebrow">
+            {isCompany ? "PREMISES & FACILITY MANAGEMENT" : "HOUSEHOLD RENT & COMMITMENT LEDGER"}
+          </span>
+          <h3 style={{ margin: "2px 0 0", fontSize: 16, fontWeight: 700, color: "var(--text)" }}>
+            {isCompany ? "Office Lease & Premises Statement" : "House Owner & Tenancy Statement"}
           </h3>
           <p style={{ margin: "3px 0 0", fontSize: 12, color: "var(--text-muted)" }}>
-            {isCompany
-              ? "Configure office premises, landlord details, monthly office rent, electricity unit rate, and water/CAM maintenance fees. The active lease drives company recurring commitments."
-              : "Configure rented residences, landlord details, monthly rent, electricity unit rate, and water/garbage fee. The currently active house automatically drives household commitments."}
+            Multi-month rent statement, automatic FIFO payment allocation, dual BS/AD accounting, and liability tracking.
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           {activeHouse && (
-            <button
-              type="button"
-              onClick={() => setShowPaymentForm((value) => !value)}
-              className="success-btn"
-              style={{ padding: "6px 12px", fontSize: 12 }}
-            >
-              <ReceiptText size={13} /> {showPaymentForm ? "Close Payment Form" : "Record Rent / Utility Payment"}
-            </button>
+            <>
+              {/* Batch Generate Months */}
+              <button
+                type="button"
+                onClick={() => setShowBatchModal(true)}
+                className="secondary-btn"
+                title="Auto-insert multi-month commitments into the statement"
+              >
+                <Layers size={13} /> Auto-Generate Months (BS)
+              </button>
+
+              {/* Record Lump Sum Payment */}
+              <button
+                type="button"
+                onClick={() => {
+                  setLumpSumAmount(Number(activeHouse.monthlyRent) * 2 || 30000);
+                  setShowLumpSumModal(true);
+                }}
+                className="primary-btn"
+                title="Pay arbitrary lump-sum (e.g. NPR 30,000 or 70,000) and auto-allocate across oldest unpaid months"
+              >
+                <ArrowDownCircle size={13} /> Record Lump-Sum Rent Payment
+              </button>
+
+              {/* Single Month Entry */}
+              <button
+                type="button"
+                onClick={() => setShowSingleBillForm((v) => !v)}
+                className="secondary-btn"
+              >
+                <ReceiptText size={13} /> {showSingleBillForm ? "Close Form" : "Single Month Bill"}
+              </button>
+            </>
           )}
+
           <button
             type="button"
             onClick={handleOpenCreate}
-            className="primary-btn"
-            style={{ padding: "6px 12px", fontSize: 12 }}
+            className="secondary-btn"
           >
-            {isCompany ? "+ Register Office Lease / Premises" : "+ Register Rental House"}
+            {isCompany ? "+ Register Office Lease" : "+ Register Rental House"}
           </button>
         </div>
       </div>
 
-      {allBills.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 14 }}>
-          {[
-            ["Total billed", totalBilled, "var(--text)"],
-            ["Actual paid", totalPaid, "var(--success)"],
-            ["Remaining dues", totalDue, totalDue > 0 ? "var(--red)" : "var(--success)"],
-          ].map(([label, value, color]) => (
-            <div key={String(label)} style={{ padding: 12, border: "1px solid var(--line)", borderRadius: 8, background: "var(--soft)" }}>
-              <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>{label}</div>
-              <strong style={{ color: String(color), fontSize: 17 }}>
-                {currency} {Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </strong>
-            </div>
-          ))}
+      {/* KPI Highlight Strip */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 16 }}>
+        <div className="kpi-card" style={{ padding: "12px 16px" }}>
+          <div className="kpi-top">
+            <span>Total Accrued Bills</span>
+            <Building2 size={15} color="var(--text-muted)" />
+          </div>
+          <div className="kpi-value">
+            {currency} {totalBilled.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          </div>
+          <div className="kpi-meta">{allBills.length} recorded billing periods</div>
         </div>
-      )}
 
-      {showPaymentForm && activeHouse && (
+        <div className="kpi-card" style={{ padding: "12px 16px" }}>
+          <div className="kpi-top">
+            <span>Total Paid to Landlord</span>
+            <CheckCircle2 size={15} color="var(--success)" />
+          </div>
+          <div className="kpi-value" style={{ color: "var(--success)" }}>
+            {currency} {totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          </div>
+          <div className="kpi-meta">Actual disbursements disbursed</div>
+        </div>
+
+        <div className="kpi-card" style={{ padding: "12px 16px", borderColor: totalDue > 0 ? "var(--danger-border)" : "var(--line)" }}>
+          <div className="kpi-top">
+            <span>Remaining Unpaid Dues</span>
+            <AlertTriangle size={15} color={totalDue > 0 ? "var(--danger)" : "var(--success)"} />
+          </div>
+          <div className="kpi-value" style={{ color: totalDue > 0 ? "var(--danger)" : "var(--success)" }}>
+            {currency} {totalDue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          </div>
+          <div className="kpi-meta">
+            {totalDue > 0 ? `${unpaidBillsCount} unpaid/partial billing period(s) pending` : "All rent & utilities fully settled"}
+          </div>
+        </div>
+
+        {activeHouse && (
+          <div className="kpi-card" style={{ padding: "12px 16px" }}>
+            <div className="kpi-top">
+              <span>Active Residence Terms</span>
+              <Sparkles size={15} color="var(--brand)" />
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4, color: "var(--text)" }}>
+              {activeHouse.ownerName} ({activeHouse.title})
+            </div>
+            <div className="kpi-meta">
+              Rent: {currency} {Number(activeHouse.monthlyRent).toLocaleString()} · Elec: {currency} {Number(activeHouse.electricityRate)}/u
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Single Month Form */}
+      {showSingleBillForm && activeHouse && (
         <form
           action={async (formData) => {
-            setShowPaymentForm(false);
+            setShowSingleBillForm(false);
             await recordRentalPaymentAction(formData);
           }}
-          style={{ background: "var(--soft)", border: "1px solid var(--line)", borderRadius: 8, padding: 16, marginBottom: 16 }}
+          className="table-card"
+          style={{ padding: 16, marginBottom: 16, background: "var(--soft)" }}
         >
           <input type="hidden" name="orgId" value={orgId} />
           <div style={{ marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <strong style={{ fontSize: 14, color: "var(--text)" }}>Record Rent &amp; Utility Payment (Dual BS / AD Supported)</strong>
-            <button type="button" onClick={() => setShowPaymentForm(false)} className="ghost-btn" style={{ fontSize: 11, padding: "2px 6px" }}>
-              <X size={14} /> Close
+            <strong style={{ fontSize: 13.5, color: "var(--text)" }}>Record Single Month Bill / Payment</strong>
+            <button type="button" onClick={() => setShowSingleBillForm(false)} className="secondary-btn" style={{ height: 26, padding: "2px 6px" }}>
+              <X size={13} /> Close
             </button>
           </div>
 
           <div className="form-grid">
             <label className="field full">
-              Premises
+              <span className="field-label">Premises</span>
               <select name="rentalHouseId" defaultValue={activeHouse.id}>
                 {rentalHouses.map((house) => (
                   <option key={house.id} value={house.id}>
@@ -475,7 +623,7 @@ export function RentalHouseSection({
             <div className="field">
               <NepaliDatePicker
                 name="dueDate"
-                label="Bill Due Date (Nepali BS / English AD)"
+                label="Bill Due Date (BS / AD)"
               />
             </div>
 
@@ -489,44 +637,44 @@ export function RentalHouseSection({
             </div>
 
             <label className="field">
-              Rent ({currency})
+              <span className="field-label">Rent ({currency})</span>
               <input name="rentAmount" type="number" min="0" step="0.01" defaultValue={Number(activeHouse.monthlyRent)} />
             </label>
 
             <label className="field">
-              Electricity ({currency})
+              <span className="field-label">Electricity ({currency})</span>
               <input name="electricityAmount" type="number" min="0" step="0.01" defaultValue="0" />
             </label>
 
             <label className="field">
-              Water / CAM ({currency})
+              <span className="field-label">Water &amp; Waste ({currency})</span>
               <input name="waterAmount" type="number" min="0" step="0.01" defaultValue={Number(activeHouse.waterGarbageFee)} />
             </label>
 
             <label className="field">
-              Other Charges ({currency})
+              <span className="field-label">Other Charges ({currency})</span>
               <input name="otherAmount" type="number" min="0" step="0.01" defaultValue="0" />
             </label>
 
             <label className="field">
-              Amount Paid Now ({currency})
-              <input name="paidAmount" type="number" min="0" step="0.01" defaultValue="0" placeholder="0.00 (Enter 0 for UNPAID)" />
+              <span className="field-label">Amount Paid Now ({currency})</span>
+              <input name="paidAmount" type="number" min="0" step="0.01" defaultValue="0" placeholder="0.00 for UNPAID" />
               <span style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 2 }}>
-                Enter 0.00 to record this month as an <strong>UNPAID</strong> bill for statement tracking.
+                Enter 0.00 to record this month as an <strong>UNPAID</strong> commitment (shows as dues).
               </span>
             </label>
 
             <label className="field">
-              Payment Method
+              <span className="field-label">Payment Method</span>
               <select name="paymentMethod">
                 <option value="CASH">Cash in Hand</option>
-                <option value="BANK">Bank / Digital Wallet / Card</option>
+                <option value="BANK">Bank / Wallet / Transfer</option>
                 <option value="OTHER">Other Method</option>
               </select>
             </label>
 
             <label className="field full">
-              Payment Account (when Bank / Wallet / Card)
+              <span className="field-label">Payment Account (When Bank / Wallet)</span>
               <select name="bankAccountId">
                 <option value="">Select financial account</option>
                 {paymentAccounts.map((account) => (
@@ -538,292 +686,611 @@ export function RentalHouseSection({
             </label>
 
             <label className="field">
-              Reference / Receipt No
-              <input name="reference" placeholder="e.g. Receipt #104, Cheque 0824, eSewa Ref" />
+              <span className="field-label">Reference / Receipt No</span>
+              <input name="reference" placeholder="e.g. Receipt #104, Cheque 0824" />
             </label>
 
             <label className="field">
-              Notes
-              <input name="notes" placeholder="e.g. Cleared full rent, electricity meter units..." />
+              <span className="field-label">Notes</span>
+              <input name="notes" placeholder="e.g. Paid in full" />
             </label>
           </div>
 
-          <div className="form-actions" style={{ marginTop: 12 }}>
-            <button type="button" className="secondary-btn" onClick={() => setShowPaymentForm(false)}>
+          <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end", gap: 8 }}>
+            <button type="button" className="secondary-btn" onClick={() => setShowSingleBillForm(false)}>
               Cancel
             </button>
-            <button className="success-btn" type="submit">
+            <button className="primary-btn" type="submit">
               Save Bill / Payment
             </button>
           </div>
         </form>
       )}
 
-      <div className="house-card-grid">
-        {rentalHouses.map((h) => (
-          <div key={h.id} className={`tenant-house-card ${h.isActive ? "active" : ""}`}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                marginBottom: 8,
-              }}
+      {/* Main Statement Table */}
+      <div className="table-card">
+        {/* Table Filter Tabs */}
+        <div
+          style={{
+            padding: "10px 14px",
+            borderBottom: "1px solid var(--line)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 10,
+            background: "var(--soft)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("ALL")}
+              className={`filter-preset-chip ${statusFilter === "ALL" ? "active" : ""}`}
             >
-              <strong style={{ fontSize: 14 }}>{h.title}</strong>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                {h.isActive ? (
-                  <span className="tenant-house-badge">
-                    <CheckCircle2 size={12} /> ACTIVE
-                  </span>
-                ) : (
-                  <form
-                    action={(formData) => {
-                      startTransition(async () => {
-                        await setActiveRentalHouseAction(formData);
-                      });
-                    }}
-                  >
-                    <input type="hidden" name="orgId" value={orgId} />
-                    <input type="hidden" name="houseId" value={h.id} />
-                    <button
-                      className="secondary-btn"
-                      style={{ fontSize: 10.5, padding: "2px 8px" }}
-                      disabled={isPending}
-                    >
-                      Set as Active
-                    </button>
-                  </form>
-                )}
-              </div>
-            </div>
-            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
-              <div>
-                <strong>{isCompany ? "Landlord:" : "Owner:"}</strong> {h.ownerName}{" "}
-                {h.ownerPhone ? `(${h.ownerPhone})` : ""}
-              </div>
-              {h.address && (
-                <div>
-                  <strong>Location:</strong> {h.address}
-                </div>
-              )}
-            </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr 1fr",
-                gap: 6,
-                background: "var(--soft)",
-                padding: 8,
-                borderRadius: 4,
-                textAlign: "center",
-                fontSize: 11,
-              }}
+              All Periods ({allBills.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("DUE")}
+              className={`filter-preset-chip ${statusFilter === "DUE" ? "active" : ""}`}
             >
-              <div>
-                <div style={{ color: "var(--text-muted)", fontSize: 10 }}>RENT</div>
-                <strong style={{ fontFamily: "Consolas, monospace" }}>
-                  {currency} {Number(h.monthlyRent).toLocaleString()}
-                </strong>
-              </div>
-              <div>
-                <div style={{ color: "var(--text-muted)", fontSize: 10 }}>ELECTRICITY</div>
-                <strong style={{ fontFamily: "Consolas, monospace" }}>
-                  {currency} {Number(h.electricityRate)}/u
-                </strong>
-              </div>
-              <div>
-                <div style={{ color: "var(--text-muted)", fontSize: 10 }}>
-                  {isCompany ? "WATER & CAM" : "WATER & WASTE"}
-                </div>
-                <strong style={{ fontFamily: "Consolas, monospace" }}>
-                  {currency} {Number(h.waterGarbageFee).toLocaleString()}
-                </strong>
-              </div>
-            </div>
+              Unpaid Dues Only ({unpaidBillsCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("PAID")}
+              className={`filter-preset-chip ${statusFilter === "PAID" ? "active" : ""}`}
+            >
+              Fully Settled ({allBills.length - unpaidBillsCount})
+            </button>
+          </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10, gap: 6 }}>
-              <button
-                type="button"
-                className="ghost-btn"
-                style={{ fontSize: 11, padding: "3px 8px" }}
-                onClick={() => handleOpenEdit(h)}
-              >
-                Modify Charges / Details
-              </button>
-            </div>
+          <div style={{ fontSize: 11.5, color: "var(--text-muted)" }}>
+            Showing <b>{filteredBills.length}</b> statement entries
+          </div>
+        </div>
 
-            {h.bills.length > 0 && (
-              <div style={{ marginTop: 14, borderTop: "1px solid var(--line)", paddingTop: 12 }}>
-                <div
-                  style={{
-                    fontSize: 10.5,
-                    fontWeight: 800,
-                    color: "var(--text-muted)",
-                    textTransform: "uppercase",
-                    marginBottom: 8,
-                    letterSpacing: "0.04em",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  <Clock size={12} />
-                  <span>Rent &amp; Utility Billing History (Dual BS / AD Reconciliation)</span>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {h.bills.slice(0, 16).map((bill) => {
-                    const paid = bill.payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
-                    const due = Math.max(0, Number(bill.totalAmount) - paid);
-                    const dualMonth = formatDualBillingMonth(bill.billingMonth);
-                    return (
-                      <details
-                        key={bill.id}
-                        className="rental-bill-details"
-                        style={{
-                          background: "var(--soft)",
-                          border: "1px solid var(--line)",
-                          borderRadius: 8,
-                          padding: "8px 12px",
-                          breakInside: "avoid",
-                          pageBreakInside: "avoid",
-                        }}
-                      >
-                        <summary
-                          style={{
-                            cursor: "pointer",
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            gap: 12,
-                            flexWrap: "wrap",
-                            fontSize: 12,
-                            breakInside: "avoid",
-                            pageBreakInside: "avoid",
-                          }}
-                        >
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span style={{ fontWeight: 700, color: "var(--brand)", fontSize: 13 }}>
-                              {dualMonth.primary}
-                            </span>
-                            {dualMonth.secondary && (
-                              <span
-                                style={{
-                                  fontSize: 11,
-                                  color: "var(--text-muted)",
-                                  background: "var(--surface)",
-                                  border: "1px solid var(--line)",
-                                  padding: "1px 6px",
-                                  borderRadius: 4,
-                                }}
-                              >
-                                {dualMonth.secondary}
-                              </span>
-                            )}
-                          </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 11.5 }}>
-                            <span>
-                              Bill: <strong>{currency} {Number(bill.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
-                            </span>
-                            <span>
-                              · Paid: <strong style={{ color: "var(--success)" }}>{currency} {paid.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
-                            </span>
-                            <span>
-                              · Due: <strong style={{ color: due > 0 ? "var(--red)" : "var(--success)" }}>{currency} {due.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
-                            </span>
-                          </div>
-                        </summary>
+        <div className="table-scroll">
+          <table className="responsive-table data-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: "left" }}>Billing Month (BS / AD)</th>
+                <th style={{ textAlign: "right" }}>Monthly Rent</th>
+                <th style={{ textAlign: "right" }}>Electricity</th>
+                <th style={{ textAlign: "right" }}>Water &amp; Waste</th>
+                <th style={{ textAlign: "right" }}>Total Billed</th>
+                <th style={{ textAlign: "right" }}>Amount Paid</th>
+                <th style={{ textAlign: "right" }}>Remaining Due</th>
+                <th style={{ textAlign: "center" }}>Status</th>
+                <th style={{ textAlign: "center", width: 60 }}>Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredBills.map((bill) => {
+                const paid = bill.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+                const due = Math.max(0, Number(bill.totalAmount) - paid);
+                const isPaid = due <= 0;
+                const isPartial = paid > 0 && due > 0;
+                const dual = formatDualBillingMonth(bill.billingMonth);
+                const isExpanded = expandedBillId === bill.id;
 
-                        <div style={{ fontSize: 11.5, marginTop: 10, paddingTop: 8, borderTop: "1px dashed var(--line)", color: "var(--text)" }}>
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 8, color: "var(--text-muted)" }}>
-                            <span>Rent: <strong>{currency} {Number(bill.rentAmount).toLocaleString()}</strong></span>
-                            <span>Electricity: <strong>{currency} {Number(bill.electricityAmount).toLocaleString()}</strong></span>
-                            <span>Water/CAM: <strong>{currency} {Number(bill.waterAmount).toLocaleString()}</strong></span>
-                            {Number(bill.otherAmount) > 0 && <span>Other: <strong>{currency} {Number(bill.otherAmount).toLocaleString()}</strong></span>}
-                            {bill.dueDate && (
-                              <span style={{ marginLeft: "auto", color: "var(--brand)" }}>
-                                Due Date: <strong>{formatDualDate(bill.dueDate)}</strong>
-                              </span>
-                            )}
-                          </div>
-                          {bill.notes && (
-                            <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8, fontStyle: "italic" }}>
-                              Note: {bill.notes}
-                            </div>
-                          )}
-
-                          <div style={{ borderTop: "1px solid var(--line)", paddingTop: 8, marginTop: 4 }}>
-                            <strong style={{ fontSize: 10.5, color: "var(--text-muted)", textTransform: "uppercase" }}>
-                              Actual Payment Records:
-                            </strong>
-                            {bill.payments.length === 0 ? (
-                              <div style={{ fontSize: 11, color: "var(--red)", marginTop: 4 }}>
-                                No payments recorded yet for this bill.
-                              </div>
-                            ) : (
-                              <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
-                                {bill.payments.map((payment) => (
-                                  <div
-                                    key={payment.id}
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: 8,
-                                      fontSize: 11,
-                                      background: "var(--surface)",
-                                      padding: "5px 8px",
-                                      borderRadius: 4,
-                                      border: "1px solid var(--line)",
-                                      flexWrap: "wrap",
-                                    }}
-                                  >
-                                    <CheckCircle2 size={13} color="var(--success)" style={{ flexShrink: 0 }} />
-                                    <span style={{ fontWeight: 650, color: "var(--success)" }}>
-                                      {currency} {Number(payment.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                    </span>
-                                    <span style={{ color: "var(--text-muted)" }}>on</span>
-                                    <span style={{ fontWeight: 600, color: "var(--brand)" }}>
-                                      {formatDualDate(payment.paidAt)}
-                                    </span>
-                                    <span style={{ color: "var(--text-muted)" }}>via {payment.paymentMethod}</span>
-                                    {payment.reference && (
-                                      <span style={{ color: "var(--text-muted)" }}>
-                                        · Ref: <code>{payment.reference}</code>
-                                      </span>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                return (
+                  <tr key={bill.id}>
+                    {/* Month */}
+                    <td data-label="Billing Month">
+                      <div style={{ fontWeight: 700, color: "var(--text)" }}>{dual.primary}</div>
+                      {dual.secondary && (
+                        <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>
+                          {dual.secondary}
                         </div>
-                      </details>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
+                      )}
+                    </td>
 
-        {!rentalHouses.length && (
-          <div
-            style={{
-              padding: 16,
-              background: "var(--soft)",
-              borderRadius: 6,
-              color: "var(--text-muted)",
-              fontSize: 12,
-            }}
-          >
-            {isCompany
-              ? 'No office premises registered yet. Click "+ Register Office Lease / Premises" above to configure your office rent and utility rates.'
-              : 'No rental residence registered yet. Click "+ Register Rental House" above to configure your landlord details and fixed rates.'}
-          </div>
-        )}
+                    {/* Rent */}
+                    <td data-label="Rent" style={{ textAlign: "right", fontFamily: "Consolas, monospace" }}>
+                      {currency} {Number(bill.rentAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+
+                    {/* Electricity */}
+                    <td data-label="Electricity" style={{ textAlign: "right", fontFamily: "Consolas, monospace" }}>
+                      {currency} {Number(bill.electricityAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+
+                    {/* Water */}
+                    <td data-label="Water" style={{ textAlign: "right", fontFamily: "Consolas, monospace" }}>
+                      {currency} {Number(bill.waterAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+
+                    {/* Total Billed */}
+                    <td data-label="Total Billed" style={{ textAlign: "right", fontFamily: "Consolas, monospace", fontWeight: 700 }}>
+                      {currency} {Number(bill.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+
+                    {/* Paid */}
+                    <td data-label="Amount Paid" style={{ textAlign: "right", fontFamily: "Consolas, monospace", fontWeight: 700, color: "var(--success)" }}>
+                      {currency} {paid.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+
+                    {/* Due */}
+                    <td data-label="Remaining Due" style={{ textAlign: "right", fontFamily: "Consolas, monospace", fontWeight: 800, color: due > 0 ? "var(--danger)" : "var(--success)" }}>
+                      {currency} {due.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+
+                    {/* Status Badge */}
+                    <td data-label="Status" style={{ textAlign: "center" }}>
+                      <span
+                        className={`badge ${
+                          isPaid
+                            ? "badge-active"
+                            : isPartial
+                            ? "badge-pending"
+                            : "badge-cancelled"
+                        }`}
+                        style={{ fontSize: "11px" }}
+                      >
+                        {isPaid ? "PAID" : isPartial ? "PARTIAL" : "UNPAID"}
+                      </span>
+                    </td>
+
+                    {/* Details Action */}
+                    <td data-label="Details" style={{ textAlign: "center" }}>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedBillId(isExpanded ? null : bill.id)}
+                        className="secondary-btn"
+                        style={{ minHeight: 26, height: 26, padding: "2px 6px", fontSize: 11 }}
+                        title="Toggle payment audit details"
+                      >
+                        {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {!filteredBills.length && (
+                <tr>
+                  <td colSpan={9} style={{ padding: "30px 16px", textAlign: "center", color: "var(--text-muted)" }}>
+                    <ReceiptText size={24} color="var(--text-muted)" style={{ margin: "0 auto 8px" }} />
+                    <div style={{ fontWeight: 600, fontSize: 13, color: "var(--text)" }}>No rental bills recorded yet</div>
+                    <div style={{ fontSize: 12, marginTop: 4 }}>
+                      Click "Auto-Generate Months (BS)" or "Single Month Bill" to populate the statement.
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Controlled Modal Dialog */}
+      {/* ========================================================================= */}
+      {/* LUMP SUM RENT PAYMENT / FIFO ALLOCATION MODAL                            */}
+      {/* ========================================================================= */}
+      {showLumpSumModal && activeHouse && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.65)",
+            backdropFilter: "blur(4px)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+          onClick={() => setShowLumpSumModal(false)}
+        >
+          <div
+            className="table-card"
+            style={{
+              width: "100%",
+              maxWidth: 520,
+              padding: 0,
+              boxShadow: "var(--modal-shadow)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <form
+              action={async (formData) => {
+                setShowLumpSumModal(false);
+                await recordLumpSumRentPaymentAction(formData);
+              }}
+            >
+              <input type="hidden" name="orgId" value={orgId} />
+              <input type="hidden" name="rentalHouseId" value={activeHouse.id} />
+
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--line)", background: "var(--soft)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--text)" }}>
+                    Record Lump-Sum Rent Payment
+                  </h3>
+                  <div style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 2 }}>
+                    Pays {activeHouse.ownerName} &amp; automatically distributes across oldest unpaid months (FIFO).
+                  </div>
+                </div>
+                <button type="button" onClick={() => setShowLumpSumModal(false)} style={{ color: "var(--text-muted)" }}>
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
+                {/* Outstanding Dues Summary */}
+                <div style={{ padding: "10px 14px", borderRadius: "var(--radius-sm)", background: "var(--danger-soft)", border: "1px solid var(--danger-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "var(--danger)", textTransform: "uppercase" }}>Current Unpaid Dues</span>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: "var(--danger)" }}>
+                      {currency} {totalDue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 11.5, color: "var(--text)", textAlign: "right" }}>
+                    Monthly Rent: <b>{currency} {Number(activeHouse.monthlyRent).toLocaleString()}</b>
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 11.5, fontWeight: 650, color: "var(--text)", display: "block", marginBottom: 4 }}>
+                    Lump-Sum Amount to Pay ({currency}) *
+                  </label>
+                  <input
+                    type="number"
+                    name="paidAmount"
+                    required
+                    min={1}
+                    step="0.01"
+                    value={lumpSumAmount}
+                    onChange={(e) => setLumpSumAmount(Number(e.target.value))}
+                    style={{
+                      width: "100%",
+                      height: 34,
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--line)",
+                      background: "var(--surface)",
+                      color: "var(--text)",
+                      padding: "0 10px",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      fontFamily: "Consolas, monospace",
+                    }}
+                  />
+                  {/* Quick Preset Buttons */}
+                  <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                    {[16800, 30000, 50000, 70000, 84000].map((amt) => (
+                      <button
+                        type="button"
+                        key={amt}
+                        onClick={() => setLumpSumAmount(amt)}
+                        className="secondary-btn"
+                        style={{ height: 24, fontSize: 10.5, padding: "0 6px" }}
+                      >
+                        {amt.toLocaleString()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Live Distribution Simulation Preview */}
+                <div style={{ padding: "10px 12px", borderRadius: "var(--radius-sm)", background: "var(--soft)", border: "1px solid var(--line)", fontSize: 12 }}>
+                  <div style={{ fontWeight: 700, color: "var(--brand)", marginBottom: 4, display: "flex", alignItems: "center", gap: 5 }}>
+                    <Sparkles size={13} />
+                    <span>Auto-Allocation Simulation:</span>
+                  </div>
+                  {lumpSumBreakdown.settled.length > 0 ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                      <div style={{ color: "var(--success)", fontWeight: 650 }}>
+                        ✓ {lumpSumBreakdown.settled.length} month(s) fully settled: {lumpSumBreakdown.settled.map((s) => s.month).join(", ")}
+                      </div>
+                      {lumpSumBreakdown.partial && (
+                        <div style={{ color: "var(--warning)", fontWeight: 650 }}>
+                          ◐ Partial allocation: {lumpSumBreakdown.partial.month} gets {currency} {lumpSumBreakdown.partial.paid.toLocaleString()}, leaving {currency} {lumpSumBreakdown.partial.dueRemaining.toLocaleString()} remaining due.
+                        </div>
+                      )}
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                        New remaining dues to landlord after payment: <b>{currency} {lumpSumBreakdown.remainingDues.toLocaleString()}</b>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ color: "var(--text-muted)" }}>
+                      Payment will be credited against pending monthly commitments.
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div>
+                    <label style={{ fontSize: 11.5, fontWeight: 650, color: "var(--text)", display: "block", marginBottom: 4 }}>
+                      Payment Source *
+                    </label>
+                    <select
+                      name="paymentMethod"
+                      style={{
+                        width: "100%",
+                        height: 32,
+                        borderRadius: "var(--radius-sm)",
+                        border: "1px solid var(--line)",
+                        background: "var(--surface)",
+                        color: "var(--text)",
+                        fontSize: 12,
+                      }}
+                    >
+                      <option value="CASH">Physical Cash in Hand</option>
+                      <option value="BANK">Bank / Wallet Account</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 11.5, fontWeight: 650, color: "var(--text)", display: "block", marginBottom: 4 }}>
+                      Account (When Bank / Wallet)
+                    </label>
+                    <select
+                      name="bankAccountId"
+                      style={{
+                        width: "100%",
+                        height: 32,
+                        borderRadius: "var(--radius-sm)",
+                        border: "1px solid var(--line)",
+                        background: "var(--surface)",
+                        color: "var(--text)",
+                        fontSize: 12,
+                      }}
+                    >
+                      <option value="">Select account</option>
+                      {paymentAccounts.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <NepaliDatePicker
+                    name="paidAt"
+                    label="Payment Date (Nepali BS / English AD) *"
+                    defaultValue={new Date()}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 11.5, fontWeight: 650, color: "var(--text)", display: "block", marginBottom: 4 }}>
+                    Reference / Notes (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    name="reference"
+                    placeholder="e.g. Paid in cash to landlord / Receipt given"
+                    style={{
+                      width: "100%",
+                      height: 32,
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--line)",
+                      background: "var(--surface)",
+                      color: "var(--text)",
+                      padding: "0 10px",
+                      fontSize: 12,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ padding: "12px 20px", borderTop: "1px solid var(--line)", background: "var(--soft)", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                <button type="button" onClick={() => setShowLumpSumModal(false)} className="secondary-btn">
+                  Cancel
+                </button>
+                <button type="submit" className="primary-btn">
+                  Disburse &amp; Clear Rent Dues
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* BATCH GENERATE RECURRING MONTHS (BS) MODAL                                */}
+      {/* ========================================================================= */}
+      {showBatchModal && activeHouse && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.65)",
+            backdropFilter: "blur(4px)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+          onClick={() => setShowBatchModal(false)}
+        >
+          <div
+            className="table-card"
+            style={{
+              width: "100%",
+              maxWidth: 480,
+              padding: 0,
+              boxShadow: "var(--modal-shadow)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <form
+              action={async (formData) => {
+                const monthKeys = batchMonths.map((m) => `${batchYear}-${String(m).padStart(2, "0")}`);
+                formData.set("months", JSON.stringify(monthKeys));
+                setShowBatchModal(false);
+                await batchGenerateRentalBillsAction(formData);
+              }}
+            >
+              <input type="hidden" name="orgId" value={orgId} />
+              <input type="hidden" name="rentalHouseId" value={activeHouse.id} />
+
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--line)", background: "var(--soft)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--text)" }}>
+                    Auto-Generate Recurring Rent Months
+                  </h3>
+                  <div style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 2 }}>
+                    Quickly batch insert unpaid rent commitments across Nepali BS months.
+                  </div>
+                </div>
+                <button type="button" onClick={() => setShowBatchModal(false)} style={{ color: "var(--text-muted)" }}>
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 11.5, fontWeight: 650, color: "var(--text)", display: "block", marginBottom: 4 }}>
+                    Select BS Year
+                  </label>
+                  <select
+                    value={batchYear}
+                    onChange={(e) => setBatchYear(Number(e.target.value))}
+                    style={{
+                      width: "100%",
+                      height: 32,
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--line)",
+                      background: "var(--surface)",
+                      color: "var(--text)",
+                      fontSize: 12,
+                    }}
+                  >
+                    {[2081, 2082, 2083, 2084, 2085].map((y) => (
+                      <option key={y} value={y}>{y} BS</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <label style={{ fontSize: 11.5, fontWeight: 650, color: "var(--text)" }}>
+                      Select Months to Insert ({batchMonths.length} selected)
+                    </label>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button
+                        type="button"
+                        onClick={() => setBatchMonths([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])}
+                        className="secondary-btn"
+                        style={{ height: 22, fontSize: 10, padding: "0 6px" }}
+                      >
+                        All 12
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBatchMonths([1, 2, 3, 4, 5])}
+                        className="secondary-btn"
+                        style={{ height: 22, fontSize: 10, padding: "0 6px" }}
+                      >
+                        First 5
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+                    {NEPALI_MONTHS_EN.map((name, idx) => {
+                      const mNum = idx + 1;
+                      const isChecked = batchMonths.includes(mNum);
+                      return (
+                        <label
+                          key={name}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "6px 8px",
+                            borderRadius: "var(--radius-sm)",
+                            border: isChecked ? "1px solid var(--brand)" : "1px solid var(--line)",
+                            background: isChecked ? "var(--brand-soft)" : "var(--surface)",
+                            cursor: "pointer",
+                            fontSize: 11.5,
+                            fontWeight: isChecked ? 700 : 500,
+                            color: isChecked ? "var(--brand)" : "var(--text)",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setBatchMonths([...batchMonths, mNum].sort((a, b) => a - b));
+                              } else {
+                                setBatchMonths(batchMonths.filter((x) => x !== mNum));
+                              }
+                            }}
+                            style={{ width: 14, height: 14 }}
+                          />
+                          <span>{mNum}. {name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div>
+                    <label style={{ fontSize: 11.5, fontWeight: 650, color: "var(--text)", display: "block", marginBottom: 4 }}>
+                      Monthly Rent Rate ({currency})
+                    </label>
+                    <input
+                      type="number"
+                      name="monthlyRent"
+                      defaultValue={Number(activeHouse.monthlyRent)}
+                      style={{
+                        width: "100%",
+                        height: 32,
+                        borderRadius: "var(--radius-sm)",
+                        border: "1px solid var(--line)",
+                        background: "var(--surface)",
+                        color: "var(--text)",
+                        padding: "0 10px",
+                        fontSize: 12,
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 11.5, fontWeight: 650, color: "var(--text)", display: "block", marginBottom: 4 }}>
+                      Water &amp; Waste ({currency})
+                    </label>
+                    <input
+                      type="number"
+                      name="waterGarbageFee"
+                      defaultValue={Number(activeHouse.waterGarbageFee)}
+                      style={{
+                        width: "100%",
+                        height: 32,
+                        borderRadius: "var(--radius-sm)",
+                        border: "1px solid var(--line)",
+                        background: "var(--surface)",
+                        color: "var(--text)",
+                        padding: "0 10px",
+                        fontSize: 12,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ padding: "12px 20px", borderTop: "1px solid var(--line)", background: "var(--soft)", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                <button type="button" onClick={() => setShowBatchModal(false)} className="secondary-btn">
+                  Cancel
+                </button>
+                <button type="submit" className="primary-btn" disabled={batchMonths.length === 0}>
+                  Insert {batchMonths.length} Months into Statement
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Controlled Modal Dialog for Property Edit */}
       {modalMode && (
         <div
           className="drawer-backdrop"
@@ -984,7 +1451,7 @@ export function RentalHouseSection({
                   defaultChecked={selectedHouse ? selectedHouse.isActive : true}
                   style={{ width: 16, height: 16 }}
                 />
-                <span style={{ fontSize: 13, fontWeight: 600 }}>
+                <span style={{ fontSize: 13, fontWeight: 650 }}>
                   Set as Currently Active Premises (Calculates Monthly Overhead)
                 </span>
               </label>

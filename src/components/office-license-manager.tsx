@@ -118,13 +118,13 @@ export function OfficeLicenseManager({
   );
 
   const formatDate = (isoString: string | null) => {
-    if (!isoString) return "Perpetual / None";
+    if (!isoString) return "Perpetual / Never";
     try {
       const d = new Date(isoString);
-      return d.toLocaleDateString("en-US", {
-        year: "numeric",
+      return d.toLocaleDateString("en-GB", {
+        day: "2-digit",
         month: "short",
-        day: "numeric",
+        year: "numeric",
       });
     } catch {
       return isoString;
@@ -276,168 +276,108 @@ export function OfficeLicenseManager({
   };
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* Action Notification Alert */}
       {actionMessage && (
         <div
           style={{
-            padding: "12px 16px",
-            borderRadius: 8,
-            marginBottom: 16,
+            padding: "10px 14px",
+            borderRadius: "var(--radius-sm)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            background: actionMessage.type === "success" ? "#ecfdf5" : "#fef2f2",
-            border: `1px solid ${actionMessage.type === "success" ? "#a7f3d0" : "#fecaca"}`,
-            color: actionMessage.type === "success" ? "#065f46" : "#991b1b",
-            fontSize: "13.5px",
-            fontWeight: 500,
+            background: actionMessage.type === "success" ? "var(--success-soft)" : "var(--danger-soft)",
+            border: `1px solid ${actionMessage.type === "success" ? "var(--success-border)" : "var(--danger-border)"}`,
+            color: actionMessage.type === "success" ? "var(--success)" : "var(--danger)",
+            fontSize: "12.5px",
+            fontWeight: 600,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {actionMessage.type === "success" ? (
-              <CheckCircle size={18} color="#059669" />
+              <CheckCircle size={16} />
             ) : (
-              <AlertTriangle size={18} color="#dc2626" />
+              <AlertTriangle size={16} />
             )}
             <span>{actionMessage.text}</span>
           </div>
           <button
+            type="button"
             onClick={() => setActionMessage(null)}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "inherit" }}
+            style={{ color: "inherit", opacity: 0.8 }}
           >
-            <X size={16} />
+            <X size={15} />
           </button>
         </div>
       )}
 
-      {/* API Connection Banner & Role Ribbon */}
+      {/* Connection Info & Action Ribbon - Styled with standard Kashtrix ERP Theme */}
       <div
+        className="table-card"
         style={{
-          background: "linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98))",
-          borderRadius: 12,
-          padding: "18px 22px",
-          color: "#f8fafc",
-          border: "1px solid rgba(255, 255, 255, 0.1)",
-          boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.2)",
+          padding: "14px 18px",
           display: "flex",
           flexWrap: "wrap",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: 16,
+          gap: 14,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div
             style={{
-              width: 44,
-              height: 44,
-              borderRadius: 10,
-              background: "linear-gradient(135deg, #0284c7, #0369a1)",
+              width: 38,
+              height: 38,
+              borderRadius: "var(--radius-sm)",
+              background: "var(--brand-soft)",
+              border: "1px solid var(--brand-border)",
+              color: "var(--brand)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#fff",
-              boxShadow: "0 4px 12px rgba(2, 132, 199, 0.35)",
+              flexShrink: 0,
             }}
           >
-            <Server size={22} />
+            <Server size={20} />
           </div>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontWeight: 700, fontSize: "15px", letterSpacing: "-0.01em" }}>
-                Simulcast Secure License Manager API
+              <span style={{ fontWeight: 700, fontSize: "14px", color: "var(--text)" }}>
+                Kashtrix License Manager
               </span>
               <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 5,
-                  padding: "2px 8px",
-                  borderRadius: 20,
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  background: serverStatus?.ok ? "rgba(16, 185, 129, 0.2)" : "rgba(239, 68, 68, 0.2)",
-                  color: serverStatus?.ok ? "#34d399" : "#f87171",
-                  border: `1px solid ${serverStatus?.ok ? "rgba(16, 185, 129, 0.4)" : "rgba(239, 68, 68, 0.4)"}`,
-                }}
+                className={`badge ${serverStatus?.ok ? "badge-active" : "badge-cancelled"}`}
+                style={{ fontSize: "11px", padding: "2px 8px" }}
               >
-                <span
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: "50%",
-                    background: serverStatus?.ok ? "#10b981" : "#ef4444",
-                    boxShadow: serverStatus?.ok ? "0 0 8px #10b981" : "none",
-                  }}
-                />
-                {serverStatus?.ok ? "Live & Connected" : "Connecting / Fallback"}
+                {serverStatus?.ok ? "● Connected" : "○ Disconnected"}
               </span>
             </div>
-            <div style={{ fontSize: "12px", color: "#94a3b8", marginTop: 3 }}>
-              Endpoint: <code style={{ color: "#38bdf8", fontWeight: 600 }}>https://license.simulcast.com.np</code>{" "}
-              · Key: <code style={{ color: "#cbd5e1" }}>{serverStatus?.keyName || "ERP Office"}</code> ({serverStatus?.role || "FULL"})
+            <div style={{ fontSize: "11.5px", color: "var(--text-muted)", marginTop: 2 }}>
+              Endpoint: <code style={{ color: "var(--brand)", fontWeight: 600 }}>https://license.simulcast.com.np</code>{" "}
+              · Key: <span style={{ color: "var(--text)" }}>{serverStatus?.keyName || "Kashtrix Office"}</span> ({serverStatus?.role || "FULL"})
               {serverStatus?.remainingDays !== undefined && ` · Key Valid: ${serverStatus.remainingDays} days`}
             </div>
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <Link
             href={`/${orgId}/plugins`}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "7px 12px",
-              borderRadius: 8,
-              background: "rgba(255, 255, 255, 0.1)",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              color: "#f1f5f9",
-              fontSize: "12px",
-              fontWeight: 600,
-              textDecoration: "none",
-            }}
+            className="secondary-btn"
           >
-            <Plug size={14} color="#c084fc" />
-            <span>Manage in Plugins Hub</span>
+            <Plug size={13} />
+            <span>Plugins Hub</span>
           </Link>
           {isAdmin ? (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "8px 14px",
-                borderRadius: 8,
-                background: "rgba(16, 185, 129, 0.15)",
-                border: "1px solid rgba(16, 185, 129, 0.3)",
-                color: "#6ee7b7",
-                fontSize: "12.5px",
-                fontWeight: 600,
-              }}
-            >
-              <ShieldCheck size={16} color="#34d399" />
-              <span>Admin Access: Extension, Revocation & Bans Enabled</span>
-            </div>
+            <span className="badge badge-active" style={{ fontSize: "11px" }}>
+              <ShieldCheck size={13} style={{ marginRight: 4 }} />
+              Admin: Extension &amp; Revocation Active
+            </span>
           ) : (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "8px 14px",
-                borderRadius: 8,
-                background: "rgba(245, 158, 11, 0.15)",
-                border: "1px solid rgba(245, 158, 11, 0.3)",
-                color: "#fde68a",
-                fontSize: "12.5px",
-                fontWeight: 600,
-              }}
-            >
-              <Lock size={16} color="#fbbf24" />
-              <span>Read-Only User: Inspection Only (Mutation Admin Only)</span>
-            </div>
+            <span className="badge badge-pending" style={{ fontSize: "11px" }}>
+              <Lock size={13} style={{ marginRight: 4 }} />
+              Read-Only Inspection
+            </span>
           )}
         </div>
       </div>
@@ -447,17 +387,17 @@ export function OfficeLicenseManager({
         <div className="kpi-card">
           <div className="kpi-top">
             <span>Total Licenses</span>
-            <KeyRound size={16} color="#64748b" />
+            <KeyRound size={15} color="var(--text-muted)" />
           </div>
           <div className="kpi-value">{totalCount}</div>
           <div className="kpi-meta">Provisioned applications</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-top">
-            <span>Active & Licensed</span>
-            <CheckCircle2 size={16} color="#10b981" />
+            <span>Active &amp; Licensed</span>
+            <CheckCircle2 size={15} color="var(--success)" />
           </div>
-          <div className="kpi-value" style={{ color: "#059669" }}>
+          <div className="kpi-value" style={{ color: "var(--success)" }}>
             {activeCount}
           </div>
           <div className="kpi-meta">Full entitlement access</div>
@@ -465,9 +405,9 @@ export function OfficeLicenseManager({
         <div className="kpi-card">
           <div className="kpi-top">
             <span>Revoked / Expired</span>
-            <ShieldAlert size={16} color="#ef4444" />
+            <ShieldAlert size={15} color="var(--danger)" />
           </div>
-          <div className="kpi-value" style={{ color: revokedCount + expiredCount > 0 ? "#dc2626" : "inherit" }}>
+          <div className="kpi-value" style={{ color: revokedCount + expiredCount > 0 ? "var(--danger)" : "inherit" }}>
             {revokedCount + expiredCount}
           </div>
           <div className="kpi-meta">{revokedCount} revoked · {expiredCount} expired</div>
@@ -475,33 +415,30 @@ export function OfficeLicenseManager({
         <div className="kpi-card">
           <div className="kpi-top">
             <span>Client Activations</span>
-            <Radio size={16} color="#0284c7" />
+            <Radio size={15} color="var(--brand)" />
           </div>
           <div className="kpi-value">{totalActivations}</div>
-          <div className="kpi-meta">{onlineSockets} live TCP sockets connected</div>
+          <div className="kpi-meta">{onlineSockets} live TCP sockets</div>
         </div>
       </section>
 
       {/* Search and Filters Bar */}
       <div
+        className="table-card no-print"
         style={{
           display: "flex",
           flexWrap: "wrap",
-          gap: 12,
+          gap: 10,
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "12px 16px",
-          background: "#ffffff",
-          borderRadius: 8,
-          border: "1px solid #e2e8f0",
+          padding: "10px 14px",
         }}
-        className="no-print"
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "1 1 280px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "1 1 260px" }}>
           <div style={{ position: "relative", width: "100%", maxWidth: 360 }}>
             <Search
-              size={15}
-              style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }}
+              size={14}
+              style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }}
             />
             <input
               type="text"
@@ -510,24 +447,34 @@ export function OfficeLicenseManager({
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
                 width: "100%",
-                paddingLeft: 32,
-                paddingRight: 12,
-                height: 34,
-                fontSize: 12.5,
-                borderRadius: 6,
-                border: "1px solid #cbd5e1",
+                paddingLeft: 30,
+                paddingRight: 10,
+                height: 32,
+                fontSize: 12,
+                borderRadius: "var(--radius-sm)",
+                border: "1px solid var(--line)",
+                background: "var(--surface)",
+                color: "var(--text)",
               }}
             />
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>Status:</span>
+            <span style={{ fontSize: "11.5px", color: "var(--text-muted)", fontWeight: 600 }}>Status:</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              style={{ height: 34, padding: "0 8px", fontSize: 12.5, borderRadius: 6, border: "1px solid #cbd5e1" }}
+              style={{
+                height: 32,
+                padding: "0 8px",
+                fontSize: 12,
+                borderRadius: "var(--radius-sm)",
+                border: "1px solid var(--line)",
+                background: "var(--surface)",
+                color: "var(--text)",
+              }}
             >
               <option value="ALL">All Statuses ({totalCount})</option>
               <option value="ACTIVE">Active ({activeCount})</option>
@@ -539,11 +486,19 @@ export function OfficeLicenseManager({
 
           {vendors.length > 1 && (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>Vendor:</span>
+              <span style={{ fontSize: "11.5px", color: "var(--text-muted)", fontWeight: 600 }}>Vendor:</span>
               <select
                 value={vendorFilter}
                 onChange={(e) => setVendorFilter(e.target.value)}
-                style={{ height: 34, padding: "0 8px", fontSize: 12.5, borderRadius: 6, border: "1px solid #cbd5e1" }}
+                style={{
+                  height: 32,
+                  padding: "0 8px",
+                  fontSize: 12,
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid var(--line)",
+                  background: "var(--surface)",
+                  color: "var(--text)",
+                }}
               >
                 <option value="ALL">All Vendors</option>
                 {vendors.map((v) => (
@@ -557,42 +512,19 @@ export function OfficeLicenseManager({
         </div>
       </div>
 
-      {/* Main Licenses Data Table */}
+      {/* Main Licenses Data Table - Completely Native ERP Theme */}
       <div className="table-card">
         <div className="table-scroll">
-          <table className="responsive-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table className="responsive-table data-table" style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-                <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 12, fontWeight: 600, color: "#475569" }}>
-                  License Serial
-                </th>
-                <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 12, fontWeight: 600, color: "#475569" }}>
-                  Application & Vendor
-                </th>
-                <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 12, fontWeight: 600, color: "#475569" }}>
-                  Customer / Tenant
-                </th>
-                <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 12, fontWeight: 600, color: "#475569" }}>
-                  Seats & Activations
-                </th>
-                <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 12, fontWeight: 600, color: "#475569" }}>
-                  Expiration Date
-                </th>
-                <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 12, fontWeight: 600, color: "#475569" }}>
-                  Status
-                </th>
-                <th
-                  style={{
-                    padding: "10px 14px",
-                    textAlign: "right",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: "#475569",
-                    minWidth: 160,
-                  }}
-                >
-                  Actions
-                </th>
+              <tr>
+                <th style={{ textAlign: "left" }}>License Serial</th>
+                <th style={{ textAlign: "left" }}>Application &amp; Vendor</th>
+                <th style={{ textAlign: "left" }}>Customer / Tenant</th>
+                <th style={{ textAlign: "left" }}>Seats &amp; Activations</th>
+                <th style={{ textAlign: "left" }}>Expiration Date</th>
+                <th style={{ textAlign: "left" }}>Status</th>
+                <th style={{ textAlign: "right", minWidth: 160 }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -603,24 +535,19 @@ export function OfficeLicenseManager({
                 const hasOnlineSockets = lic.activations.some((a) => a.isSocketOnline);
 
                 return (
-                  <tr
-                    key={lic.serial}
-                    style={{
-                      borderBottom: "1px solid #f1f5f9",
-                      transition: "background 0.15s ease",
-                    }}
-                  >
+                  <tr key={lic.serial}>
                     {/* Serial */}
-                    <td data-label="License Serial" style={{ padding: "12px 14px" }}>
+                    <td data-label="License Serial">
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <code
                           style={{
                             fontWeight: 700,
-                            fontSize: 12.5,
-                            color: "#0f172a",
-                            background: "#f1f5f9",
-                            padding: "3px 6px",
+                            fontSize: 12,
+                            color: "var(--text)",
+                            background: "var(--soft)",
+                            padding: "2px 6px",
                             borderRadius: 4,
+                            border: "1px solid var(--line)",
                           }}
                         >
                           {lic.serial}
@@ -630,72 +557,68 @@ export function OfficeLicenseManager({
                           onClick={() => copyToClipboard(lic.serial)}
                           title="Copy serial"
                           style={{
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
                             padding: 2,
-                            color: copiedKey === lic.serial ? "#10b981" : "#94a3b8",
+                            color: copiedKey === lic.serial ? "var(--success)" : "var(--text-muted)",
                           }}
                         >
-                          {copiedKey === lic.serial ? <Check size={14} /> : <Copy size={14} />}
+                          {copiedKey === lic.serial ? <Check size={13} /> : <Copy size={13} />}
                         </button>
                       </div>
-                      <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
                         Modules: {lic.modules.length} authorized
                       </div>
                     </td>
 
                     {/* App & Vendor */}
-                    <td data-label="Application & Vendor" style={{ padding: "12px 14px" }}>
-                      <div style={{ fontWeight: 600, fontSize: 13, color: "#0f172a" }}>
+                    <td data-label="Application & Vendor">
+                      <div style={{ fontWeight: 600, fontSize: 12.5, color: "var(--text)" }}>
                         {lic.application.name}
                       </div>
-                      <div style={{ fontSize: 11, color: "#64748b", display: "flex", alignItems: "center", gap: 4 }}>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
                         <Building2 size={11} />
                         <span>Vendor: {lic.vendor.name}</span>
                       </div>
                     </td>
 
                     {/* Customer */}
-                    <td data-label="Customer" style={{ padding: "12px 14px" }}>
-                      <div style={{ fontWeight: 600, fontSize: 13, color: "#0f172a" }}>
+                    <td data-label="Customer">
+                      <div style={{ fontWeight: 600, fontSize: 12.5, color: "var(--text)" }}>
                         {lic.customerOrganization}
                       </div>
                       {lic.customerContact?.email && (
-                        <div style={{ fontSize: 11, color: "#64748b" }}>
+                        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
                           {lic.customerContact.email}
                         </div>
                       )}
                     </td>
 
                     {/* Seats */}
-                    <td data-label="Seats & Activations" style={{ padding: "12px 14px" }}>
+                    <td data-label="Seats & Activations">
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ fontWeight: 600, fontSize: 13 }}>
+                        <span style={{ fontWeight: 600, fontSize: 12.5 }}>
                           {lic.seats.activeActivations} / {lic.seats.maxActivations} Seats
                         </span>
                         {hasOnlineSockets && (
                           <span
-                            title="Live TCP Socket Active"
+                            title="Live Socket Connected"
                             style={{
                               display: "inline-block",
-                              width: 8,
-                              height: 8,
+                              width: 7,
+                              height: 7,
                               borderRadius: "50%",
-                              background: "#10b981",
-                              boxShadow: "0 0 6px #10b981",
+                              background: "var(--success)",
                             }}
                           />
                         )}
                       </div>
-                      <div style={{ fontSize: 11, color: "#64748b", marginTop: 1 }}>
-                        {lic.activations.length} total device bound
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>
+                        {lic.activations.length} device activations
                       </div>
                     </td>
 
                     {/* Expiry */}
-                    <td data-label="Expiration Date" style={{ padding: "12px 14px" }}>
-                      <div style={{ fontWeight: 600, fontSize: 12.5, color: "#0f172a" }}>
+                    <td data-label="Expiration Date">
+                      <div style={{ fontWeight: 600, fontSize: 12, color: "var(--text)" }}>
                         {formatDate(lic.dates.expiresAt)}
                       </div>
                       {remDays !== null && (
@@ -703,7 +626,7 @@ export function OfficeLicenseManager({
                           style={{
                             fontSize: 11,
                             fontWeight: 600,
-                            color: isExpired ? "#dc2626" : isExpiringSoon ? "#d97706" : "#059669",
+                            color: isExpired ? "var(--danger)" : isExpiringSoon ? "var(--warning)" : "var(--success)",
                             marginTop: 1,
                           }}
                         >
@@ -715,51 +638,23 @@ export function OfficeLicenseManager({
                     </td>
 
                     {/* Status Badge */}
-                    <td data-label="Status" style={{ padding: "12px 14px" }}>
+                    <td data-label="Status">
                       <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 4,
-                          padding: "3px 9px",
-                          borderRadius: 20,
-                          fontSize: 11.5,
-                          fontWeight: 700,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.02em",
-                          background:
-                            lic.status === "ACTIVE"
-                              ? "#ecfdf5"
-                              : lic.status === "REVOKED"
-                              ? "#fef2f2"
-                              : lic.status === "SUSPENDED"
-                              ? "#fffbeb"
-                              : "#f1f5f9",
-                          color:
-                            lic.status === "ACTIVE"
-                              ? "#047857"
-                              : lic.status === "REVOKED"
-                              ? "#b91c1c"
-                              : lic.status === "SUSPENDED"
-                              ? "#b45309"
-                              : "#475569",
-                          border: `1px solid ${
-                            lic.status === "ACTIVE"
-                              ? "#a7f3d0"
-                              : lic.status === "REVOKED"
-                              ? "#fecaca"
-                              : lic.status === "SUSPENDED"
-                              ? "#fde68a"
-                              : "#cbd5e1"
-                          }`,
-                        }}
+                        className={`badge ${
+                          lic.status === "ACTIVE"
+                            ? "badge-active"
+                            : lic.status === "REVOKED"
+                            ? "badge-cancelled"
+                            : "badge-pending"
+                        }`}
+                        style={{ fontSize: "11px" }}
                       >
                         {lic.status}
                       </span>
                     </td>
 
-                    {/* Actions */}
-                    <td data-label="Actions" style={{ padding: "12px 14px", textAlign: "right" }}>
+                    {/* Actions - Standard ERP Theme Buttons */}
+                    <td data-label="Actions" style={{ textAlign: "right" }}>
                       <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                         {/* View Details Button (Available to ALL users) */}
                         <button
@@ -769,16 +664,9 @@ export function OfficeLicenseManager({
                             setDetailTab("overview");
                           }}
                           className="secondary-btn"
-                          style={{
-                            padding: "5px 9px",
-                            fontSize: 11.5,
-                            height: 28,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 4,
-                          }}
+                          style={{ minHeight: 28, height: 28, padding: "3px 8px", fontSize: "11px" }}
                         >
-                          <Eye size={13} />
+                          <Eye size={12} />
                           <span>Details</span>
                         </button>
 
@@ -794,17 +682,9 @@ export function OfficeLicenseManager({
                                 setExtendReason("");
                               }}
                               className="primary-btn"
-                              style={{
-                                padding: "5px 9px",
-                                fontSize: 11.5,
-                                height: 28,
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 4,
-                                background: "#0284c7",
-                              }}
+                              style={{ minHeight: 28, height: 28, padding: "3px 8px", fontSize: "11px" }}
                             >
-                              <Plus size={13} />
+                              <Plus size={12} />
                               <span>Extend</span>
                             </button>
 
@@ -816,22 +696,10 @@ export function OfficeLicenseManager({
                                   setRestoreTarget(lic);
                                   setRestoreReason("");
                                 }}
-                                style={{
-                                  padding: "5px 9px",
-                                  fontSize: 11.5,
-                                  height: 28,
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 4,
-                                  borderRadius: 6,
-                                  border: "1px solid #059669",
-                                  background: "#ecfdf5",
-                                  color: "#065f46",
-                                  fontWeight: 600,
-                                  cursor: "pointer",
-                                }}
+                                className="success-btn"
+                                style={{ minHeight: 28, height: 28, padding: "3px 8px", fontSize: "11px" }}
                               >
-                                <Unlock size={13} />
+                                <Unlock size={12} />
                                 <span>Restore</span>
                               </button>
                             ) : (
@@ -841,36 +709,16 @@ export function OfficeLicenseManager({
                                   setRevokeTarget(lic);
                                   setRevokeReason("");
                                 }}
-                                style={{
-                                  padding: "5px 9px",
-                                  fontSize: 11.5,
-                                  height: 28,
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 4,
-                                  borderRadius: 6,
-                                  border: "1px solid #ef4444",
-                                  background: "#fef2f2",
-                                  color: "#b91c1c",
-                                  fontWeight: 600,
-                                  cursor: "pointer",
-                                }}
+                                className="danger-btn"
+                                style={{ minHeight: 28, height: 28, padding: "3px 8px", fontSize: "11px" }}
                               >
-                                <Ban size={13} />
+                                <Ban size={12} />
                                 <span>Revoke</span>
                               </button>
                             )}
                           </>
                         ) : (
-                          <span
-                            title="Only administrators can extend, revoke, or ban activations."
-                            style={{
-                              fontSize: 11,
-                              color: "#94a3b8",
-                              fontStyle: "italic",
-                              padding: "2px 6px",
-                            }}
-                          >
+                          <span style={{ fontSize: 11, color: "var(--text-muted)", fontStyle: "italic" }}>
                             Read Only
                           </span>
                         )}
@@ -882,9 +730,9 @@ export function OfficeLicenseManager({
 
               {!filtered.length && (
                 <tr>
-                  <td colSpan={7} style={{ padding: "36px 16px", textAlign: "center", color: "#64748b" }}>
-                    <KeyRound size={28} color="#94a3b8" style={{ margin: "0 auto 8px" }} />
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>No licenses found matching your filters</div>
+                  <td colSpan={7} style={{ padding: "36px 16px", textAlign: "center", color: "var(--text-muted)" }}>
+                    <KeyRound size={26} color="var(--text-muted)" style={{ margin: "0 auto 8px" }} />
+                    <div style={{ fontWeight: 600, fontSize: 13, color: "var(--text)" }}>No licenses found matching your filters</div>
                     <div style={{ fontSize: 12, marginTop: 4 }}>
                       Try adjusting your search query or selecting a different status filter.
                     </div>
@@ -897,7 +745,7 @@ export function OfficeLicenseManager({
       </div>
 
       {/* ========================================================================= */}
-      {/* LICENSE DETAILS DRAWER / MODAL (ACCESSIBLE TO ALL USERS)                 */}
+      {/* LICENSE DETAILS MODAL (ACCESSIBLE TO ALL USERS)                          */}
       {/* ========================================================================= */}
       {selectedLicense && (
         <div
@@ -915,63 +763,56 @@ export function OfficeLicenseManager({
           onClick={() => setSelectedLicense(null)}
         >
           <div
+            className="table-card"
             style={{
-              background: "#ffffff",
-              borderRadius: 14,
               width: "100%",
               maxWidth: 720,
               maxHeight: "90vh",
               overflowY: "auto",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
-              border: "1px solid #cbd5e1",
+              padding: 0,
+              boxShadow: "var(--modal-shadow)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div
               style={{
-                padding: "18px 22px",
-                borderBottom: "1px solid #e2e8f0",
+                padding: "16px 20px",
+                borderBottom: "1px solid var(--line)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                background: "#f8fafc",
+                background: "var(--soft)",
               }}
             >
               <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#0f172a" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--text)" }}>
                     License Details
                   </h3>
                   <code
                     style={{
-                      background: "#e2e8f0",
-                      padding: "2px 8px",
+                      background: "var(--surface)",
+                      padding: "2px 6px",
                       borderRadius: 4,
-                      fontSize: 12,
+                      fontSize: 11.5,
                       fontWeight: 700,
+                      border: "1px solid var(--line)",
                     }}
                   >
                     {selectedLicense.serial}
                   </code>
                 </div>
-                <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                <div style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 2 }}>
                   {selectedLicense.application.name} · {selectedLicense.vendor.name}
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedLicense(null)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "#64748b",
-                  padding: 4,
-                  borderRadius: 6,
-                }}
+                style={{ color: "var(--text-muted)", padding: 4 }}
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
@@ -979,56 +820,56 @@ export function OfficeLicenseManager({
             <div
               style={{
                 display: "flex",
-                borderBottom: "1px solid #e2e8f0",
-                padding: "0 22px",
+                borderBottom: "1px solid var(--line)",
+                padding: "0 20px",
                 gap: 16,
-                background: "#ffffff",
+                background: "var(--surface)",
               }}
             >
               <button
                 type="button"
                 onClick={() => setDetailTab("overview")}
                 style={{
-                  padding: "12px 4px",
-                  fontSize: 13,
+                  padding: "10px 4px",
+                  fontSize: 12.5,
                   fontWeight: 600,
                   border: "none",
                   background: "none",
                   cursor: "pointer",
-                  color: detailTab === "overview" ? "#0284c7" : "#64748b",
-                  borderBottom: detailTab === "overview" ? "2px solid #0284c7" : "2px solid transparent",
+                  color: detailTab === "overview" ? "var(--brand)" : "var(--text-muted)",
+                  borderBottom: detailTab === "overview" ? "2px solid var(--brand)" : "2px solid transparent",
                 }}
               >
-                Overview & Dates
+                Overview &amp; Dates
               </button>
               <button
                 type="button"
                 onClick={() => setDetailTab("modules")}
                 style={{
-                  padding: "12px 4px",
-                  fontSize: 13,
+                  padding: "10px 4px",
+                  fontSize: 12.5,
                   fontWeight: 600,
                   border: "none",
                   background: "none",
                   cursor: "pointer",
-                  color: detailTab === "modules" ? "#0284c7" : "#64748b",
-                  borderBottom: detailTab === "modules" ? "2px solid #0284c7" : "2px solid transparent",
+                  color: detailTab === "modules" ? "var(--brand)" : "var(--text-muted)",
+                  borderBottom: detailTab === "modules" ? "2px solid var(--brand)" : "2px solid transparent",
                 }}
               >
-                Modules & Entitlements ({selectedLicense.modules.length})
+                Modules &amp; Entitlements ({selectedLicense.modules.length})
               </button>
               <button
                 type="button"
                 onClick={() => setDetailTab("activations")}
                 style={{
-                  padding: "12px 4px",
-                  fontSize: 13,
+                  padding: "10px 4px",
+                  fontSize: 12.5,
                   fontWeight: 600,
                   border: "none",
                   background: "none",
                   cursor: "pointer",
-                  color: detailTab === "activations" ? "#0284c7" : "#64748b",
-                  borderBottom: detailTab === "activations" ? "2px solid #0284c7" : "2px solid transparent",
+                  color: detailTab === "activations" ? "var(--brand)" : "var(--text-muted)",
+                  borderBottom: detailTab === "activations" ? "2px solid var(--brand)" : "2px solid transparent",
                 }}
               >
                 Connected Activations ({selectedLicense.activations.length})
@@ -1036,38 +877,37 @@ export function OfficeLicenseManager({
             </div>
 
             {/* Tab Body */}
-            <div style={{ padding: "22px" }}>
+            <div style={{ padding: "18px 20px" }}>
               {detailTab === "overview" && (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>
+                    <label style={{ fontSize: 10.5, fontWeight: 750, color: "var(--text-muted)", textTransform: "uppercase" }}>
                       Customer / Tenant
                     </label>
-                    <div style={{ fontWeight: 600, fontSize: 13, marginTop: 3 }}>
+                    <div style={{ fontWeight: 650, fontSize: 12.5, marginTop: 3, color: "var(--text)" }}>
                       {selectedLicense.customerOrganization}
                     </div>
                     {selectedLicense.customerContact?.email && (
-                      <div style={{ fontSize: 12, color: "#64748b" }}>
+                      <div style={{ fontSize: 11.5, color: "var(--text-muted)" }}>
                         Contact: {selectedLicense.customerContact.email}
                       </div>
                     )}
                   </div>
 
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>
+                    <label style={{ fontSize: 10.5, fontWeight: 750, color: "var(--text-muted)", textTransform: "uppercase" }}>
                       Current Status
                     </label>
                     <div style={{ marginTop: 3 }}>
                       <span
-                        style={{
-                          display: "inline-block",
-                          padding: "3px 8px",
-                          borderRadius: 4,
-                          fontWeight: 700,
-                          fontSize: 11.5,
-                          background: selectedLicense.status === "ACTIVE" ? "#ecfdf5" : "#fef2f2",
-                          color: selectedLicense.status === "ACTIVE" ? "#047857" : "#b91c1c",
-                        }}
+                        className={`badge ${
+                          selectedLicense.status === "ACTIVE"
+                            ? "badge-active"
+                            : selectedLicense.status === "REVOKED"
+                            ? "badge-cancelled"
+                            : "badge-pending"
+                        }`}
+                        style={{ fontSize: "11px" }}
                       >
                         {selectedLicense.status}
                       </span>
@@ -1075,61 +915,61 @@ export function OfficeLicenseManager({
                   </div>
 
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>
+                    <label style={{ fontSize: 10.5, fontWeight: 750, color: "var(--text-muted)", textTransform: "uppercase" }}>
                       Vendor Namespace
                     </label>
-                    <div style={{ fontWeight: 600, fontSize: 13, marginTop: 3 }}>
+                    <div style={{ fontWeight: 650, fontSize: 12.5, marginTop: 3, color: "var(--text)" }}>
                       {selectedLicense.vendor.name} ({selectedLicense.vendor.code})
                     </div>
-                    <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "monospace" }}>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "monospace" }}>
                       UUID: {selectedLicense.vendor.publicId}
                     </div>
                   </div>
 
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>
+                    <label style={{ fontSize: 10.5, fontWeight: 750, color: "var(--text-muted)", textTransform: "uppercase" }}>
                       Application Namespace
                     </label>
-                    <div style={{ fontWeight: 600, fontSize: 13, marginTop: 3 }}>
+                    <div style={{ fontWeight: 650, fontSize: 12.5, marginTop: 3, color: "var(--text)" }}>
                       {selectedLicense.application.name} ({selectedLicense.application.code})
                     </div>
-                    <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "monospace" }}>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "monospace" }}>
                       UUID: {selectedLicense.application.publicId}
                     </div>
                   </div>
 
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>
+                    <label style={{ fontSize: 10.5, fontWeight: 750, color: "var(--text-muted)", textTransform: "uppercase" }}>
                       Valid From
                     </label>
-                    <div style={{ fontWeight: 600, fontSize: 13, marginTop: 3 }}>
+                    <div style={{ fontWeight: 650, fontSize: 12.5, marginTop: 3, color: "var(--text)" }}>
                       {formatDate(selectedLicense.dates.validFrom)}
                     </div>
                   </div>
 
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>
+                    <label style={{ fontSize: 10.5, fontWeight: 750, color: "var(--text-muted)", textTransform: "uppercase" }}>
                       Expiration Date
                     </label>
-                    <div style={{ fontWeight: 600, fontSize: 13, marginTop: 3 }}>
+                    <div style={{ fontWeight: 650, fontSize: 12.5, marginTop: 3, color: "var(--text)" }}>
                       {formatDate(selectedLicense.dates.expiresAt)}
                     </div>
                   </div>
 
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>
+                    <label style={{ fontSize: 10.5, fontWeight: 750, color: "var(--text-muted)", textTransform: "uppercase" }}>
                       Provisioned Seats
                     </label>
-                    <div style={{ fontWeight: 600, fontSize: 13, marginTop: 3 }}>
+                    <div style={{ fontWeight: 650, fontSize: 12.5, marginTop: 3, color: "var(--text)" }}>
                       {selectedLicense.seats.activeActivations} Active / {selectedLicense.seats.maxActivations} Max Allowed
                     </div>
                   </div>
 
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>
+                    <label style={{ fontSize: 10.5, fontWeight: 750, color: "var(--text-muted)", textTransform: "uppercase" }}>
                       Last Validated Timestamp
                     </label>
-                    <div style={{ fontWeight: 600, fontSize: 13, marginTop: 3 }}>
+                    <div style={{ fontWeight: 650, fontSize: 12.5, marginTop: 3, color: "var(--text)" }}>
                       {selectedLicense.dates.lastValidatedAt
                         ? formatDate(selectedLicense.dates.lastValidatedAt)
                         : "Never validated online"}
@@ -1139,30 +979,30 @@ export function OfficeLicenseManager({
               )}
 
               {detailTab === "modules" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   <div>
-                    <h4 style={{ margin: "0 0 10px 0", fontSize: 13, fontWeight: 700, color: "#334155" }}>
+                    <h4 style={{ margin: "0 0 8px 0", fontSize: "12.5px", fontWeight: 700, color: "var(--text)" }}>
                       Authorized Application Modules
                     </h4>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                       {selectedLicense.modules.map((m) => (
                         <div
                           key={m.code}
                           style={{
-                            padding: "10px 12px",
-                            borderRadius: 8,
-                            border: "1px solid #e2e8f0",
-                            background: "#f8fafc",
+                            padding: "8px 10px",
+                            borderRadius: "var(--radius-sm)",
+                            border: "1px solid var(--line)",
+                            background: "var(--soft)",
                           }}
                         >
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <CheckCircle2 size={15} color="#10b981" />
-                            <span style={{ fontWeight: 700, fontSize: 12.5, color: "#0f172a" }}>
+                            <CheckCircle2 size={14} color="var(--success)" />
+                            <span style={{ fontWeight: 700, fontSize: 12, color: "var(--text)" }}>
                               {m.name}
                             </span>
                           </div>
-                          <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>
-                            Code: <code style={{ color: "#0284c7" }}>{m.code}</code>
+                          <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                            Code: <code style={{ color: "var(--brand)" }}>{m.code}</code>
                             {m.description && ` · ${m.description}`}
                           </div>
                         </div>
@@ -1171,29 +1011,29 @@ export function OfficeLicenseManager({
                   </div>
 
                   {Object.keys(selectedLicense.entitlements || {}).length > 0 && (
-                    <div style={{ marginTop: 20 }}>
-                      <h4 style={{ margin: "0 0 10px 0", fontSize: 13, fontWeight: 700, color: "#334155" }}>
-                        Entitlement Parameters & Capacities
+                    <div style={{ marginTop: 12 }}>
+                      <h4 style={{ margin: "0 0 8px 0", fontSize: "12.5px", fontWeight: 700, color: "var(--text)" }}>
+                        Entitlement Parameters &amp; Capacities
                       </h4>
                       <div
                         style={{
                           display: "grid",
-                          gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-                          gap: 8,
+                          gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+                          gap: 6,
                         }}
                       >
                         {Object.entries(selectedLicense.entitlements).map(([key, val]) => (
                           <div
                             key={key}
                             style={{
-                              padding: "8px 12px",
-                              borderRadius: 6,
-                              background: "#f1f5f9",
-                              border: "1px solid #e2e8f0",
+                              padding: "6px 10px",
+                              borderRadius: "var(--radius-sm)",
+                              background: "var(--soft)",
+                              border: "1px solid var(--line)",
                             }}
                           >
-                            <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>{key}</div>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginTop: 2 }}>
+                            <div style={{ fontSize: 10.5, color: "var(--text-muted)", fontWeight: 600 }}>{key}</div>
+                            <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)", marginTop: 2 }}>
                               {String(val)}
                             </div>
                           </div>
@@ -1206,48 +1046,43 @@ export function OfficeLicenseManager({
 
               {detailTab === "activations" && (
                 <div>
-                  <h4 style={{ margin: "0 0 10px 0", fontSize: 13, fontWeight: 700, color: "#334155" }}>
+                  <h4 style={{ margin: "0 0 8px 0", fontSize: "12.5px", fontWeight: 700, color: "var(--text)" }}>
                     Registered Hardware Activations
                   </h4>
                   {selectedLicense.activations.length === 0 ? (
-                    <div style={{ padding: 24, textAlign: "center", color: "#64748b", fontSize: 13 }}>
+                    <div style={{ padding: 20, textAlign: "center", color: "var(--text-muted)", fontSize: 12.5 }}>
                       No client installations have activated this license yet.
                     </div>
                   ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       {selectedLicense.activations.map((a) => (
                         <div
                           key={a.id}
                           style={{
-                            padding: "12px 14px",
-                            borderRadius: 8,
-                            border: "1px solid #e2e8f0",
-                            background: a.state === "BANNED" ? "#fef2f2" : "#f8fafc",
+                            padding: "10px 12px",
+                            borderRadius: "var(--radius-sm)",
+                            border: "1px solid var(--line)",
+                            background: a.state === "BANNED" ? "var(--danger-soft)" : "var(--soft)",
                             display: "flex",
                             flexWrap: "wrap",
                             alignItems: "center",
                             justifyContent: "space-between",
-                            gap: 12,
+                            gap: 10,
                           }}
                         >
                           <div>
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                              <Laptop size={16} color="#64748b" />
-                              <code style={{ fontSize: 12, fontWeight: 700 }}>{a.clientId}</code>
+                              <Laptop size={15} color="var(--text-muted)" />
+                              <code style={{ fontSize: 11.5, fontWeight: 700 }}>{a.clientId}</code>
                               <span
-                                style={{
-                                  fontSize: 10.5,
-                                  fontWeight: 700,
-                                  padding: "2px 6px",
-                                  borderRadius: 4,
-                                  background:
-                                    a.state === "BANNED"
-                                      ? "#dc2626"
-                                      : a.isSocketOnline
-                                      ? "#10b981"
-                                      : "#64748b",
-                                  color: "#fff",
-                                }}
+                                className={`badge ${
+                                  a.state === "BANNED"
+                                    ? "badge-cancelled"
+                                    : a.isSocketOnline
+                                    ? "badge-active"
+                                    : "badge-pending"
+                                }`}
+                                style={{ fontSize: "10.5px" }}
                               >
                                 {a.state === "BANNED"
                                   ? "BANNED"
@@ -1256,12 +1091,12 @@ export function OfficeLicenseManager({
                                   : a.state}
                               </span>
                             </div>
-                            <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 4 }}>
+                            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3 }}>
                               Platform: <b>{a.platform}</b> · Version: <b>{a.appVersion}</b> · Last IP:{" "}
                               <b>{a.lastIp || "Unknown"}</b>
                             </div>
                             {a.lastHeartbeatAt && (
-                              <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
+                              <div style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 2 }}>
                                 Last Heartbeat: {formatDate(a.lastHeartbeatAt)}
                               </div>
                             )}
@@ -1275,18 +1110,10 @@ export function OfficeLicenseManager({
                                   type="button"
                                   onClick={() => handleUnbanClient(a.clientId)}
                                   disabled={isPending}
-                                  style={{
-                                    padding: "4px 10px",
-                                    fontSize: 11.5,
-                                    fontWeight: 600,
-                                    borderRadius: 6,
-                                    background: "#ecfdf5",
-                                    color: "#065f46",
-                                    border: "1px solid #059669",
-                                    cursor: "pointer",
-                                  }}
+                                  className="success-btn"
+                                  style={{ minHeight: 28, height: 28, padding: "3px 8px", fontSize: "11px" }}
                                 >
-                                  Unban Installation
+                                  Unban
                                 </button>
                               ) : (
                                 <button
@@ -1298,23 +1125,15 @@ export function OfficeLicenseManager({
                                     })
                                   }
                                   disabled={isPending}
-                                  style={{
-                                    padding: "4px 10px",
-                                    fontSize: 11.5,
-                                    fontWeight: 600,
-                                    borderRadius: 6,
-                                    background: "#fef2f2",
-                                    color: "#b91c1c",
-                                    border: "1px solid #ef4444",
-                                    cursor: "pointer",
-                                  }}
+                                  className="danger-btn"
+                                  style={{ minHeight: 28, height: 28, padding: "3px 8px", fontSize: "11px" }}
                                 >
                                   Ban Installation
                                 </button>
                               )}
                             </div>
                           ) : (
-                            <span style={{ fontSize: 11, color: "#94a3b8" }}>
+                            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
                               Admin ban required
                             </span>
                           )}
@@ -1329,16 +1148,16 @@ export function OfficeLicenseManager({
             {/* Modal Footer */}
             <div
               style={{
-                padding: "14px 22px",
-                borderTop: "1px solid #e2e8f0",
+                padding: "12px 20px",
+                borderTop: "1px solid var(--line)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                background: "#f8fafc",
+                background: "var(--soft)",
               }}
             >
-              <div style={{ fontSize: 11.5, color: "#64748b" }}>
-                License Serial: <code style={{ fontWeight: 700 }}>{selectedLicense.serial}</code>
+              <div style={{ fontSize: 11.5, color: "var(--text-muted)" }}>
+                Serial: <code style={{ fontWeight: 700 }}>{selectedLicense.serial}</code>
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 {isAdmin && (
@@ -1352,7 +1171,6 @@ export function OfficeLicenseManager({
                         setExtendDays(365);
                       }}
                       className="primary-btn"
-                      style={{ fontSize: 12, height: 32, padding: "0 12px" }}
                     >
                       Extend Validity
                     </button>
@@ -1364,17 +1182,7 @@ export function OfficeLicenseManager({
                           setSelectedLicense(null);
                           setRevokeTarget(target);
                         }}
-                        style={{
-                          fontSize: 12,
-                          height: 32,
-                          padding: "0 12px",
-                          borderRadius: 6,
-                          background: "#fef2f2",
-                          color: "#b91c1c",
-                          border: "1px solid #ef4444",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                        }}
+                        className="danger-btn"
                       >
                         Revoke License
                       </button>
@@ -1386,17 +1194,7 @@ export function OfficeLicenseManager({
                           setSelectedLicense(null);
                           setRestoreTarget(target);
                         }}
-                        style={{
-                          fontSize: 12,
-                          height: 32,
-                          padding: "0 12px",
-                          borderRadius: 6,
-                          background: "#ecfdf5",
-                          color: "#065f46",
-                          border: "1px solid #059669",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                        }}
+                        className="success-btn"
                       >
                         Restore License
                       </button>
@@ -1407,7 +1205,6 @@ export function OfficeLicenseManager({
                   type="button"
                   onClick={() => setSelectedLicense(null)}
                   className="secondary-btn"
-                  style={{ fontSize: 12, height: 32, padding: "0 12px" }}
                 >
                   Close
                 </button>
@@ -1436,49 +1233,38 @@ export function OfficeLicenseManager({
           onClick={() => setExtendTarget(null)}
         >
           <div
+            className="table-card"
             style={{
-              background: "#ffffff",
-              borderRadius: 14,
               width: "100%",
-              maxWidth: 480,
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
-              border: "1px solid #cbd5e1",
-              overflow: "hidden",
+              maxWidth: 460,
+              padding: 0,
+              boxShadow: "var(--modal-shadow)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <form onSubmit={handleExtendSubmit}>
-              <div style={{ padding: "18px 22px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
-                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#0f172a" }}>
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--line)", background: "var(--soft)" }}>
+                <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--text)" }}>
                   Extend License Validity
                 </h3>
-                <div style={{ fontSize: 12, color: "#64748b", marginTop: 3 }}>
-                  Serial: <code style={{ fontWeight: 700 }}>{extendTarget.serial}</code> (
-                  {extendTarget.customerOrganization})
+                <div style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 2 }}>
+                  Serial: <code style={{ fontWeight: 700 }}>{extendTarget.serial}</code> ({extendTarget.customerOrganization})
                 </div>
               </div>
 
-              <div style={{ padding: 22, display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#334155", display: "block", marginBottom: 6 }}>
+                  <label style={{ fontSize: 11.5, fontWeight: 600, color: "var(--text)", display: "block", marginBottom: 6 }}>
                     Select Extension Duration
                   </label>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
                     {[30, 90, 180, 365].map((d) => (
                       <button
                         type="button"
                         key={d}
                         onClick={() => setExtendDays(d)}
-                        style={{
-                          padding: "8px 4px",
-                          borderRadius: 6,
-                          fontSize: 12,
-                          fontWeight: 700,
-                          cursor: "pointer",
-                          border: extendDays === d ? "2px solid #0284c7" : "1px solid #cbd5e1",
-                          background: extendDays === d ? "#f0f9ff" : "#ffffff",
-                          color: extendDays === d ? "#0369a1" : "#334155",
-                        }}
+                        className={extendDays === d ? "primary-btn" : "secondary-btn"}
+                        style={{ height: 32, fontSize: 11.5 }}
                       >
                         +{d} Days
                       </button>
@@ -1487,8 +1273,8 @@ export function OfficeLicenseManager({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#334155", display: "block", marginBottom: 6 }}>
-                    Or Custom Number of Days
+                  <label style={{ fontSize: 11.5, fontWeight: 600, color: "var(--text)", display: "block", marginBottom: 4 }}>
+                    Custom Number of Days
                   </label>
                   <input
                     type="number"
@@ -1498,17 +1284,19 @@ export function OfficeLicenseManager({
                     onChange={(e) => setExtendDays(Number(e.target.value))}
                     style={{
                       width: "100%",
-                      height: 36,
-                      borderRadius: 6,
-                      border: "1px solid #cbd5e1",
+                      height: 32,
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--line)",
+                      background: "var(--surface)",
+                      color: "var(--text)",
                       padding: "0 10px",
-                      fontSize: 13,
+                      fontSize: 12.5,
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#334155", display: "block", marginBottom: 6 }}>
+                  <label style={{ fontSize: 11.5, fontWeight: 600, color: "var(--text)", display: "block", marginBottom: 4 }}>
                     Reason / Notes (Optional)
                   </label>
                   <input
@@ -1518,11 +1306,13 @@ export function OfficeLicenseManager({
                     onChange={(e) => setExtendReason(e.target.value)}
                     style={{
                       width: "100%",
-                      height: 36,
-                      borderRadius: 6,
-                      border: "1px solid #cbd5e1",
+                      height: 32,
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--line)",
+                      background: "var(--surface)",
+                      color: "var(--text)",
                       padding: "0 10px",
-                      fontSize: 13,
+                      fontSize: 12.5,
                     }}
                   />
                 </div>
@@ -1530,19 +1320,18 @@ export function OfficeLicenseManager({
 
               <div
                 style={{
-                  padding: "14px 22px",
-                  borderTop: "1px solid #e2e8f0",
-                  background: "#f8fafc",
+                  padding: "12px 20px",
+                  borderTop: "1px solid var(--line)",
+                  background: "var(--soft)",
                   display: "flex",
                   justifyContent: "flex-end",
-                  gap: 10,
+                  gap: 8,
                 }}
               >
                 <button
                   type="button"
                   onClick={() => setExtendTarget(null)}
                   className="secondary-btn"
-                  style={{ fontSize: 12.5, height: 34 }}
                 >
                   Cancel
                 </button>
@@ -1550,7 +1339,6 @@ export function OfficeLicenseManager({
                   type="submit"
                   disabled={isPending}
                   className="primary-btn"
-                  style={{ fontSize: 12.5, height: 34 }}
                 >
                   {isPending ? "Extending..." : "Confirm Extension"}
                 </button>
@@ -1579,38 +1367,36 @@ export function OfficeLicenseManager({
           onClick={() => setRevokeTarget(null)}
         >
           <div
+            className="table-card"
             style={{
-              background: "#ffffff",
-              borderRadius: 14,
               width: "100%",
-              maxWidth: 480,
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
-              border: "1px solid #cbd5e1",
-              overflow: "hidden",
+              maxWidth: 460,
+              padding: 0,
+              boxShadow: "var(--modal-shadow)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <form onSubmit={handleRevokeSubmit}>
-              <div style={{ padding: "18px 22px", borderBottom: "1px solid #e2e8f0", background: "#fef2f2" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <AlertTriangle size={20} color="#dc2626" />
-                  <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#991b1b" }}>
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--danger-border)", background: "var(--danger-soft)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <AlertTriangle size={18} color="var(--danger)" />
+                  <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--danger)" }}>
                     Revoke Commercial License
                   </h3>
                 </div>
-                <div style={{ fontSize: 12, color: "#7f1d1d", marginTop: 3 }}>
+                <div style={{ fontSize: 11.5, color: "var(--danger)", marginTop: 2 }}>
                   Serial: <code style={{ fontWeight: 700 }}>{revokeTarget.serial}</code>
                 </div>
               </div>
 
-              <div style={{ padding: 22, display: "flex", flexDirection: "column", gap: 14 }}>
-                <p style={{ margin: 0, fontSize: "13px", color: "#475569", lineHeight: 1.5 }}>
+              <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
+                <p style={{ margin: 0, fontSize: "12.5px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
                   Warning: Revoking this license will immediately lock licensed features and terminate active
                   client socket connections across all registered machines.
                 </p>
 
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#334155", display: "block", marginBottom: 6 }}>
+                  <label style={{ fontSize: 11.5, fontWeight: 600, color: "var(--text)", display: "block", marginBottom: 4 }}>
                     Revocation Reason
                   </label>
                   <input
@@ -1621,11 +1407,13 @@ export function OfficeLicenseManager({
                     onChange={(e) => setRevokeReason(e.target.value)}
                     style={{
                       width: "100%",
-                      height: 36,
-                      borderRadius: 6,
-                      border: "1px solid #cbd5e1",
+                      height: 32,
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--line)",
+                      background: "var(--surface)",
+                      color: "var(--text)",
                       padding: "0 10px",
-                      fontSize: 13,
+                      fontSize: 12.5,
                     }}
                   />
                 </div>
@@ -1633,38 +1421,27 @@ export function OfficeLicenseManager({
 
               <div
                 style={{
-                  padding: "14px 22px",
-                  borderTop: "1px solid #e2e8f0",
-                  background: "#f8fafc",
+                  padding: "12px 20px",
+                  borderTop: "1px solid var(--line)",
+                  background: "var(--soft)",
                   display: "flex",
                   justifyContent: "flex-end",
-                  gap: 10,
+                  gap: 8,
                 }}
               >
                 <button
                   type="button"
                   onClick={() => setRevokeTarget(null)}
                   className="secondary-btn"
-                  style={{ fontSize: 12.5, height: 34 }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isPending}
-                  style={{
-                    fontSize: 12.5,
-                    height: 34,
-                    padding: "0 16px",
-                    borderRadius: 6,
-                    background: "#dc2626",
-                    color: "#fff",
-                    fontWeight: 600,
-                    border: "none",
-                    cursor: "pointer",
-                  }}
+                  className="danger-btn"
                 >
-                  {isPending ? "Revoking..." : "Confirm Revocation"}
+                  {isPending ? "Revoking..." : "Confirm Revoke"}
                 </button>
               </div>
             </form>
@@ -1691,52 +1468,51 @@ export function OfficeLicenseManager({
           onClick={() => setRestoreTarget(null)}
         >
           <div
+            className="table-card"
             style={{
-              background: "#ffffff",
-              borderRadius: 14,
               width: "100%",
-              maxWidth: 480,
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
-              border: "1px solid #cbd5e1",
-              overflow: "hidden",
+              maxWidth: 460,
+              padding: 0,
+              boxShadow: "var(--modal-shadow)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <form onSubmit={handleRestoreSubmit}>
-              <div style={{ padding: "18px 22px", borderBottom: "1px solid #e2e8f0", background: "#ecfdf5" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <Unlock size={20} color="#059669" />
-                  <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#065f46" }}>
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--success-border)", background: "var(--success-soft)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <Unlock size={18} color="var(--success)" />
+                  <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--success)" }}>
                     Restore License to Active Status
                   </h3>
                 </div>
-                <div style={{ fontSize: 12, color: "#047857", marginTop: 3 }}>
+                <div style={{ fontSize: 11.5, color: "var(--success)", marginTop: 2 }}>
                   Serial: <code style={{ fontWeight: 700 }}>{restoreTarget.serial}</code>
                 </div>
               </div>
 
-              <div style={{ padding: 22, display: "flex", flexDirection: "column", gap: 14 }}>
-                <p style={{ margin: 0, fontSize: "13px", color: "#475569", lineHeight: 1.5 }}>
-                  Restoring this license will reset status to ACTIVE, permit clients to revalidate online, and
-                  re-enable authorized application modules.
+              <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
+                <p style={{ margin: 0, fontSize: "12.5px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                  Restoring will re-enable all authorized features for registered client activations.
                 </p>
 
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#334155", display: "block", marginBottom: 6 }}>
-                    Restoration Reason (Optional)
+                  <label style={{ fontSize: 11.5, fontWeight: 600, color: "var(--text)", display: "block", marginBottom: 4 }}>
+                    Restoration Reason / Notes (Optional)
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Account cleared and reinstated"
+                    placeholder="e.g. Account settled or payment verified"
                     value={restoreReason}
                     onChange={(e) => setRestoreReason(e.target.value)}
                     style={{
                       width: "100%",
-                      height: 36,
-                      borderRadius: 6,
-                      border: "1px solid #cbd5e1",
+                      height: 32,
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--line)",
+                      background: "var(--surface)",
+                      color: "var(--text)",
                       padding: "0 10px",
-                      fontSize: 13,
+                      fontSize: 12.5,
                     }}
                   />
                 </div>
@@ -1744,29 +1520,27 @@ export function OfficeLicenseManager({
 
               <div
                 style={{
-                  padding: "14px 22px",
-                  borderTop: "1px solid #e2e8f0",
-                  background: "#f8fafc",
+                  padding: "12px 20px",
+                  borderTop: "1px solid var(--line)",
+                  background: "var(--soft)",
                   display: "flex",
                   justifyContent: "flex-end",
-                  gap: 10,
+                  gap: 8,
                 }}
               >
                 <button
                   type="button"
                   onClick={() => setRestoreTarget(null)}
                   className="secondary-btn"
-                  style={{ fontSize: 12.5, height: 34 }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="primary-btn"
-                  style={{ fontSize: 12.5, height: 34, background: "#059669" }}
+                  className="success-btn"
                 >
-                  {isPending ? "Restoring..." : "Restore License"}
+                  {isPending ? "Restoring..." : "Confirm Restore"}
                 </button>
               </div>
             </form>
@@ -1775,7 +1549,7 @@ export function OfficeLicenseManager({
       )}
 
       {/* ========================================================================= */}
-      {/* BAN CLIENT MODAL (ADMIN ONLY)                                            */}
+      {/* BAN CLIENT ACTIVATION MODAL (ADMIN ONLY)                                 */}
       {/* ========================================================================= */}
       {banClientTarget && (
         <div
@@ -1793,53 +1567,52 @@ export function OfficeLicenseManager({
           onClick={() => setBanClientTarget(null)}
         >
           <div
+            className="table-card"
             style={{
-              background: "#ffffff",
-              borderRadius: 14,
               width: "100%",
-              maxWidth: 480,
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
-              border: "1px solid #cbd5e1",
-              overflow: "hidden",
+              maxWidth: 460,
+              padding: 0,
+              boxShadow: "var(--modal-shadow)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <form onSubmit={handleBanClientSubmit}>
-              <div style={{ padding: "18px 22px", borderBottom: "1px solid #e2e8f0", background: "#fef2f2" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <Ban size={20} color="#dc2626" />
-                  <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#991b1b" }}>
-                    Ban Client Device Installation
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--danger-border)", background: "var(--danger-soft)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <Ban size={18} color="var(--danger)" />
+                  <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--danger)" }}>
+                    Ban Client Hardware Activation
                   </h3>
                 </div>
-                <div style={{ fontSize: 12, color: "#7f1d1d", marginTop: 3 }}>
-                  Installation UUID: <code style={{ fontWeight: 700 }}>{banClientTarget.clientId}</code>
+                <div style={{ fontSize: 11.5, color: "var(--danger)", marginTop: 2 }}>
+                  Client ID: <code style={{ fontWeight: 700 }}>{banClientTarget.clientId}</code>
                 </div>
               </div>
 
-              <div style={{ padding: 22, display: "flex", flexDirection: "column", gap: 14 }}>
-                <p style={{ margin: 0, fontSize: "13px", color: "#475569", lineHeight: 1.5 }}>
-                  Banning this device stops heartbeats, sends a signed termination signal, disconnects the live socket,
-                  and blocks reconnection for this hardware instance.
+              <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
+                <p style={{ margin: 0, fontSize: "12.5px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                  This specific machine/installation will be barred from communicating with the license server
+                  under this license key.
                 </p>
 
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#334155", display: "block", marginBottom: 6 }}>
-                    Ban Reason
+                  <label style={{ fontSize: 11.5, fontWeight: 600, color: "var(--text)", display: "block", marginBottom: 4 }}>
+                    Ban Reason (Optional)
                   </label>
                   <input
                     type="text"
-                    required
-                    placeholder="e.g. Unauthorized workstation, hardware cloned"
+                    placeholder="e.g. Unauthorized hardware deployment or device decommissioned"
                     value={banReason}
                     onChange={(e) => setBanReason(e.target.value)}
                     style={{
                       width: "100%",
-                      height: 36,
-                      borderRadius: 6,
-                      border: "1px solid #cbd5e1",
+                      height: 32,
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--line)",
+                      background: "var(--surface)",
+                      color: "var(--text)",
                       padding: "0 10px",
-                      fontSize: 13,
+                      fontSize: 12.5,
                     }}
                   />
                 </div>
@@ -1847,36 +1620,25 @@ export function OfficeLicenseManager({
 
               <div
                 style={{
-                  padding: "14px 22px",
-                  borderTop: "1px solid #e2e8f0",
-                  background: "#f8fafc",
+                  padding: "12px 20px",
+                  borderTop: "1px solid var(--line)",
+                  background: "var(--soft)",
                   display: "flex",
                   justifyContent: "flex-end",
-                  gap: 10,
+                  gap: 8,
                 }}
               >
                 <button
                   type="button"
                   onClick={() => setBanClientTarget(null)}
                   className="secondary-btn"
-                  style={{ fontSize: 12.5, height: 34 }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isPending}
-                  style={{
-                    fontSize: 12.5,
-                    height: 34,
-                    padding: "0 16px",
-                    borderRadius: 6,
-                    background: "#dc2626",
-                    color: "#fff",
-                    fontWeight: 600,
-                    border: "none",
-                    cursor: "pointer",
-                  }}
+                  className="danger-btn"
                 >
                   {isPending ? "Banning..." : "Confirm Ban"}
                 </button>

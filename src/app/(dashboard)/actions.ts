@@ -1812,6 +1812,37 @@ export async function recordRentalPaymentAction(formData: FormData) {
             expenseId: expense.id,
           },
         });
+      } else if (paymentMethod === "CASH") {
+        const cashAcc = await tx.bankAccount.findFirst({
+          where: {
+            organizationId: orgId,
+            OR: [
+              { accountType: "CASH" },
+              { accountNumber: "CASH-IN-HAND" },
+              { bankName: { contains: "Cash" } },
+            ],
+          },
+        });
+        if (cashAcc) {
+          const updated = await tx.bankAccount.update({
+            where: { id: cashAcc.id },
+            data: { currentBalance: { decrement: paidAmount } },
+          });
+          await tx.bankTransaction.create({
+            data: {
+              organizationId: orgId,
+              bankAccountId: cashAcc.id,
+              transactionDate: paidAt,
+              type: "WITHDRAWAL",
+              amount: paidAmount,
+              balance: updated.currentBalance,
+              description: `Rental payment (Cash) - ${house.title} (${monthDisplay})`,
+              reference,
+              category: "Rent & Premises",
+              expenseId: expense.id,
+            },
+          });
+        }
       }
     } else {
       // UNPAID Bill: Create or upsert an UNPAID (isEstimated: true) expense so it is visible in the expenses ledger for tracking
@@ -1848,6 +1879,220 @@ export async function recordRentalPaymentAction(formData: FormData) {
       }
     }
   });
+
+  refreshModules(orgId, "expenses", "banking", "reports");
+}
+
+export async function recordLumpSumRentPaymentAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  await orgAccess(orgId);
+  const rentalHouseId = s(formData, "rentalHouseId");
+  const paidAmount = n(formData, "paidAmount", 0);
+  if (!rentalHouseId || paidAmount <= 0) {
+    throw new Error("A valid rental house and payment amount greater than zero are required.");
+  }
+
+  const house = await db.rentalHouse.findFirst({
+    where: { id: rentalHouseId, organizationId: orgId },
+    include: {
+      bills: {
+        include: { payments: true },
+        orderBy: { billingMonth: "asc" },
+      },
+    },
+  });
+  if (!house) throw new Error("Rental house property not found.");
+
+  const paidAt = d(formData, "paidAt") ?? new Date();
+  const paymentMethod = (s(formData, "paymentMethod") || "CASH").toUpperCase();
+  const bankAccountId = s(formData, "bankAccountId");
+  const reference = s(formData, "reference") || null;
+  const userNotes = s(formData, "notes") || "";
+
+  let remainingToAllocate = paidAmount;
+  let clearedMonthsCount = 0;
+  let hasPartial = false;
+  const affectedMonths: string[] = [];
+
+  await db.$transaction(async (tx) => {
+    let rentCategory = await tx.expenseCategory.findFirst({
+      where: { organizationId: orgId, name: { contains: "Rent" } },
+    });
+    if (!rentCategory) {
+      rentCategory = await tx.expenseCategory.create({
+        data: { organizationId: orgId, name: "Rent & Premises", icon: "home" },
+      });
+    }
+
+    // Allocate across unpaid/partial bills in FIFO order
+    for (const bill of house.bills) {
+      if (remainingToAllocate <= 0) break;
+
+      const totalBill = Number(bill.totalAmount);
+      const alreadyPaid = bill.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+      const due = Math.max(0, totalBill - alreadyPaid);
+
+      if (due <= 0) continue; // already fully paid
+
+      const allocation = Math.min(due, remainingToAllocate);
+      remainingToAllocate -= allocation;
+      affectedMonths.push(bill.billingMonth);
+
+      if (allocation >= due) {
+        clearedMonthsCount++;
+      } else {
+        hasPartial = true;
+      }
+
+      await tx.rentalPayment.create({
+        data: {
+          organizationId: orgId,
+          rentalBillId: bill.id,
+          amount: allocation,
+          paidAt,
+          paymentMethod,
+          reference: reference || `Rent FIFO Allocation (${bill.billingMonth})`,
+          notes: `Allocated NPR ${allocation.toLocaleString()} towards ${bill.billingMonth} bill. ${userNotes}`,
+        },
+      });
+    }
+
+    // If remainingToAllocate is STILL > 0 (advance hold / prepayment):
+    if (remainingToAllocate > 0) {
+      hasPartial = true;
+    }
+
+    const title = `House Rent Payment - ${clearedMonthsCount > 0 ? `${clearedMonthsCount} month(s) settled` : "Partial Payment"}${hasPartial ? " (with remaining hold)" : ""} [NPR ${paidAmount.toLocaleString()}]`;
+
+    const mainExpense = await tx.expense.create({
+      data: {
+        organizationId: orgId,
+        categoryId: rentCategory.id,
+        title,
+        vendor: house.ownerName,
+        type: "ONE_TIME",
+        amount: paidAmount,
+        occurredAt: paidAt,
+        isEstimated: false,
+        notes: `House rent paid to ${house.ownerName} (${house.title}). Months covered: ${affectedMonths.join(", ") || "Advance Prepayment"}. Ref: ${reference || "None"}. ${userNotes}`.trim(),
+      },
+    });
+
+    // Deduct from selected Bank Account or Cash in Hand
+    if (paymentMethod === "BANK" && bankAccountId) {
+      const account = await tx.bankAccount.findFirst({ where: { id: bankAccountId, organizationId: orgId } });
+      if (!account) throw new Error("Selected payment account was not found.");
+      const updated = await tx.bankAccount.update({
+        where: { id: account.id },
+        data: { currentBalance: { decrement: paidAmount } },
+      });
+      await tx.bankTransaction.create({
+        data: {
+          organizationId: orgId,
+          bankAccountId: account.id,
+          transactionDate: paidAt,
+          type: "WITHDRAWAL",
+          amount: paidAmount,
+          balance: updated.currentBalance,
+          description: `House Rent: ${title}`,
+          reference: reference || `RENT-${house.ownerName}`,
+          category: "Rent & Premises",
+          expenseId: mainExpense.id,
+        },
+      });
+    } else if (paymentMethod === "CASH") {
+      const cashAcc = await tx.bankAccount.findFirst({
+        where: {
+          organizationId: orgId,
+          OR: [
+            { accountType: "CASH" },
+            { accountNumber: "CASH-IN-HAND" },
+            { bankName: { contains: "Cash" } },
+          ],
+        },
+      });
+      if (cashAcc) {
+        const updated = await tx.bankAccount.update({
+          where: { id: cashAcc.id },
+          data: { currentBalance: { decrement: paidAmount } },
+        });
+        await tx.bankTransaction.create({
+          data: {
+            organizationId: orgId,
+            bankAccountId: cashAcc.id,
+            transactionDate: paidAt,
+            type: "WITHDRAWAL",
+            amount: paidAmount,
+            balance: updated.currentBalance,
+            description: `House Rent (Cash): ${title}`,
+            reference: reference || `RENT-${house.ownerName}`,
+            category: "Rent & Premises",
+            expenseId: mainExpense.id,
+          },
+        });
+      }
+    }
+  });
+
+  refreshModules(orgId, "expenses", "banking", "reports");
+}
+
+export async function batchGenerateRentalBillsAction(formData: FormData) {
+  const orgId = s(formData, "orgId");
+  await orgAccess(orgId);
+  const rentalHouseId = s(formData, "rentalHouseId");
+  if (!rentalHouseId) throw new Error("Rental house property is required.");
+
+  const house = await db.rentalHouse.findFirst({
+    where: { id: rentalHouseId, organizationId: orgId },
+  });
+  if (!house) throw new Error("Rental property not found.");
+
+  const monthsJson = s(formData, "months");
+  let months: string[] = [];
+  if (monthsJson) {
+    try {
+      months = JSON.parse(monthsJson);
+    } catch {
+      months = [];
+    }
+  }
+
+  if (months.length === 0) {
+    throw new Error("Please select at least one month to generate.");
+  }
+
+  const customRent = formData.has("monthlyRent") ? n(formData, "monthlyRent", Number(house.monthlyRent)) : Number(house.monthlyRent);
+  const customWater = formData.has("waterGarbageFee") ? n(formData, "waterGarbageFee", Number(house.waterGarbageFee)) : Number(house.waterGarbageFee);
+  const customElec = formData.has("electricityAmount") ? n(formData, "electricityAmount", 0) : 0;
+  const totalAmount = customRent + customWater + customElec;
+
+  for (const m of months) {
+    await db.rentalBill.upsert({
+      where: {
+        rentalHouseId_billingMonth: {
+          rentalHouseId,
+          billingMonth: m,
+        },
+      },
+      update: {
+        rentAmount: customRent,
+        waterAmount: customWater,
+        electricityAmount: customElec,
+        totalAmount,
+      },
+      create: {
+        organizationId: orgId,
+        rentalHouseId,
+        billingMonth: m,
+        rentAmount: customRent,
+        waterAmount: customWater,
+        electricityAmount: customElec,
+        totalAmount,
+        notes: `Unpaid recurring commitment for ${m}`,
+      },
+    });
+  }
 
   refreshModules(orgId, "expenses", "banking", "reports");
 }

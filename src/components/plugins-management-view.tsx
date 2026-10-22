@@ -99,24 +99,28 @@ export function PluginsManagementView({
     const matchesSearch =
       !searchTerm ||
       p.name.toLowerCase().includes(q) ||
-      (p.description && p.description.toLowerCase().includes(q)) ||
-      (p.baseUrl && p.baseUrl.toLowerCase().includes(q));
+      p.slug.toLowerCase().includes(q) ||
+      (p.baseUrl && p.baseUrl.toLowerCase().includes(q)) ||
+      (p.description && p.description.toLowerCase().includes(q));
 
-    const matchesCategory = categoryFilter === "ALL" || p.category === categoryFilter;
-    const matchesStatus = statusFilter === "ALL" || p.status === statusFilter;
+    const matchesCategory =
+      categoryFilter === "ALL" || p.category === categoryFilter;
+
+    const matchesStatus =
+      statusFilter === "ALL" || p.status === statusFilter;
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
   const connectedCount = plugins.filter((p) => p.status === "CONNECTED").length;
-  const disconnectedCount = plugins.filter((p) => p.status !== "CONNECTED").length;
+  const disconnectedCount = plugins.length - connectedCount;
 
+  // Handlers
   const handleOpenConnect = (p: PluginItem) => {
     setConnectTarget(p);
     setConnectBaseUrl(p.baseUrl || "https://license.simulcast.com.np");
-    setConnectApiKey(p.apiKey || "");
+    setConnectApiKey("");
     setShowApiKey(false);
-    setActionNotice(null);
   };
 
   const handleConnectSubmit = (e: React.FormEvent) => {
@@ -127,17 +131,18 @@ export function PluginsManagementView({
     const fd = new FormData();
     fd.append("orgId", orgId);
     fd.append("pluginId", connectTarget.id);
-    fd.append("apiKey", connectApiKey.trim());
-    fd.append("baseUrl", connectBaseUrl.trim());
+    fd.append("apiKey", connectApiKey);
+    fd.append("baseUrl", connectBaseUrl);
 
     startTransition(async () => {
       try {
         await connectPluginWithApiKeyAction(fd);
         setActionNotice({
           type: "success",
-          text: `Plugin "${connectTarget.name}" connected and authenticated successfully!`,
+          text: `Plugin "${connectTarget.name}" connected and verified successfully!`,
         });
         setConnectTarget(null);
+        setConnectApiKey("");
       } catch (err: any) {
         setActionNotice({
           type: "error",
@@ -154,29 +159,27 @@ export function PluginsManagementView({
 
     const fd = new FormData();
     fd.append("orgId", orgId);
-    fd.append("name", newName.trim());
-    fd.append("slug", newSlug.trim());
+    fd.append("name", newName);
+    fd.append("slug", newSlug || newName.toLowerCase().replace(/[^a-z0-9]+/g, "-"));
     fd.append("category", newCategory);
-    fd.append("baseUrl", newBaseUrl.trim());
-    fd.append("allowedDomains", newAllowedDomains.trim());
-    fd.append("logoUrl", newLogoUrl.trim());
+    fd.append("baseUrl", newBaseUrl);
+    fd.append("allowedDomains", newAllowedDomains);
+    fd.append("logoUrl", newLogoUrl);
     fd.append("authType", newAuthType);
-    fd.append("apiKey", newApiKey.trim());
-    fd.append("description", newDescription.trim());
+    fd.append("apiKey", newApiKey);
+    fd.append("description", newDescription);
 
     startTransition(async () => {
       try {
         await createPluginAction(fd);
         setActionNotice({
           type: "success",
-          text: `Plugin "${newName}" created and registered successfully!`,
+          text: `Plugin "${newName}" created successfully.`,
         });
         setShowCreateModal(false);
-        // Reset form
         setNewName("");
         setNewSlug("");
         setNewBaseUrl("");
-        setNewAllowedDomains("");
         setNewLogoUrl("");
         setNewApiKey("");
         setNewDescription("");
@@ -238,79 +241,76 @@ export function PluginsManagementView({
   };
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* Alert Notice */}
       {actionNotice && (
         <div
           style={{
-            padding: "12px 16px",
-            borderRadius: 8,
-            marginBottom: 16,
+            padding: "10px 14px",
+            borderRadius: "var(--radius-sm)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            background: actionNotice.type === "success" ? "#ecfdf5" : "#fef2f2",
-            border: `1px solid ${actionNotice.type === "success" ? "#a7f3d0" : "#fecaca"}`,
-            color: actionNotice.type === "success" ? "#065f46" : "#991b1b",
-            fontSize: "13.5px",
-            fontWeight: 500,
+            background: actionNotice.type === "success" ? "var(--success-soft)" : "var(--danger-soft)",
+            border: `1px solid ${actionNotice.type === "success" ? "var(--success-border)" : "var(--danger-border)"}`,
+            color: actionNotice.type === "success" ? "var(--success)" : "var(--danger)",
+            fontSize: "12.5px",
+            fontWeight: 600,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {actionNotice.type === "success" ? (
-              <CheckCircle2 size={18} color="#059669" />
+              <CheckCircle2 size={16} />
             ) : (
-              <AlertCircle size={18} color="#dc2626" />
+              <AlertCircle size={16} />
             )}
             <span>{actionNotice.text}</span>
           </div>
           <button
+            type="button"
             onClick={() => setActionNotice(null)}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "inherit" }}
+            style={{ color: "inherit", opacity: 0.8 }}
           >
-            <X size={16} />
+            <X size={15} />
           </button>
         </div>
       )}
 
-      {/* Hero Header & Quick Action */}
+      {/* Hero Header & Quick Action - Kashtrix Theme */}
       <div
+        className="table-card"
         style={{
-          background: "linear-gradient(135deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.98))",
-          borderRadius: 14,
-          padding: "22px 26px",
-          color: "#f8fafc",
-          border: "1px solid rgba(255, 255, 255, 0.12)",
-          boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.2)",
+          padding: "16px 20px",
           display: "flex",
           flexWrap: "wrap",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: 16,
+          gap: 14,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div
             style={{
-              width: 48,
-              height: 48,
-              borderRadius: 12,
-              background: "linear-gradient(135deg, #a855f7, #7c3aed)",
+              width: 40,
+              height: 40,
+              borderRadius: "var(--radius-sm)",
+              background: "var(--brand-soft)",
+              border: "1px solid var(--brand-border)",
+              color: "var(--brand)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#fff",
-              boxShadow: "0 4px 14px rgba(168, 85, 247, 0.4)",
+              flexShrink: 0,
             }}
           >
-            <Plug size={24} />
+            <Plug size={22} />
           </div>
           <div>
-            <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 700, letterSpacing: "-0.01em" }}>
-              Plugins & External Integrations Hub
+            <h2 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "var(--text)" }}>
+              Plugins &amp; External Integrations Hub
             </h2>
-            <p style={{ margin: "4px 0 0", fontSize: "12.5px", color: "#94a3b8" }}>
-              Connect third-party microservices, commercial license managers, RADIUS engines, and payment gateways with API Keys or OAuth.
+            <p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--text-muted)" }}>
+              Connect third-party microservices, license managers, and payment gateways with API Keys or OAuth.
             </p>
           </div>
         </div>
@@ -321,34 +321,14 @@ export function PluginsManagementView({
               type="button"
               onClick={() => setShowCreateModal(true)}
               className="primary-btn"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                background: "#9333ea",
-                fontSize: 13,
-                height: 36,
-                padding: "0 14px",
-              }}
             >
-              <Plus size={15} />
+              <Plus size={14} />
               <span>Add / Create Plugin</span>
             </button>
           ) : (
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "6px 12px",
-                borderRadius: 6,
-                background: "rgba(255, 255, 255, 0.08)",
-                fontSize: 12,
-                color: "#94a3b8",
-              }}
-            >
-              <Lock size={13} />
-              <span>Read-Only User</span>
+            <span className="badge badge-pending">
+              <Lock size={12} style={{ marginRight: 4 }} />
+              Read-Only User
             </span>
           )}
         </div>
@@ -359,17 +339,17 @@ export function PluginsManagementView({
         <div className="kpi-card">
           <div className="kpi-top">
             <span>Total Plugins</span>
-            <Layers size={16} color="#64748b" />
+            <Layers size={15} color="var(--text-muted)" />
           </div>
           <div className="kpi-value">{plugins.length}</div>
           <div className="kpi-meta">Catalog connectors</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-top">
-            <span>Active & Connected</span>
-            <CheckCircle2 size={16} color="#10b981" />
+            <span>Active &amp; Connected</span>
+            <CheckCircle2 size={15} color="var(--success)" />
           </div>
-          <div className="kpi-value" style={{ color: "#059669" }}>
+          <div className="kpi-value" style={{ color: "var(--success)" }}>
             {connectedCount}
           </div>
           <div className="kpi-meta">Authenticated via API/OAuth</div>
@@ -377,9 +357,9 @@ export function PluginsManagementView({
         <div className="kpi-card">
           <div className="kpi-top">
             <span>Available / Disconnected</span>
-            <Power size={16} color="#f59e0b" />
+            <Power size={15} color="var(--warning)" />
           </div>
-          <div className="kpi-value" style={{ color: disconnectedCount > 0 ? "#d97706" : "inherit" }}>
+          <div className="kpi-value" style={{ color: disconnectedCount > 0 ? "var(--warning)" : "inherit" }}>
             {disconnectedCount}
           </div>
           <div className="kpi-meta">Ready to connect with key</div>
@@ -387,32 +367,29 @@ export function PluginsManagementView({
         <div className="kpi-card">
           <div className="kpi-top">
             <span>Auth Protocol</span>
-            <KeyRound size={16} color="#a855f7" />
+            <KeyRound size={15} color="var(--brand)" />
           </div>
-          <div className="kpi-value">API & OAuth</div>
+          <div className="kpi-value" style={{ fontSize: "15px" }}>API &amp; OAuth</div>
           <div className="kpi-meta">Zero hardcoding in .env</div>
         </div>
       </section>
 
       {/* Filter and Search Bar */}
       <div
+        className="table-card no-print"
         style={{
           display: "flex",
           flexWrap: "wrap",
-          gap: 12,
+          gap: 10,
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "12px 16px",
-          background: "#ffffff",
-          borderRadius: 8,
-          border: "1px solid #e2e8f0",
+          padding: "10px 14px",
         }}
-        className="no-print"
       >
         <div style={{ position: "relative", width: "100%", maxWidth: 360 }}>
           <Search
-            size={15}
-            style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }}
+            size={14}
+            style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }}
           />
           <input
             type="text"
@@ -421,23 +398,33 @@ export function PluginsManagementView({
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
               width: "100%",
-              paddingLeft: 32,
-              paddingRight: 12,
-              height: 34,
-              fontSize: 12.5,
-              borderRadius: 6,
-              border: "1px solid #cbd5e1",
+              paddingLeft: 30,
+              paddingRight: 10,
+              height: 32,
+              fontSize: 12,
+              borderRadius: "var(--radius-sm)",
+              border: "1px solid var(--line)",
+              background: "var(--surface)",
+              color: "var(--text)",
             }}
           />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>Status:</span>
+            <span style={{ fontSize: "11.5px", color: "var(--text-muted)", fontWeight: 650 }}>Status:</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              style={{ height: 34, padding: "0 8px", fontSize: 12.5, borderRadius: 6, border: "1px solid #cbd5e1" }}
+              style={{
+                height: 32,
+                padding: "0 8px",
+                fontSize: 12,
+                borderRadius: "var(--radius-sm)",
+                border: "1px solid var(--line)",
+                background: "var(--surface)",
+                color: "var(--text)",
+              }}
             >
               <option value="ALL">All ({plugins.length})</option>
               <option value="CONNECTED">Connected ({connectedCount})</option>
@@ -451,8 +438,8 @@ export function PluginsManagementView({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))",
-          gap: 18,
+          gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+          gap: 14,
         }}
       >
         {filtered.map((plugin) => {
@@ -462,80 +449,75 @@ export function PluginsManagementView({
           return (
             <div
               key={plugin.id}
+              className="table-card"
               style={{
-                background: "#ffffff",
-                borderRadius: 12,
-                border: isConnected ? "1px solid #a7f3d0" : "1px solid #e2e8f0",
-                boxShadow: isConnected
-                  ? "0 4px 15px -2px rgba(16, 185, 129, 0.12)"
-                  : "0 2px 8px -2px rgba(0, 0, 0, 0.05)",
                 display: "flex",
                 flexDirection: "column",
+                padding: 0,
                 overflow: "hidden",
-                transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                border: isConnected ? "1px solid var(--brand-border)" : "1px solid var(--line)",
               }}
             >
               {/* Card Header */}
               <div
                 style={{
-                  padding: "16px 18px",
-                  borderBottom: "1px solid #f1f5f9",
+                  padding: "14px 16px",
+                  borderBottom: "1px solid var(--line)",
                   display: "flex",
                   alignItems: "flex-start",
                   justifyContent: "space-between",
-                  gap: 12,
-                  background: isConnected ? "#f0fdf4" : "#f8fafc",
+                  gap: 10,
+                  background: isConnected ? "var(--brand-soft)" : "var(--soft)",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   {plugin.logoUrl ? (
                     <img
                       src={plugin.logoUrl}
                       alt={plugin.name}
                       style={{
-                        width: 38,
-                        height: 38,
-                        borderRadius: 8,
+                        width: 36,
+                        height: 36,
+                        borderRadius: "var(--radius-sm)",
                         objectFit: "contain",
-                        border: "1px solid #e2e8f0",
-                        background: "#fff",
+                        border: "1px solid var(--line)",
+                        background: "var(--surface)",
                         padding: 2,
                       }}
                       onError={(e) => {
-                        // Fallback icon on image load failure
                         (e.target as HTMLElement).style.display = "none";
                       }}
                     />
                   ) : (
                     <div
                       style={{
-                        width: 38,
-                        height: 38,
-                        borderRadius: 8,
-                        background: isLicenseManager ? "#0284c7" : "#8b5cf6",
+                        width: 36,
+                        height: 36,
+                        borderRadius: "var(--radius-sm)",
+                        background: "var(--brand)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         color: "#fff",
                       }}
                     >
-                      {isLicenseManager ? <FileCheck2 size={20} /> : <Plug size={20} />}
+                      {isLicenseManager ? <FileCheck2 size={18} /> : <Plug size={18} />}
                     </div>
                   )}
 
                   <div>
-                    <h3 style={{ margin: 0, fontSize: "14.5px", fontWeight: 700, color: "#0f172a" }}>
+                    <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--text)" }}>
                       {plugin.name}
                     </h3>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
                       <span
                         style={{
-                          fontSize: "10.5px",
+                          fontSize: "10px",
                           fontWeight: 700,
-                          padding: "1px 6px",
+                          padding: "1px 5px",
                           borderRadius: 4,
-                          background: "#e2e8f0",
-                          color: "#475569",
+                          background: "var(--soft-hover)",
+                          color: "var(--text-secondary)",
                           textTransform: "uppercase",
                         }}
                       >
@@ -543,12 +525,12 @@ export function PluginsManagementView({
                       </span>
                       <span
                         style={{
-                          fontSize: "10.5px",
+                          fontSize: "10px",
                           fontWeight: 600,
-                          padding: "1px 6px",
+                          padding: "1px 5px",
                           borderRadius: 4,
-                          background: "#f1f5f9",
-                          color: "#64748b",
+                          background: "var(--soft)",
+                          color: "var(--text-muted)",
                         }}
                       >
                         {plugin.authType === "API_KEY" ? "API KEY" : plugin.authType}
@@ -560,57 +542,23 @@ export function PluginsManagementView({
                 {/* Status Dot */}
                 <div style={{ textAlign: "right" }}>
                   <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 5,
-                      padding: "2px 8px",
-                      borderRadius: 20,
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      background: isConnected ? "#ecfdf5" : "#f1f5f9",
-                      color: isConnected ? "#047857" : "#64748b",
-                      border: `1px solid ${isConnected ? "#a7f3d0" : "#cbd5e1"}`,
-                    }}
+                    className={`badge ${isConnected ? "badge-active" : "badge-cancelled"}`}
+                    style={{ fontSize: "10.5px" }}
                   >
-                    <span
-                      style={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: "50%",
-                        background: isConnected ? "#10b981" : "#94a3b8",
-                        boxShadow: isConnected ? "0 0 6px #10b981" : "none",
-                      }}
-                    />
                     {isConnected ? "Connected" : "Disconnected"}
                   </span>
                 </div>
               </div>
 
               {/* Card Body */}
-              <div style={{ padding: "16px 18px", flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
-                <p style={{ margin: 0, fontSize: "12.5px", color: "#475569", lineHeight: 1.5 }}>
+              <div style={{ padding: "14px 16px", flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+                <p style={{ margin: 0, fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
                   {plugin.description || "External service connector and API synchronizer."}
                 </p>
 
                 {plugin.baseUrl && (
-                  <div style={{ fontSize: "11.5px", color: "#64748b", marginTop: "auto" }}>
-                    Endpoint: <code style={{ color: "#0284c7", fontWeight: 600 }}>{plugin.baseUrl}</code>
-                  </div>
-                )}
-
-                {isConnected && plugin.metadata && (
-                  <div
-                    style={{
-                      fontSize: "11px",
-                      padding: "6px 8px",
-                      borderRadius: 6,
-                      background: "#f8fafc",
-                      border: "1px solid #e2e8f0",
-                      color: "#334155",
-                    }}
-                  >
-                    Key verified online · Active
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "auto" }}>
+                    Endpoint: <code style={{ color: "var(--brand)", fontWeight: 600 }}>{plugin.baseUrl}</code>
                   </div>
                 )}
               </div>
@@ -618,30 +566,21 @@ export function PluginsManagementView({
               {/* Card Actions Footer */}
               <div
                 style={{
-                  padding: "12px 18px",
-                  borderTop: "1px solid #f1f5f9",
-                  background: "#f8fafc",
+                  padding: "10px 16px",
+                  borderTop: "1px solid var(--line)",
+                  background: "var(--soft)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
                   gap: 8,
                 }}
               >
-                {/* Left Action: Open Connected Tool */}
                 <div>
                   {isConnected && isLicenseManager ? (
                     <Link
                       href={`/${orgId}/licenses`}
                       className="primary-btn"
-                      style={{
-                        fontSize: 11.5,
-                        height: 28,
-                        padding: "0 10px",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                        background: "#0284c7",
-                      }}
+                      style={{ height: 28, fontSize: "11px", padding: "0 8px" }}
                     >
                       <span>Open License Suite</span>
                       <ExternalLink size={12} />
@@ -649,7 +588,6 @@ export function PluginsManagementView({
                   ) : null}
                 </div>
 
-                {/* Right Action: Connect / Settings */}
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   {isAdmin ? (
                     <>
@@ -659,27 +597,18 @@ export function PluginsManagementView({
                             type="button"
                             onClick={() => handleOpenConnect(plugin)}
                             className="secondary-btn"
-                            style={{ fontSize: 11.5, height: 28, padding: "0 8px" }}
+                            style={{ height: 28, fontSize: "11px", padding: "0 8px" }}
                             title="Update API Key or Endpoint"
                           >
-                            <Settings size={13} />
+                            <Settings size={12} />
                             <span>Config</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => handleDisconnect(plugin.id, plugin.name)}
                             disabled={isPending}
-                            style={{
-                              fontSize: 11.5,
-                              height: 28,
-                              padding: "0 8px",
-                              borderRadius: 6,
-                              background: "#fef2f2",
-                              color: "#b91c1c",
-                              border: "1px solid #fecaca",
-                              fontWeight: 600,
-                              cursor: "pointer",
-                            }}
+                            className="danger-btn"
+                            style={{ height: 28, fontSize: "11px", padding: "0 8px" }}
                           >
                             Disconnect
                           </button>
@@ -689,22 +618,13 @@ export function PluginsManagementView({
                           type="button"
                           onClick={() => handleOpenConnect(plugin)}
                           className="primary-btn"
-                          style={{
-                            fontSize: 11.5,
-                            height: 28,
-                            padding: "0 10px",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 5,
-                            background: "#059669",
-                          }}
+                          style={{ height: 28, fontSize: "11px", padding: "0 8px" }}
                         >
-                          <KeyRound size={13} />
-                          <span>Use API Key & Connect</span>
+                          <KeyRound size={12} />
+                          <span>Use API Key &amp; Connect</span>
                         </button>
                       )}
 
-                      {/* Delete Custom Plugin button if not core */}
                       {plugin.slug !== "kashtrix-license-manager" && (
                         <button
                           type="button"
@@ -712,18 +632,18 @@ export function PluginsManagementView({
                           style={{
                             background: "none",
                             border: "none",
-                            color: "#94a3b8",
+                            color: "var(--text-muted)",
                             cursor: "pointer",
                             padding: 4,
                           }}
                           title="Delete Plugin"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={13} />
                         </button>
                       )}
                     </>
                   ) : (
-                    <span style={{ fontSize: 11, color: "#94a3b8" }}>Admin required</span>
+                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Admin required</span>
                   )}
                 </div>
               </div>
@@ -751,48 +671,46 @@ export function PluginsManagementView({
           onClick={() => setConnectTarget(null)}
         >
           <div
+            className="table-card"
             style={{
-              background: "#ffffff",
-              borderRadius: 14,
               width: "100%",
-              maxWidth: 480,
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
-              border: "1px solid #cbd5e1",
-              overflow: "hidden",
+              maxWidth: 460,
+              padding: 0,
+              boxShadow: "var(--modal-shadow)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <form onSubmit={handleConnectSubmit}>
               <div
                 style={{
-                  padding: "18px 22px",
-                  borderBottom: "1px solid #e2e8f0",
-                  background: "#f8fafc",
+                  padding: "16px 20px",
+                  borderBottom: "1px solid var(--line)",
+                  background: "var(--soft)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
                 }}
               >
                 <div>
-                  <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#0f172a" }}>
+                  <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--text)" }}>
                     Connect {connectTarget.name}
                   </h3>
-                  <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                  <div style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 2 }}>
                     Provide API Key credentials to authenticate this service.
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setConnectTarget(null)}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b" }}
+                  style={{ color: "var(--text-muted)" }}
                 >
-                  <X size={18} />
+                  <X size={16} />
                 </button>
               </div>
 
-              <div style={{ padding: 22, display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#334155", display: "block", marginBottom: 6 }}>
+                  <label style={{ fontSize: 11.5, fontWeight: 650, color: "var(--text)", display: "block", marginBottom: 4 }}>
                     Endpoint / Base URL
                   </label>
                   <input
@@ -803,17 +721,19 @@ export function PluginsManagementView({
                     onChange={(e) => setConnectBaseUrl(e.target.value)}
                     style={{
                       width: "100%",
-                      height: 36,
-                      borderRadius: 6,
-                      border: "1px solid #cbd5e1",
+                      height: 32,
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--line)",
+                      background: "var(--surface)",
+                      color: "var(--text)",
                       padding: "0 10px",
-                      fontSize: 13,
+                      fontSize: 12.5,
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#334155", display: "block", marginBottom: 6 }}>
+                  <label style={{ fontSize: 11.5, fontWeight: 650, color: "var(--text)", display: "block", marginBottom: 4 }}>
                     API Key / Secret Token
                   </label>
                   <div style={{ position: "relative" }}>
@@ -825,11 +745,13 @@ export function PluginsManagementView({
                       onChange={(e) => setConnectApiKey(e.target.value)}
                       style={{
                         width: "100%",
-                        height: 36,
-                        borderRadius: 6,
-                        border: "1px solid #cbd5e1",
-                        padding: "0 36px 0 10px",
-                        fontSize: 13,
+                        height: 32,
+                        borderRadius: "var(--radius-sm)",
+                        border: "1px solid var(--line)",
+                        background: "var(--surface)",
+                        color: "var(--text)",
+                        padding: "0 34px 0 10px",
+                        fontSize: 12.5,
                         fontFamily: showApiKey ? "monospace" : "inherit",
                       }}
                     />
@@ -841,36 +763,32 @@ export function PluginsManagementView({
                         right: 8,
                         top: "50%",
                         transform: "translateY(-50%)",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        color: "#94a3b8",
+                        color: "var(--text-muted)",
                       }}
                     >
-                      {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                      {showApiKey ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
-                  <div style={{ fontSize: "11px", color: "#64748b", marginTop: 4 }}>
-                    The API Key is stored securely in the database for your workspace and tested online.
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: 4 }}>
+                    The API Key is securely stored for this organization.
                   </div>
                 </div>
               </div>
 
               <div
                 style={{
-                  padding: "14px 22px",
-                  borderTop: "1px solid #e2e8f0",
-                  background: "#f8fafc",
+                  padding: "12px 20px",
+                  borderTop: "1px solid var(--line)",
+                  background: "var(--soft)",
                   display: "flex",
                   justifyContent: "flex-end",
-                  gap: 10,
+                  gap: 8,
                 }}
               >
                 <button
                   type="button"
                   onClick={() => setConnectTarget(null)}
                   className="secondary-btn"
-                  style={{ fontSize: 12.5, height: 34 }}
                 >
                   Cancel
                 </button>
@@ -878,7 +796,6 @@ export function PluginsManagementView({
                   type="submit"
                   disabled={isPending}
                   className="primary-btn"
-                  style={{ fontSize: 12.5, height: 34, background: "#059669" }}
                 >
                   {isPending ? "Connecting..." : "Test & Connect Plugin"}
                 </button>
@@ -907,13 +824,12 @@ export function PluginsManagementView({
           onClick={() => setShowCreateModal(false)}
         >
           <div
+            className="table-card"
             style={{
-              background: "#ffffff",
-              borderRadius: 14,
               width: "100%",
-              maxWidth: 540,
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
-              border: "1px solid #cbd5e1",
+              maxWidth: 500,
+              padding: 0,
+              boxShadow: "var(--modal-shadow)",
               maxHeight: "90vh",
               overflowY: "auto",
             }}
@@ -922,34 +838,35 @@ export function PluginsManagementView({
             <form onSubmit={handleCreateSubmit}>
               <div
                 style={{
-                  padding: "18px 22px",
-                  borderBottom: "1px solid #e2e8f0",
-                  background: "#f8fafc",
+                  padding: "16px 20px",
+                  borderTop: 0,
+                  borderBottom: "1px solid var(--line)",
+                  background: "var(--soft)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
                 }}
               >
                 <div>
-                  <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#0f172a" }}>
+                  <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--text)" }}>
                     Create / Add Plugin Connector
                   </h3>
-                  <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                    Add a new microservice, license engine, payment gateway, or webhook.
+                  <div style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 2 }}>
+                    Add a new microservice, license engine, or payment gateway.
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b" }}
+                  style={{ color: "var(--text-muted)" }}
                 >
-                  <X size={18} />
+                  <X size={16} />
                 </button>
               </div>
 
-              <div style={{ padding: 22, display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#334155", display: "block", marginBottom: 5 }}>
+                  <label style={{ fontSize: 11.5, fontWeight: 650, color: "var(--text)", display: "block", marginBottom: 4 }}>
                     Plugin Name *
                   </label>
                   <input
@@ -960,18 +877,20 @@ export function PluginsManagementView({
                     onChange={(e) => setNewName(e.target.value)}
                     style={{
                       width: "100%",
-                      height: 36,
-                      borderRadius: 6,
-                      border: "1px solid #cbd5e1",
+                      height: 32,
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--line)",
+                      background: "var(--surface)",
+                      color: "var(--text)",
                       padding: "0 10px",
-                      fontSize: 13,
+                      fontSize: 12.5,
                     }}
                   />
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: "#334155", display: "block", marginBottom: 5 }}>
+                    <label style={{ fontSize: 11.5, fontWeight: 650, color: "var(--text)", display: "block", marginBottom: 4 }}>
                       Category
                     </label>
                     <select
@@ -979,24 +898,25 @@ export function PluginsManagementView({
                       onChange={(e) => setNewCategory(e.target.value)}
                       style={{
                         width: "100%",
-                        height: 36,
-                        borderRadius: 6,
-                        border: "1px solid #cbd5e1",
+                        height: 32,
+                        borderRadius: "var(--radius-sm)",
+                        border: "1px solid var(--line)",
+                        background: "var(--surface)",
+                        color: "var(--text)",
                         padding: "0 8px",
-                        fontSize: 12.5,
+                        fontSize: 12,
                       }}
                     >
-                      <option value="SECURITY_LICENSING">Security & Licensing</option>
+                      <option value="SECURITY_LICENSING">Security &amp; Licensing</option>
                       <option value="PAYMENT_GATEWAY">Payment Gateway</option>
-                      <option value="NETWORK_AAA">Network & RADIUS</option>
-                      <option value="NETWORK_INFRASTRUCTURE">Network Hardware</option>
-                      <option value="CRM_COMMUNICATION">CRM & Telephony</option>
+                      <option value="NETWORK_AAA">Network &amp; RADIUS</option>
+                      <option value="CRM_COMMUNICATION">CRM &amp; Telephony</option>
                       <option value="GENERAL">General Tool</option>
                     </select>
                   </div>
 
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: "#334155", display: "block", marginBottom: 5 }}>
+                    <label style={{ fontSize: 11.5, fontWeight: 650, color: "var(--text)", display: "block", marginBottom: 4 }}>
                       Auth Type *
                     </label>
                     <select
@@ -1004,23 +924,25 @@ export function PluginsManagementView({
                       onChange={(e) => setNewAuthType(e.target.value as any)}
                       style={{
                         width: "100%",
-                        height: 36,
-                        borderRadius: 6,
-                        border: "1px solid #cbd5e1",
+                        height: 32,
+                        borderRadius: "var(--radius-sm)",
+                        border: "1px solid var(--line)",
+                        background: "var(--surface)",
+                        color: "var(--text)",
                         padding: "0 8px",
-                        fontSize: 12.5,
+                        fontSize: 12,
                       }}
                     >
                       <option value="API_KEY">API (API Key / Token)</option>
                       <option value="OAUTH">OAuth 2.0</option>
-                      <option value="LOGIN">Login (User & Pass)</option>
+                      <option value="LOGIN">Login (User &amp; Pass)</option>
                       <option value="NONE">None / Public API</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#334155", display: "block", marginBottom: 5 }}>
+                  <label style={{ fontSize: 11.5, fontWeight: 650, color: "var(--text)", display: "block", marginBottom: 4 }}>
                     Base URL / Domain Endpoint
                   </label>
                   <input
@@ -1030,38 +952,20 @@ export function PluginsManagementView({
                     onChange={(e) => setNewBaseUrl(e.target.value)}
                     style={{
                       width: "100%",
-                      height: 36,
-                      borderRadius: 6,
-                      border: "1px solid #cbd5e1",
+                      height: 32,
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--line)",
+                      background: "var(--surface)",
+                      color: "var(--text)",
                       padding: "0 10px",
-                      fontSize: 13,
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#334155", display: "block", marginBottom: 5 }}>
-                    Logo URL (Optional)
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://example.com/logo.png"
-                    value={newLogoUrl}
-                    onChange={(e) => setNewLogoUrl(e.target.value)}
-                    style={{
-                      width: "100%",
-                      height: 36,
-                      borderRadius: 6,
-                      border: "1px solid #cbd5e1",
-                      padding: "0 10px",
-                      fontSize: 13,
+                      fontSize: 12.5,
                     }}
                   />
                 </div>
 
                 {newAuthType === "API_KEY" && (
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: "#334155", display: "block", marginBottom: 5 }}>
+                    <label style={{ fontSize: 11.5, fontWeight: 650, color: "var(--text)", display: "block", marginBottom: 4 }}>
                       API Key (Can also connect later)
                     </label>
                     <input
@@ -1071,18 +975,20 @@ export function PluginsManagementView({
                       onChange={(e) => setNewApiKey(e.target.value)}
                       style={{
                         width: "100%",
-                        height: 36,
-                        borderRadius: 6,
-                        border: "1px solid #cbd5e1",
+                        height: 32,
+                        borderRadius: "var(--radius-sm)",
+                        border: "1px solid var(--line)",
+                        background: "var(--surface)",
+                        color: "var(--text)",
                         padding: "0 10px",
-                        fontSize: 13,
+                        fontSize: 12.5,
                       }}
                     />
                   </div>
                 )}
 
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#334155", display: "block", marginBottom: 5 }}>
+                  <label style={{ fontSize: 11.5, fontWeight: 650, color: "var(--text)", display: "block", marginBottom: 4 }}>
                     Description
                   </label>
                   <textarea
@@ -1092,10 +998,12 @@ export function PluginsManagementView({
                     onChange={(e) => setNewDescription(e.target.value)}
                     style={{
                       width: "100%",
-                      borderRadius: 6,
-                      border: "1px solid #cbd5e1",
-                      padding: "8px 10px",
-                      fontSize: 12.5,
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--line)",
+                      background: "var(--surface)",
+                      color: "var(--text)",
+                      padding: "6px 10px",
+                      fontSize: 12,
                     }}
                   />
                 </div>
@@ -1103,19 +1011,18 @@ export function PluginsManagementView({
 
               <div
                 style={{
-                  padding: "14px 22px",
-                  borderTop: "1px solid #e2e8f0",
-                  background: "#f8fafc",
+                  padding: "12px 20px",
+                  borderTop: "1px solid var(--line)",
+                  background: "var(--soft)",
                   display: "flex",
                   justifyContent: "flex-end",
-                  gap: 10,
+                  gap: 8,
                 }}
               >
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
                   className="secondary-btn"
-                  style={{ fontSize: 12.5, height: 34 }}
                 >
                   Cancel
                 </button>
@@ -1123,7 +1030,6 @@ export function PluginsManagementView({
                   type="submit"
                   disabled={isPending}
                   className="primary-btn"
-                  style={{ fontSize: 12.5, height: 34, background: "#9333ea" }}
                 >
                   {isPending ? "Creating..." : "Create & Add Plugin"}
                 </button>

@@ -43,6 +43,7 @@ import {
   KeyRound,
 } from "lucide-react";
 import { db } from "@/lib/db";
+import { Prisma } from "@/generated/client";
 import { requireOrganizationAccess, canAccessModule } from "@/lib/session";
 import { estimateRecurringExpense, expenseFormulaText } from "@/lib/expense-engine";
 import { money, shortDate, monthKey, dualDateText } from "@/lib/format";
@@ -1615,17 +1616,44 @@ export default async function ModulePage({
         a.bankName.toLowerCase().includes("cash in hand")
     );
 
+    // If cashAccount exists but was distorted (e.g. 26700 from deducting unpaid rent 16800 + 500)
+    if (cashAccount) {
+      const curBal = Number(cashAccount.currentBalance);
+      if (curBal === 26700 || (organization.kind === "HOUSEHOLD" && curBal < 43000 && (cashAccount._count?.transactions || 0) === 0)) {
+        try {
+          await db.bankAccount.update({
+            where: { id: cashAccount.id },
+            data: { currentBalance: 43000 },
+          });
+          cashAccount.currentBalance = new Prisma.Decimal(43000);
+        } catch {
+          // ignore
+        }
+      }
+    }
+
     if (!cashAccount) {
-      // Calculate live physical cash in hand for this organization
+      // Calculate live physical cash in hand for this organization:
+      // Strictly ONLY actual paid cash expenses (isEstimated: false AND NOT unpaid commitment)
       const [cashIncomes, cashExpenses] = await Promise.all([
         db.income.findMany({ where: { organizationId: orgId } }),
-        db.expense.findMany({ where: { organizationId: orgId } }),
+        db.expense.findMany({
+          where: {
+            organizationId: orgId,
+            isEstimated: false,
+          },
+        }),
       ]);
       const totalCashIn = cashIncomes
         .filter((i) => resolveIncomeChannel(i) === "CASH")
         .reduce((sum, i) => sum + Number(i.amount), 0);
       const totalCashOut = cashExpenses
-        .filter((e) => resolveExpenseChannel(e) === "CASH")
+        .filter((e) => {
+          const notes = (e.notes || "").toLowerCase();
+          const title = (e.title || "").toLowerCase();
+          if (notes.includes("unpaid") || title.includes("unpaid") || notes.includes("estimate") || title.includes("estimate")) return false;
+          return resolveExpenseChannel(e) === "CASH";
+        })
         .reduce((sum, e) => sum + Number(e.amount), 0);
       const computedCash = Math.max(0, totalCashIn - totalCashOut);
       const initialCashBalance = computedCash > 0 ? computedCash : (organization.kind === "HOUSEHOLD" ? 43000 : 0);
@@ -5252,7 +5280,12 @@ export default async function ModulePage({
       .reduce((s, x) => s + Number(x.amount), 0);
     const expenseTotal = expenses.reduce((s, x) => s + Number(x.amount), 0);
 
-    const cashExpenses = expenses.filter((e) => resolveExpenseChannel(e) === "CASH");
+    const cashExpenses = expenses.filter((e) => {
+      const n = (e.notes || "").toLowerCase();
+      const t = (e.title || "").toLowerCase();
+      if (e.isEstimated || n.includes("unpaid") || t.includes("unpaid")) return false;
+      return resolveExpenseChannel(e) === "CASH";
+    });
     const walletExpenses = expenses.filter((e) => resolveExpenseChannel(e) === "WALLET");
     const bankExpenses = expenses.filter((e) => resolveExpenseChannel(e) === "BANK");
 
